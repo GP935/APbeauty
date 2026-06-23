@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- ===== DOMINIO SEO ===== -->
+  <!-- Rellena aquí: <title>, meta description, canonical, Open Graph, Twitter Card.
+       OG image placeholder en og/home-og.svg (sustituir por 1200x630 real).
+       El JSON-LD (Organization + WebSite/SearchAction) va antes de </body>.
+       Front no toca este bloque. -->
+  <!-- ===== FIN bloque SEO ===== -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="brand/ap_ico_wnb-removebg-preview.png">
+</head>
+<body>
+
+  <!-- ===== 0 · PROMO BAR ===== -->
+  <div class="promo-bar" role="complementary" aria-label="Promoción">
+    <p>Envío gratis en pedidos +35€ · Maquilladora profesional · 100% Cruelty-free</p>
+  </div>
+
+  <!-- ===== 1 · HEADER (rework Gucci: logo centrado · nav 3+3 flanqueando) ===== -->
+  <!-- Sólido blanco siempre (retirado `site-header--overlay`/`.is-stuck`/scrim — ver inbox css+js).
+       Grid 3 zonas: [search + nav-izq(3)] · [logo centro] · [nav-der(3) + carrito].
+       Móvil (CSS ≤900px): ocultar navs + search → barra [☰ · logo · 🛒]. Logo header = AP NEGRO (wnb) sobre blanco. -->
+  <header class="site-header" id="site-header">
+    <div class="site-header__inner">
+
+      <!-- ZONA IZQUIERDA: buscar + ☰ (móvil) + nav 3 -->
+      <div class="header-left">
+        <button class="header-icon" id="btn-search" aria-label="Buscar" aria-expanded="false" aria-controls="search-panel">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <button class="menu-toggle" id="btn-menu" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu-panel">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <nav class="nav-cluster" aria-label="Categorías">
+          <a class="nav-link" href="/tienda?cat=labios">Labios</a>
+          <a class="nav-link" href="/tienda?cat=ojos">Ojos</a>
+          <a class="nav-link" href="/tienda?cat=rostro">Rostro</a>
+        </nav>
+      </div>
+
+      <!-- ZONA CENTRO: logo -->
+      <a class="header-logo" href="/" aria-label="AP Beauty inicio">
+        <img src="brand/ap_ico_wnb-removebg-preview.png" alt="AP Beauty">
+      </a>
+
+      <!-- ZONA DERECHA: nav 3 + carrito -->
+      <div class="header-right">
+        <nav class="nav-cluster" aria-label="Más categorías">
+          <a class="nav-link" href="/tienda?cat=sets">Sets</a>
+          <a class="nav-link" href="/tienda?cat=brochas">Brochas</a>
+          <a class="nav-link" href="#historia">Historia</a>
+        </nav>
+        <a href="/carrito" class="header-icon header-cart" aria-label="Carrito">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <span class="cart-count" id="cart-count">0</span>
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Buscador desplegable (conservado · contrato JS #btn-search/#search-panel/#search-input) -->
+    <div class="search-panel" id="search-panel" hidden>
+      <div class="container">
+        <input type="search" id="search-input" placeholder="Busca labiales, paletas, brochas..." aria-label="Buscar productos">
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MENÚ MÓVIL: backdrop + panel deslizante con X + jerarquía (primario/secundario) ===== -->
+  <!-- Contrato JS: #btn-menu (abre) · #menu-panel · #menu-backdrop · #btn-menu-close (cierra) · clases is-open.
+       Logo panel = AP NEGRO (wnb) sobre panel blanco. -->
+  <div class="menu-backdrop" id="menu-backdrop" hidden></div>
+  <aside class="menu-panel" id="menu-panel" aria-label="Menú de navegación" aria-hidden="true">
+    <div class="menu-top">
+      <img src="brand/ap_ico_wnb-removebg-preview.png" alt="AP Beauty">
+      <button class="menu-close" id="btn-menu-close" aria-label="Cerrar menú">✕</button>
+    </div>
+    <nav class="menu-primary" aria-label="Categorías">
+      <a href="/tienda?cat=labios">Labios</a>
+      <a href="/tienda?cat=ojos">Ojos</a>
+      <a href="/tienda?cat=rostro">Rostro</a>
+      <a href="/tienda?cat=sets">Sets</a>
+      <a href="/tienda?cat=brochas">Brochas</a>
+    </nav>
+    <nav class="menu-secondary" aria-label="Más opciones">
+      <a href="#historia">Historia</a>
+      <a href="#" id="menu-search-link" data-open-search>Buscar</a>
+      <a href="/cuenta">Mi cuenta</a>
+    </nav>
+  </aside>
+
+  <main>
+
+    <!-- ===== 2 · HERO ===== -->
+    <section class="hero" aria-labelledby="hero-titulo">
+      <div class="hero-media">
+        <img src="hero/hero-editorial.webp" alt="Retrato editorial en blanco y negro de modelo de AP Beauty con maquillaje definido" fetchpriority="high">
+      </div>
+      <!-- Scrim superior para legibilidad del header blanco — dominio CSS (.hero-overlay / scrim) -->
+      <div class="hero-scrim" aria-hidden="true"></div>
+      <div class="hero-overlay">
+        <div class="container">
+          <span class="hero-eyebrow">CONTROLLED PRESENCE</span>
+          <h1 id="hero-titulo">PRESENCE IS POWER</h1>
+          <p class="hero-sub">Maquillaje que define. No que disimula.</p>
+          <div class="hero-cta">
+            <a href="#destacados" class="btn-editorial btn-editorial--solid">DESCUBRIR</a>
+            <a href="#historia" class="btn-editorial btn-editorial--ghost">Nuestra historia</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3 · DESTACADOS (3 cards cuadradas estáticas — antes carrusel marquee) ===== -->
+    <!-- Carrusel giratorio eliminado. 3 cards de misma dimensión, simétricas dentro del .container
+         (sin sangrar márgenes). Necesita CSS nuevo: .product-rail__grid (3 col iguales) + .rail-card cuadrada. -->
+    <section class="product-rail" id="destacados" aria-labelledby="rail-titulo">
+      <div class="container">
+        <div class="rail-head">
+          <h2 class="section-title" id="rail-titulo">Destacados</h2>
+          <a href="/tienda" class="rail-explore">Ver todo →</a>
+        </div>
+
+        <div class="product-rail__grid">
+
+          <a href="/producto/lip-eclipse" class="rail-card">
+            <div class="rail-card-img"><img src="products/labial-destacado.webp" alt="Labial Lip Eclipse de AP Beauty" loading="lazy"></div>
+            <h3 class="rail-card-name">Lip Eclipse</h3>
+            <p class="rail-card-meta">Labial mate de larga duración</p>
+            <p class="rail-card-price">24,90€</p>
+          </a>
+
+          <a href="/producto/power-matte" class="rail-card">
+            <div class="rail-card-img"><img src="products/power-matte-destacado.webp" alt="Paleta de rubor y contorno Power Matte" loading="lazy"></div>
+            <h3 class="rail-card-name">Power Matte</h3>
+            <p class="rail-card-meta">Paleta rubor + contorno</p>
+            <p class="rail-card-price">39,90€</p>
+          </a>
+
+          <a href="/producto/sculpt-liner" class="rail-card">
+            <div class="rail-card-img"><img src="products/sculpt-liner-destacado.webp" alt="Delineador de precisión Sculpt Liner" loading="lazy"></div>
+            <h3 class="rail-card-name">Sculpt Liner</h3>
+            <p class="rail-card-meta">Delineador de precisión</p>
+            <p class="rail-card-price">18,90€</p>
+          </a>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3B · SPOTLIGHT PRODUCT (SECCIÓN NUEVA · §3B v3 — sustituye al antiguo statement) ===== -->
+    <!-- Climax de producto tras Destacados: el héroe del catálogo. Producto = MÁS VENDIDO actual: pestañas postizas.
+         Split editorial full-bleed: render de producto a un lado, texto al otro (eyebrow / nombre Playfair / línea / precio / CTA).
+         Necesita CSS nuevo: .spotlight, .spotlight-grid, .spotlight-media, .spotlight-text (mismo patrón estructural que storytelling; sin .container, full-bleed).
+         RITMO (§3): el fondo debe ser DISTINTO a sus vecinos para cortar la racha de oscuros. El vecino siguiente
+         (storytelling) es OSCURO → este spotlight NO debe ser oscuro: usar gris/charcoal-claro o claro. Dominio CSS.
+         ROJO (§3B): un único punto. ⚠️ CAMBIO: el producto ya NO es rojo (estuche de pestañas sobre fondo oscuro)
+         → el rojo de esta vista pasa al CTA (puede ir rojo como único acento) O queda neutro. Decisión CSS. Ver inbox/css.
+         ⚠️ Precio = FACHADA, confirmar con el usuario. -->
+    <section class="spotlight" aria-labelledby="spotlight-titulo">
+      <div class="spotlight-grid">
+        <div class="spotlight-media">
+          <img src="products/pestanas-destacado.jpg" alt="Power Lash, pestañas postizas de alta calidad de AP Beauty en su estuche sobre fondo negro" loading="lazy">
+        </div>
+        <div class="spotlight-text">
+          <p class="eyebrow">EL MÁS VENDIDO</p>
+          <h2 id="spotlight-titulo">Power Lash</h2>
+          <p class="spotlight-line">Pestañas postizas de alta calidad que realzan la mirada. Ligeras, reutilizables, de acabado natural. La mirada que entra antes que tú.</p>
+          <p class="spotlight-price">19,90€</p>
+          <a href="/producto/power-lash" class="btn-editorial btn-editorial--solid">Descubrir</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 5 · STORYTELLING (SECCIÓN NUEVA · §3 ACT 2) ===== -->
+    <!-- No existe en comodex. Construida con el grid heredado (.container, section-pad, full-bleed).
+         Necesita CSS nuevo: .storytelling, .story-grid, .story-media, .story-text, .story-pullquote.
+         Editorial alternando imagen / texto sobre blanco y gris; sin rojo (o un único trazo). -->
+    <section class="storytelling" id="historia" aria-labelledby="story-titulo">
+      <div class="story-grid">
+        <div class="story-media">
+          <img src="brand/modelo-maquilladora-3-2.jpg" alt="Andrea, maquilladora y modelo profesional fundadora de AP Beauty" loading="lazy">
+        </div>
+        <div class="story-text">
+          <p class="eyebrow">YOU ARE THE STANDARD</p>
+          <h2 id="story-titulo">No seguimos tendencias. Marcamos el estándar.</h2>
+          <p>AP Beauty nace de una maquilladora y modelo profesional con experiencia real en moda, fotografía y belleza de alto nivel.</p>
+          <p>Precisión. Control. Presencia. Cada producto se diseña para definir, no para disimular.</p>
+          <blockquote class="story-pullquote">
+            <span class="rule" aria-hidden="true"></span>
+            You don't follow trends. You set the standard.
+          </blockquote>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 6 · POR QUÉ AP BEAUTY (4 cifras) · §3 ACT 2 — cierra el bloque de marca ("esto somos en números") ===== -->
+    <!-- RITMO (§3.1): why es OSCURO; su vecino de arriba (storytelling) también es oscuro → CSS debe dar
+         remate/aire al final del storytelling para que no lean como 2 oscuros de corrido. Abajo, el vecino
+         (dual-cards) es CLARO. -->
+
+    <section class="why" aria-labelledby="why-titulo">
+      <div class="container">
+        <span class="eyebrow">SILENT DOMINANCE</span>
+        <h2 id="why-titulo" class="section-title">Por qué AP Beauty</h2>
+
+        <div class="why-stats">
+          <div class="why-stat">
+            <span class="why-num" data-target="2000" data-prefix="+">0</span>
+            <span class="why-label">clientas</span>
+            <span class="why-sub">Confianza construida sobre resultados reales</span>
+          </div>
+          <div class="why-stat">
+            <span class="why-num" data-target="4.8" data-decimals="1" data-suffix="★">0</span>
+            <span class="why-label">640 reseñas verificadas</span>
+            <span class="why-sub">Valoración media real de clientas</span>
+          </div>
+          <div class="why-stat">
+            <span class="why-num" data-target="100" data-suffix="%">0</span>
+            <span class="why-label">Cruelty-free</span>
+            <span class="why-sub">Nunca testado en animales</span>
+          </div>
+          <div class="why-stat">
+            <span class="why-num" data-target="48" data-suffix="h">0</span>
+            <span class="why-label">envío exprés</span>
+            <span class="why-sub">Entrega en España en 24–48h</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 7 · DOS CARDS INTERACTIVAS · §3 ACT 3 — BEAT CLARO que separa el why (oscuro) del proof ===== -->
+    <!-- Scrim OBLIGATORIO sobre la imagen de fondo + ocultar texto scaffold "1200x800" de los placeholders — dominio CSS (§3 ACT 3). -->
+    <section class="dual-cards" aria-label="Ayuda para elegir">
+      <div class="container dual-grid">
+        <a href="/guia-maquillaje" class="dual-card">
+          <img src="dual/dual-card-1.jpg" alt="Productos de maquillaje AP Beauty" loading="lazy">
+          <div class="dual-card-text">
+            <h3>¿No sabes por dónde empezar?</h3>
+            <p>Encuentra tu rutina según tu tono, tu acabado y tu nivel.</p>
+            <span class="btn-editorial btn-editorial--ghost">Ver guía</span>
+          </div>
+        </a>
+        <a href="/tienda?cat=sets" class="dual-card">
+          <img src="dual/dual-card-2.jpg" alt="Sets y kits de maquillaje AP Beauty" loading="lazy">
+          <div class="dual-card-text">
+            <h3>Descubre los sets</h3>
+            <p>Selecciones cerradas para construir tu presencia con criterio.</p>
+            <span class="btn-editorial btn-editorial--ghost">Ver sets</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- ===== 8 · BANNER SOCIAL PROOF (antes / después) · §3 ACT 3 — prueba real, último empujón antes de navegar a comprar ===== -->
+    <!-- v3.1: movido de ACT 2 a ACT 3. proof y why son la MISMA función (prueba social) en 2 formatos
+         (foto-resultado vs. cifras) → se separan con el beat claro de las dual-cards para que no se canibalicen.
+         Sección CLARA (§3.1). Foto fuente vertical = 2 tomas apiladas → partida por la costura central (y=684) en
+         social-proof/antes.jpg (ceja natural) y social-proof/despues.jpg (ceja+delineado definidos).
+         Banda apaisada: 2 celdas lado a lado en PC, apiladas en móvil (CSS).
+         El resultado ES el contenido → texto NUNCA encima de la imagen; copy en barra propia debajo.
+         background-image de cada celda va por CSS en .pb-cell--before/.pb-cell--after (sin estilo inline). Ver inbox/css.
+         ⚠️ Cifra de prueba social = PLACEHOLDER. Sustituir por dato real antes de tráfico real. -->
+    <section class="proof-banner" aria-label="Resultados reales: antes y después">
+      <div class="proof-banner__media">
+        <figure class="pb-cell pb-cell--before">
+          <figcaption>Antes</figcaption>
+        </figure>
+        <figure class="pb-cell pb-cell--after">
+          <figcaption>Después</figcaption>
+        </figure>
+      </div>
+      <div class="proof-banner__caption">
+        <span class="stars" aria-hidden="true">★★★★★</span>
+        <p>Más de 2.000 clientas con una valoración media de 4,8</p>
+      </div>
+    </section>
+
+    <!-- ===== 9 · COMPRA POR CATEGORÍA (6 cat-cards) · §3 ACT 3 ===== -->
+    <section class="category-rail" aria-labelledby="cat-titulo">
+      <div class="container">
+        <div class="rail-head">
+          <h2 id="cat-titulo">Compra por categoría</h2>
+          <div class="rail-arrows">
+            <button class="rail-arrow" id="cat-prev" aria-label="Anterior">‹</button>
+            <button class="rail-arrow" id="cat-next" aria-label="Siguiente">›</button>
+          </div>
+        </div>
+
+        <div class="category-track" id="cat-track">
+          <a class="category-card" href="/tienda?cat=labios">
+            <img src="categories/labios-categoryl.webp" alt="Labios" loading="lazy">
+            <span class="category-name">Labios</span>
+          </a>
+          <a class="category-card" href="/tienda?cat=ojos">
+            <img src="categories/ojos-category.webp" alt="Ojos" loading="lazy">
+            <span class="category-name">Ojos</span>
+          </a>
+          <a class="category-card" href="/tienda?cat=rostro">
+            <img src="categories/rostro-category.webp" alt="Rostro" loading="lazy">
+            <span class="category-name">Rostro</span>
+          </a>
+          <a class="category-card" href="/tienda?cat=sets">
+            <img src="categories/kits-category.webp" alt="Sets y kits" loading="lazy">
+            <span class="category-name">Sets / Kits</span>
+          </a>
+          <a class="category-card" href="/tienda?cat=brochas">
+            <img src="categories/brochas-category.webp" alt="Brochas" loading="lazy">
+            <span class="category-name">Brochas</span>
+          </a>
+          <a class="category-card" href="/bundles">
+            <img src="categories/bundles-category.jpg" alt="Bundles" loading="lazy">
+            <span class="category-name">Bundles</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 10 · @APBEAUTY (GRID INSTAGRAM) · §3 ACT 3 ===== -->
+    <!-- Sin gradiente IG (§6.2): handle en rojo/negro según contraste — dominio CSS. -->
+    <section class="insta" aria-labelledby="insta-titulo">
+      <div class="container">
+        <h2 class="insta-handle" id="insta-titulo">@apbeauty</h2>
+        <p class="insta-text">You are the standard. Precision is power. Presence before emotion.</p>
+        <div class="insta-links">
+          <a href="https://instagram.com/apbeauty" class="insta-link">Síguenos en Instagram</a>
+          <a href="https://tiktok.com/@apbeauty" class="insta-link">Síguenos en TikTok</a>
+        </div>
+        <div class="insta-grid">
+          <a href="https://instagram.com/apbeauty" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-1.jpeg" alt="" loading="lazy"></a>
+          <a href="https://instagram.com/apbeauty" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-2.jpeg" alt="" loading="lazy"></a>
+          <a href="https://instagram.com/apbeauty" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-3.jpeg" alt="" loading="lazy"></a>
+          <a href="https://instagram.com/apbeauty" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-4.jpeg" alt="" loading="lazy"></a>
+          <a href="https://instagram.com/apbeauty" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-5.jpeg" alt="" loading="lazy"></a>
+          <a href="https://instagram.com/apbeauty" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-6.jpeg" alt="" loading="lazy"></a>
+          <a href="https://instagram.com/apbeauty" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-7.jpeg" alt="" loading="lazy"></a>
+          <a href="https://instagram.com/apbeauty" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-8.jpeg" alt="" loading="lazy"></a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== 13 · NEWSLETTER ===== -->
+  <section class="newsletter" aria-labelledby="news-titulo">
+    <div class="container">
+      <h2 id="news-titulo">Únete al estándar</h2>
+      <p>Lanzamientos, ediciones limitadas y notas de maquillaje profesional. Sin ruido.</p>
+      <form class="newsletter__form" action="#" method="post">
+        <input type="email" class="newsletter__input" name="email" placeholder="Tu correo electrónico" aria-label="Correo electrónico" autocomplete="email" required>
+        <button class="newsletter__btn" type="submit">Suscribirme</button>
+      </form>
+      <small>Sin spam. Solo lo que importa. Baja cuando quieras.</small>
+    </div>
+  </section>
+
+  <!-- ===== 14 · FOOTER ===== -->
+  <footer class="site-footer">
+    <div class="site-footer__main">
+      <div class="container site-footer__grid">
+
+        <!-- Columna 1 — Marca -->
+        <div class="footer-col footer-col--brand">
+          <div class="footer-col__brand-logo">
+            <img src="brand/ap_ico_bnw-removebg-preview.png" alt="AP Beauty" width="28" height="28">
+            <span class="footer-col__brand-name">AP Beauty</span>
+          </div>
+          <p class="footer-col__desc">
+            Maquillaje que define. Presencia controlada.
+          </p>
+          <ul class="footer-social" aria-label="Síguenos en redes sociales">
+            <li>
+              <a href="https://instagram.com/apbeauty" aria-label="Instagram">
+                <img class="footer-social__icon" src="trustelements/instagram.svg" alt="Instagram" width="20" height="20" loading="lazy">
+              </a>
+            </li>
+            <li>
+              <a href="https://tiktok.com/@apbeauty" aria-label="TikTok">
+                <img class="footer-social__icon" src="trustelements/tiktok.svg" alt="TikTok" width="20" height="20" loading="lazy">
+              </a>
+            </li>
+            <li>
+              <a href="https://youtube.com/@apbeauty" aria-label="YouTube">
+                <img class="footer-social__icon" src="trustelements/youtube.svg" alt="YouTube" width="20" height="20" loading="lazy">
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Columna 2 — Tienda (categorías de maquillaje) -->
+        <nav class="footer-col" aria-label="Tienda">
+          <h2 class="footer-col__title">Tienda</h2>
+          <ul class="footer-col__links">
+            <li><a href="/tienda?cat=labios">Labios</a></li>
+            <li><a href="/tienda?cat=ojos">Ojos</a></li>
+            <li><a href="/tienda?cat=rostro">Rostro</a></li>
+            <li><a href="/tienda?cat=sets">Sets / Kits</a></li>
+            <li><a href="/tienda?cat=brochas">Brochas</a></li>
+            <li><a href="/bundles">Bundles</a></li>
+          </ul>
+        </nav>
+
+        <!-- Columna 3 — Ayuda -->
+        <nav class="footer-col" aria-label="Ayuda">
+          <h2 class="footer-col__title">Ayuda</h2>
+          <ul class="footer-col__links">
+            <li><a href="#">Preguntas frecuentes</a></li>
+            <li><a href="#">Cómo comprar</a></li>
+            <li><a href="#">Seguimiento de pedido</a></li>
+            <li><a href="#">Devoluciones</a></li>
+            <li><a href="legal/aviso-legal.html">Aviso legal</a></li>
+            <li><a href="legal/privacidad.html">Privacidad</a></li>
+            <li><a href="legal/cookies.html">Cookies</a></li>
+          </ul>
+        </nav>
+
+        <!-- Columna 4 — Contacto -->
+        <div class="footer-col footer-col--contact">
+          <h2 class="footer-col__title">Contacto</h2>
+          <a class="footer-col__contact-email" href="mailto:hola@apbeauty.com">hola@apbeauty.com</a>
+          <p class="footer-col__contact-hours">Lunes–Viernes 9:00–18:00 CET</p>
+          <img src="trustelements/card_payments.webp" alt="Métodos de pago aceptados: Visa, Mastercard, PayPal, Apple Pay" class="payment-img" loading="lazy">
+        </div>
+
+      </div>
+    </div>
+
+    <div class="site-footer__bottom">
+      <div class="container">
+        <span class="site-footer__copy">© <span id="footer-year">2026</span> AP Beauty. Todos los derechos reservados.</span>
+        <span class="site-footer__made">Controlled Presence</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== DOMINIO SEO: JSON-LD ===== -->
+  <!-- Inserta aquí los <script type="application/ld+json"> de Organization y
+       WebSite/SearchAction. Front no toca este bloque. -->
+  <!-- ===== FIN JSON-LD SEO ===== -->
+
+  <script type="module" defer src="main.js"></script>
+</body>
+</html>

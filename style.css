@@ -1,0 +1,605 @@
+/* ==========================================================================
+   AP BEAUTY — HOME (andreaapbeauty)
+   Reskin de la plantilla comodex-home. Identidad "Controlled Presence":
+   negro · blanco · gris dominantes + rojo complementario estratégico (≤10%).
+   Tipografía: Playfair Display (display) + Montserrat (cuerpo/UI). Mobile-first.
+   Estructura y mecánicas se heredan intactas; aquí solo se reviste.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Design tokens
+   -------------------------------------------------------------------------- */
+:root {
+  /* DOMINANTE — negro · blanco · gris */
+  --color-ink:        #0A0A0A;   /* negro profundo: texto + botones comercio */
+  --color-ink-soft:   #1A1A1A;   /* hover de negros */
+  --color-bg:         #FFFFFF;   /* blanco puro: precisión / aire */
+  --color-bg-alt:     #F4F4F4;   /* gris claro: secciones editoriales */
+  --color-gray:       #8A8A8A;   /* gris medio: líneas, meta, decorativo (NO texto fino) */
+  --color-gray-text:  #5A5A5A;   /* gris oscuro AA: cuerpo secundario y eyebrows */
+  --color-charcoal:   #1A1A1A;   /* casi-negro: capa editorial (footer) */
+  --color-border:     #E5E5E5;
+
+  /* COMPLEMENTARIO ESTRATÉGICO — rojo ≤10%, solo donde manda la mirada */
+  --color-red:        #C8102E;
+  --color-red-hover:  #A50D24;
+
+  /* FUNCIONALES (sin cambio) */
+  --color-discount:   #E11D48;
+  --color-success:    #16A34A;
+  --color-star:       #F5A623;
+
+  /* Alias heredados del sistema (mapeados a la paleta AP Beauty) */
+  --blanco:     var(--color-bg);
+  --fondo-alt:  var(--color-bg-alt);
+  --negro:      var(--color-ink);
+  --gris-texto: var(--color-gray-text);
+  --gris-muted: var(--color-gray);
+  --borde:      var(--color-border);
+  --dorado:     var(--color-star);
+  --exito:      var(--color-success);
+  --error:      var(--color-discount);
+
+  /* Tipografía */
+  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-body:    'Montserrat', system-ui, -apple-system, sans-serif;
+  --font:         var(--font-body);   /* alias heredado (botones, labels, etc.) */
+
+  /* Ritmo vertical único + grid maestro (heredados SIN cambios) */
+  --section-pad-y: clamp(40px, 4.5vw, 64px);
+  --container-max: 1600px;
+  --gutter: clamp(16px, 3vw, 40px);
+  --promo-h: 38px;
+
+  /* Radios + sombras */
+  --radius-card: 14px;
+  --radius-pill: 50px;
+  --radius-soft: 8px;
+  --shadow-card: 0 8px 24px rgba(0,0,0,0.06);
+  --shadow-hover: 0 12px 32px rgba(0,0,0,0.10);
+}
+
+/* --------------------------------------------------------------------------
+   Reset
+   -------------------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; max-width: 100%; }
+html, body { margin: 0; padding: 0; overflow-x: hidden; }
+body { font-family: var(--font-body); color: var(--negro); background: var(--blanco); line-height: 1.55; }
+img { display: block; max-width: 100%; height: auto; }
+
+/* Contenedor estándar — grid maestro */
+.container { width: 100%; max-width: var(--container-max); margin-inline: auto; padding-inline: var(--gutter); }
+
+/* Ritmo vertical ÚNICO de secciones (hero y proof-banner se excluyen → padding-block:0). */
+section { padding-block: var(--section-pad-y); }
+
+/* --------------------------------------------------------------------------
+   Botonería — dos sistemas, NO mezclar
+   -------------------------------------------------------------------------- */
+/* === EDITORIAL (hero, banners, spotlight) === */
+.btn-editorial {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 15px 36px;
+  font-family: var(--font-body);
+  font-size: 13px; font-weight: 600; letter-spacing: 1.8px; text-transform: uppercase;
+  border-radius: var(--radius-soft);
+  cursor: pointer; text-decoration: none; transition: all .2s ease;
+}
+/* Solid = ÚNICO CTA rojo de la marca (solo en el hero: "DESCUBRIR"). El rojo vive aquí. */
+.btn-editorial--solid { background: var(--color-red); color: #fff; border: none; }
+.btn-editorial--solid:hover { background: var(--color-red-hover); }
+.btn-editorial--ghost { background: transparent; color: #fff; border: 1.5px solid #fff; }
+.btn-editorial--ghost:hover { background: #fff; color: var(--negro); }
+.btn-editorial--dark { background: transparent; color: var(--negro); border: 1.5px solid var(--negro); }
+.btn-editorial--dark:hover { background: var(--negro); color: #fff; }
+
+/* === COMERCIO — retirado: `.btn-comercio` quedó a 0 usos tras eliminar
+   spotlight/complementos/bundles (AB-F3 + AB-F5). Reañadir si vuelve un CTA de venta. === */
+
+/* Eyebrow / título de sección */
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 12px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--color-gray-text); margin-bottom: 14px;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 34px; font-weight: 700; line-height: 1.15; letter-spacing: -0.5px;
+  color: var(--negro); margin: 0 0 12px;
+}
+@media (max-width: 768px) { .section-title { font-size: 26px; } }
+
+/* --------------------------------------------------------------------------
+   0 · Promo bar
+   -------------------------------------------------------------------------- */
+.promo-bar { background: #fff; color: var(--color-ink); text-align: center; padding: 9px 12px; font-size: 13px; font-weight: 500; letter-spacing: .3px; border-bottom: 1px solid var(--color-border); }
+.promo-bar p { margin: 0; }
+@media (max-width: 600px) { .promo-bar { font-size: 11.5px; } }
+
+/* --------------------------------------------------------------------------
+   1 · Header
+   -------------------------------------------------------------------------- */
+/* Header sólido blanco sticky (sin overlay/stuck — AB-C8). Grid 3 zonas, logo centrado (Gucci). */
+.site-header { position: sticky; top: 0; z-index: 1000; background: #fff; border-bottom: 1px solid var(--borde); }
+.site-header__inner {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  gap: clamp(16px, 2vw, 40px);
+  padding: clamp(14px, 1.6vw, 22px) var(--gutter);
+  background: #fff;
+}
+.header-left { display: flex; align-items: center; gap: clamp(18px, 2vw, 32px); justify-self: start; }
+.header-right { display: flex; align-items: center; gap: clamp(18px, 2vw, 32px); justify-self: end; }
+.header-logo { justify-self: center; display: block; }
+.header-logo img { height: clamp(34px, 3vw, 46px); width: auto; display: block; }
+
+.nav-cluster { display: flex; gap: clamp(16px, 1.6vw, 28px); }
+.nav-link {
+  font: 500 .82rem/1 var(--font-body); letter-spacing: .08em; text-transform: uppercase;
+  color: var(--color-ink); text-decoration: none; transition: color .2s;
+}
+.nav-link:hover { color: var(--color-red); }   /* ÚNICO rojo del header, solo en hover */
+
+.header-icon { background: none; border: 0; color: var(--color-ink); cursor: pointer; display: inline-flex; padding: 4px; }
+.header-cart { position: relative; text-decoration: none; }
+.cart-count { position: absolute; top: -4px; right: -6px; background: var(--color-ink); color: #fff; font-size: 10px; font-weight: 700; min-width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0 3px; }
+.menu-toggle { display: none; background: none; border: 0; color: var(--color-ink); cursor: pointer; padding: 4px; }
+
+/* Buscador desplegable (conservado) */
+.search-panel { border-top: 1px solid var(--borde); padding: 14px 0; background: #fff; }
+.search-panel input { width: 100%; padding: 12px 16px; font-size: 15px; font-family: var(--font-body); border: 1px solid var(--borde); border-radius: var(--radius-soft); }
+.search-panel[hidden] { display: none; }
+
+/* Menú móvil — panel deslizante desde la derecha + backdrop (JS togglea .is-open · contrato AB-J4) */
+.menu-backdrop {
+  position: fixed; inset: 0; z-index: 1090;
+  background: rgba(10, 10, 10, .45);
+  opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility .3s ease;
+}
+.menu-backdrop[hidden] { display: none; }
+.menu-backdrop.is-open { opacity: 1; visibility: visible; }
+.menu-panel {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 1100;
+  width: min(86vw, 380px);
+  background: #fff;
+  display: flex; flex-direction: column;
+  padding: clamp(20px, 4vw, 32px);
+  transform: translateX(100%); transition: transform .35s cubic-bezier(.4, 0, .2, 1);
+  overflow-y: auto;
+}
+.menu-panel.is-open { transform: translateX(0); }
+.menu-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: clamp(24px, 5vw, 40px); }
+.menu-top img { height: 36px; width: auto; display: block; }
+.menu-close {
+  width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--color-ink); color: #fff; font-size: 16px; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.menu-primary { display: flex; flex-direction: column; }
+.menu-primary a {
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--font-display); font-size: 1.5rem; font-weight: 700;
+  color: var(--color-ink); text-decoration: none;
+  padding: clamp(12px, 2vw, 16px) 0; border-bottom: 1px solid var(--fondo-alt);
+}
+.menu-primary a::after { content: "›"; color: var(--color-gray); font-weight: 400; }
+.menu-secondary { margin-top: auto; padding-top: clamp(20px, 4vw, 32px); display: flex; flex-direction: column; gap: 14px; }
+.menu-secondary a { font: 500 .8rem/1 var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--gris-texto); text-decoration: none; transition: color .2s; }
+.menu-secondary a:hover { color: var(--color-ink); }
+
+/* Móvil ≤900px: barra [☰ · logo · 🛒]; navs desktop y "Buscar" pasan al panel */
+@media (max-width: 900px) {
+  .site-header__inner { grid-template-columns: auto auto auto; }
+  .header-left .nav-cluster, .header-right .nav-cluster { display: none; }
+  #btn-search { display: none; }
+  .menu-toggle { display: inline-flex; }
+}
+
+/* --------------------------------------------------------------------------
+   2 · Hero
+   -------------------------------------------------------------------------- */
+.hero { position: relative; height: 82vh; min-height: 540px; max-height: 780px; overflow: hidden; padding-block: 0; }
+.hero-media, .hero-media img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hero-media img { object-fit: cover; object-position: center; }
+.hero-scrim { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(0,0,0,0.45) 0%, transparent 30%); }
+.hero-overlay { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; background: linear-gradient(90deg, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.30) 45%, rgba(0,0,0,0) 75%); }
+.hero-overlay .container { color: #fff; }
+.hero-eyebrow { display: inline-block; font-family: var(--font-body); font-size: 13px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 18px; opacity: .9; }
+.hero h1 { font-family: var(--font-display); font-size: 64px; font-weight: 900; line-height: 1.04; letter-spacing: -0.5px; max-width: 640px; margin: 0 0 18px; }
+.hero-sub { font-family: var(--font-body); font-size: 19px; font-weight: 400; line-height: 1.5; max-width: 460px; margin: 0 0 32px; opacity: .95; }
+.hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
+
+@media (max-width: 768px) {
+  .hero { height: auto; min-height: 0; max-height: none; }
+  .hero-media { position: relative; height: 64vw; min-height: 300px; }
+  .hero-media img { position: absolute; }
+  .hero-overlay { position: static; background: var(--negro); padding: 40px 0; }
+  .hero h1 { font-size: 38px; }
+  .hero-sub { font-size: 16px; }
+  .hero-cta { flex-direction: column; }
+  .hero-cta .btn-editorial { width: 100%; }
+  /* el CTA rojo se MANTIENE sobre el bloque hero negro en móvil (firma de marca) */
+}
+
+/* --------------------------------------------------------------------------
+   3 · Destacados (3 cards cuadradas estáticas) + arrows compartidas
+   AB-F3: el carrusel marquee se eliminó. Grid simétrico dentro del .container.
+   .rail-head / .rail-explore / .rail-arrow se conservan: los reusa la categoría.
+   -------------------------------------------------------------------------- */
+.rail-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: clamp(20px, 2vw, 32px); gap: 16px; flex-wrap: wrap; }
+.rail-arrows { display: flex; align-items: center; gap: 12px; }
+.rail-explore { font-family: var(--font-body); font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--negro); text-decoration: none; }
+.rail-explore:hover { color: var(--color-gray-text); }
+.rail-arrow { width: 38px; height: 38px; border: 1px solid var(--borde); background: #fff; border-radius: 50%; font-size: 20px; line-height: 1; cursor: pointer; color: var(--negro); transition: all .15s; }
+.rail-arrow:hover { border-color: var(--color-ink); color: var(--color-ink); }
+
+/* Grid de 3 destacados: columnas iguales, cards cuadradas, sin sangrar (dentro del .container). */
+.product-rail__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gutter); }
+.rail-card { display: block; text-decoration: none; color: var(--negro); }
+.rail-card-img { position: relative; background: var(--fondo-alt); border-radius: 12px; overflow: hidden; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+.rail-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; }
+.rail-card:hover .rail-card-img img { transform: scale(1.04); }
+.rail-card-name { font-family: var(--font-body); font-size: 15px; font-weight: 700; margin: 0 0 4px; }
+.rail-card-meta { font-size: 13px; color: var(--gris-muted); margin: 0 0 6px; }
+.rail-card-price { font-size: 16px; font-weight: 800; margin: 0; }
+
+@media (max-width: 768px) {
+  .product-rail__grid { grid-template-columns: repeat(2, 1fr); }
+  .rail-explore { display: none; }
+}
+@media (max-width: 520px) { .product-rail__grid { grid-template-columns: 1fr; } }
+
+/* --------------------------------------------------------------------------
+   3B · STORYTELLING (sección NUEVA · §3 del brief)
+   Full-bleed editorial: losa imagen a sangre (izq) + texto alineado al borde del
+   container (der), sobre gris. Pull-quote Playfair italic con único trazo rojo (.rule).
+   HTML realineado por front (AB-C2): eyebrow <p>, h2 sin .section-title, pull-quote
+   dentro de .story-text como <blockquote> con <span class="rule"> + texto plano.
+   -------------------------------------------------------------------------- */
+/* Sección OSCURA editorial: el retrato se funde al fondo negro por su borde derecho
+   (mask-image) y el texto va en claro. Respaldo `#0E0E0E` hasta que AB-A1 entregue
+   `galeria/storytelling/story-bg.jpg` (fondo Grok que clona la luz del retrato). */
+.storytelling {
+  position: relative;
+  width: 100vw;
+  margin-inline: calc(50% - 50vw);          /* full-bleed, rompe márgenes */
+  background: #0E0E0E;
+  color: #fff;
+  overflow: hidden;
+}
+.story-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  min-height: clamp(520px, 58vw, 760px);
+}
+/* IMAGEN — losa a sangre por la izquierda; se funde al fondo oscuro por la derecha */
+.story-media { position: relative; overflow: hidden; }
+.story-media img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center 25%;   /* retrato vertical, sujeto centrado: cara+torso visibles */
+  display: block;
+  /* funde el borde derecho al fondo oscuro; corte a 65% protege cara+traje (punto focal) */
+  -webkit-mask-image: linear-gradient(to right, #000 65%, transparent 100%);
+          mask-image: linear-gradient(to right, #000 65%, transparent 100%);
+}
+/* TEXTO — alineado al borde del .container (der), en claro sobre el fondo oscuro */
+.story-text {
+  display: flex; flex-direction: column; justify-content: center;
+  gap: clamp(14px, 1.8vw, 24px);
+  max-width: 620px;
+  padding-block: clamp(40px, 5vw, 72px);
+  padding-left: clamp(24px, 3vw, 48px);
+  padding-right: max(var(--gutter), calc(50vw - var(--container-max) / 2));
+}
+.story-text .eyebrow {
+  display: block; margin: 0;                  /* anula display:inline-block/margin de la global */
+  font: 600 .72rem/1 var(--font-body);
+  letter-spacing: .22em; text-transform: uppercase;
+  color: rgba(255,255,255,.55);
+}
+.story-text h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 2.6vw, 2.4rem);
+  line-height: 1.15; color: #fff; margin: 0;
+}
+.story-text p {
+  font: 400 clamp(.95rem, 1.05vw, 1.05rem)/1.65 var(--font-body);
+  color: rgba(255,255,255,.78); margin: 0; max-width: 46ch;
+}
+/* PULLQUOTE — columna derecha, bajo la narrativa */
+.story-pullquote {
+  margin: clamp(10px, 1.5vw, 18px) 0 0;
+  font-family: var(--font-display); font-style: italic;
+  font-size: clamp(1.35rem, 2vw, 1.9rem); line-height: 1.2;
+  color: #fff;
+}
+.story-pullquote .rule {
+  display: block; width: 44px; height: 2px;
+  background: var(--color-red);               /* único rojo estratégico de la sección */
+  margin-bottom: clamp(12px, 1.4vw, 18px);
+}
+/* MÓVIL — apila: imagen a sangre arriba (sin mask lateral), texto debajo */
+@media (max-width: 768px) {
+  .story-grid { grid-template-columns: 1fr; min-height: 0; }
+  .story-media { min-height: clamp(420px, 95vw, 560px); }
+  .story-media img { -webkit-mask-image: none; mask-image: none; }
+  .story-text {
+    max-width: none;
+    padding-inline: var(--gutter);
+    padding-block: clamp(32px, 8vw, 56px);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4 · Compra por categoría (cards grandes verticales, 2 visibles · sin peek)
+   -------------------------------------------------------------------------- */
+.category-rail { padding-bottom: var(--section-pad-y); }
+.category-rail .rail-head h2 { font-family: var(--font-display); font-weight: 700; font-size: 34px; line-height: 1.15; letter-spacing: -0.5px; color: var(--negro); margin: 0; }
+.category-track { display: flex; gap: 24px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; }
+.category-track::-webkit-scrollbar { display: none; }
+.category-card { flex: 0 0 calc(50% - 12px); scroll-snap-align: start; position: relative; aspect-ratio: 4/5; border-radius: 16px; overflow: hidden; text-decoration: none; }
+.category-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+.category-card:hover img { transform: scale(1.05); }
+.category-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 45%, rgba(0,0,0,.65)); }
+.category-name { position: absolute; left: 24px; bottom: 24px; z-index: 1; color: #fff; font-family: var(--font-display); font-size: clamp(20px, 2.4vw, 28px); font-weight: 700; }
+@media (max-width: 768px) {
+  .category-rail .rail-head h2 { font-size: 26px; }
+  .category-card { flex: 0 0 calc(85% - 12px); aspect-ratio: 3/4; }
+}
+
+/* --------------------------------------------------------------------------
+   3B · Spotlight — "el héroe" del catálogo (AB-C6 · split editorial CLARO)
+   Mismo lenguaje que storytelling pero en CLARO: su vecino (storytelling) es
+   oscuro → este NO puede serlo (sin oscuros encadenados). El rojo de la sección
+   es el PRODUCTO (render del labial) → el CTA va NEGRO, no rojo (el único CTA
+   rojo de la página es "DESCUBRIR" del hero). Imagen a la DERECHA: alterna el
+   ritmo respecto a storytelling (imagen izquierda).
+   -------------------------------------------------------------------------- */
+.spotlight {
+  width: 100vw; margin-inline: calc(50% - 50vw);   /* full-bleed */
+  background: var(--color-bg-alt);                  /* gris claro editorial */
+  overflow: hidden;
+}
+.spotlight-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  min-height: clamp(440px, 48vw, 640px);
+}
+/* IMAGEN — losa a sangre por la DERECHA */
+.spotlight-media { position: relative; order: 2; overflow: hidden; }
+.spotlight-media img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+  display: block;
+}
+/* TEXTO — alineado al borde IZQ del .container.
+   Jerarquía por márgenes POR ELEMENTO (no gap uniforme): ancla la columna y
+   evita el "todo del mismo peso". Columna estrecha (max-width:460) = editorial. */
+.spotlight-text {
+  order: 1;
+  display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+  max-width: 460px;
+  padding-block: clamp(40px, 5vw, 72px);
+  padding-right: clamp(24px, 3vw, 48px);
+  padding-left: max(var(--gutter), calc(50vw - var(--container-max) / 2));
+}
+/* Eyebrow con filete rojo delante — ÚNICO acento de marca de la sección.
+   (eyebrow en --color-gray-text #5A5A5A, no --color-gray #8A8A8A: AA en texto pequeño, estándar AB-C1.) */
+.spotlight-text .eyebrow {
+  display: inline-flex; align-items: center; gap: 12px;
+  font: 600 .72rem/1 var(--font-body);
+  letter-spacing: .24em; text-transform: uppercase; color: var(--gris-texto);
+  margin: 0 0 clamp(16px, 2vw, 24px);
+}
+.spotlight-text .eyebrow::before {
+  content: ""; width: 28px; height: 2px; background: var(--color-red);
+}
+.spotlight-text h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3.2vw, 2.8rem);
+  line-height: 1.1; color: var(--negro);
+  margin: 0 0 clamp(16px, 1.8vw, 22px);
+}
+/* Descripción — gris SÓLIDO #4A4A4A (sin desvaído), líneas cortas en columna estrecha */
+.spotlight-line {
+  font: 400 clamp(1rem, 1.1vw, 1.1rem)/1.7 var(--font-body);
+  color: #4A4A4A;
+  margin: 0 0 clamp(28px, 3vw, 40px); max-width: 34ch;
+}
+/* Precio en Playfair (tipografía editorial), separado del botón */
+.spotlight-price {
+  display: block;
+  font: 600 clamp(1.5rem, 1.8vw, 1.85rem)/1 var(--font-display);
+  color: var(--negro); margin: 0 0 clamp(20px, 2.4vw, 28px);
+}
+.spotlight-text .btn-editorial { align-self: flex-start; margin-top: 4px; }
+/* CTA NEGRO — el único acento rojo de la sección es el filete del eyebrow; el
+   único CTA rojo de la página es "DESCUBRIR" del hero (regla rojo ≤10%/escasez). */
+.spotlight .btn-editorial--solid { background: var(--negro); }
+.spotlight .btn-editorial--solid:hover { background: var(--color-ink-soft); }
+/* MÓVIL — apila: imagen arriba, texto debajo */
+@media (max-width: 768px) {
+  .spotlight-grid { grid-template-columns: 1fr; min-height: 0; }
+  .spotlight-media { order: 1; min-height: clamp(360px, 80vw, 480px); }
+  .spotlight-text {
+    order: 2; max-width: none;
+    padding-inline: var(--gutter);
+    padding-block: clamp(32px, 8vw, 56px);
+  }
+}
+
+/* 8 · Statement — sección ELIMINADA del HTML (AB-F8/AB-C6). CSS borrado
+   (`.statement-inner/-headline/-body/-logos`); pagos viven solo en el footer. */
+
+/* --------------------------------------------------------------------------
+   9 · Banner social proof (AB-C5 · antes/después en 2 celdas)
+   Contrato: `.proof-banner__media` (grid 2 celdas con background-image:
+   .pb-cell--before / .pb-cell--after, hairline negro entre ambas) +
+   `.proof-banner__caption` (franja CLARA debajo: estrellas dorado + claim).
+   En móvil las celdas se apilan. background-image lo pone el CSS (no inline).
+   Caption CLARO (AB-C6): el proof va entre storytelling(oscuro) y why(oscuro)
+   → su franja blanca da el respiro que evita encadenar dos secciones oscuras.
+   -------------------------------------------------------------------------- */
+.proof-banner {
+  width: 100vw; margin-inline: calc(50% - 50vw);   /* sección a sangre */
+  padding-block: 0;
+}
+.proof-banner__media {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;                                   /* hairline negro separador antes/después */
+  min-height: clamp(300px, 26vw, 380px);
+  background: var(--color-ink);
+}
+.pb-cell {
+  position: relative; margin: 0;
+  background-size: cover;
+  background-position: center 42%;            /* afinar por celda si corta mal */
+}
+.pb-cell--before { background-image: url('social-proof/antes.jpg'); }
+.pb-cell--after  { background-image: url('social-proof/despues.jpg'); }
+.pb-cell figcaption {
+  position: absolute; left: 0; bottom: 0;
+  font: 600 .7rem/1 var(--font-body);
+  letter-spacing: .18em; text-transform: uppercase;   /* "Antes"/"Después" → ANTES/DESPUÉS */
+  color: #fff; background: rgba(10, 10, 10, .62);
+  padding: 8px 12px;
+}
+.proof-banner__caption {
+  display: flex; align-items: center; justify-content: center; gap: 18px;
+  flex-wrap: wrap; text-align: center;
+  background: var(--color-bg); color: var(--color-ink);
+  padding: clamp(20px, 3vw, 40px) var(--gutter);
+}
+.proof-banner__caption .stars { color: var(--dorado); letter-spacing: 2px; font-size: 22px; }
+.proof-banner__caption p {
+  margin: 0;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(1rem, 1.3vw, 1.25rem); line-height: 1.2;
+  color: var(--color-ink);
+}
+@media (max-width: 768px) {
+  .proof-banner__media { grid-template-columns: 1fr; }   /* apiladas en móvil */
+}
+
+/* --------------------------------------------------------------------------
+   10 · Dos cards interactivas
+   -------------------------------------------------------------------------- */
+.dual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.dual-card { position: relative; aspect-ratio: 3/2; border-radius: var(--radius-card); overflow: hidden; text-decoration: none; display: flex; align-items: flex-end; }
+.dual-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .35s; }
+.dual-card:hover img { transform: scale(1.05); }
+.dual-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,.7) 100%); }
+.dual-card-text { position: relative; z-index: 1; padding: 28px; color: #fff; }
+.dual-card-text h3 { font-family: var(--font-display); font-size: 26px; font-weight: 700; margin: 0 0 8px; }
+.dual-card-text p { font-size: 15px; margin: 0 0 16px; opacity: .95; max-width: 320px; }
+@media (max-width: 768px) { .dual-grid { grid-template-columns: 1fr; } .dual-card { aspect-ratio: 4/3; } }
+
+/* --------------------------------------------------------------------------
+   11 · Por qué AP Beauty  (sección oscura #1 — stats con count-up)
+   -------------------------------------------------------------------------- */
+.why { background: var(--color-ink); text-align: center; width: 100vw; margin-inline: calc(50% - 50vw); }
+.why > .container { margin-inline: auto; padding-inline: var(--gutter); }
+.why .eyebrow { color: #FFFFFF; opacity: 0.6; font-weight: 600; font-size: 13px; letter-spacing: 0.1em; }
+.why h2 { color: #FFFFFF; margin-block: 8px clamp(28px, 3vw, 48px); }
+.why-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(20px, 3vw, 48px); }
+.why-stat {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 24px 16px; border-radius: 14px;
+  transition: transform .25s ease, box-shadow .25s ease, background .25s ease;
+  opacity: 0; transform: translateY(16px);   /* estado inicial; JS añade .revealed */
+}
+.why-stat.revealed { opacity: 1; transform: translateY(0); }
+.why-stat:hover { transform: translateY(-4px); background: rgba(255,255,255,0.04); box-shadow: 0 12px 30px rgba(0,0,0,0.4); }
+.why-num { font-family: var(--font-display); font-size: clamp(34px, 4vw, 46px); font-weight: 700; color: #FFFFFF; line-height: 1; }
+.why-label { font-size: 15px; font-weight: 600; color: #FFFFFF; }
+.why-sub { font-size: 13px; color: rgba(255,255,255,0.6); max-width: 22ch; line-height: 1.4; }
+@media (max-width: 768px) { .why-stats { grid-template-columns: repeat(2, 1fr); gap: 24px; } }
+@media (prefers-reduced-motion: reduce) { .why-stat { opacity: 1; transform: none; transition: none; } }
+
+/* --------------------------------------------------------------------------
+   12 · @apbeauty Instagram  (sin gradiente IG · §6.2)
+   -------------------------------------------------------------------------- */
+.insta { text-align: center; }
+.insta-handle { display: inline-block; font-family: var(--font-display); font-size: 36px; font-weight: 900; margin: 0 0 10px; color: var(--color-red); }
+.insta-text { font-size: 16px; color: var(--gris-texto); max-width: 480px; margin: 0 auto 24px; }
+.insta-links { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin-bottom: 36px; }
+.insta-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-body); font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  color: #fff; text-decoration: none;
+  background: var(--color-ink);
+  padding: 12px 22px; border-radius: var(--radius-pill);
+  transition: background .2s ease, transform .2s ease;
+}
+.insta-link:hover { background: var(--color-ink-soft); transform: translateY(-1px); }
+.insta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.insta-cell { aspect-ratio: 1/1; border-radius: var(--radius-soft); overflow: hidden; }
+.insta-cell img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+.insta-cell:hover img { transform: scale(1.08); }
+@media (max-width: 768px) { .insta-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* --------------------------------------------------------------------------
+   13 · Newsletter  (sección oscura #2 — separada de .why por .insta)
+   -------------------------------------------------------------------------- */
+.newsletter { background: var(--color-ink); }
+.newsletter .container { display: flex; flex-direction: column; gap: 18px; align-items: center; text-align: center; }
+.newsletter h2 { font-family: var(--font-display); font-size: 30px; font-weight: 700; color: #fff; margin: 0; }
+.newsletter p { font-size: 16px; color: rgba(255,255,255,0.85); max-width: 420px; margin: 0; }
+.newsletter__form { display: flex; width: 100%; max-width: 440px; }
+.newsletter__input { flex: 1; min-width: 0; padding: 14px 18px; border: none; border-radius: var(--radius-pill) 0 0 var(--radius-pill); font-family: var(--font-body); font-size: 15px; outline: none; }
+.newsletter__btn { padding: 14px 22px; background: #fff; color: var(--color-ink); border: none; border-radius: 0 var(--radius-pill) var(--radius-pill) 0; font-family: var(--font-body); font-weight: 700; letter-spacing: .5px; cursor: pointer; white-space: nowrap; transition: background .2s; }
+.newsletter__btn:hover { background: var(--color-bg-alt); }
+.newsletter small { font-size: 12px; color: rgba(255,255,255,0.55); }
+
+/* --------------------------------------------------------------------------
+   14 · Footer  (charcoal en la banda principal — capa editorial sobre el ink)
+   -------------------------------------------------------------------------- */
+.site-footer { padding: 0; }
+.site-footer__main { background: var(--color-charcoal); padding: 64px 0; }
+.site-footer__grid { display: grid; grid-template-columns: 1fr; gap: 40px; }
+.site-footer__grid > * { min-width: 0; }
+.footer-col__brand-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.footer-col__brand-logo img { width: 28px; height: 28px; object-fit: contain; border-radius: 6px; }
+.footer-col__brand-name { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: #fff; }
+.footer-col__desc { font-size: 14px; color: var(--gris-muted); line-height: 1.6; margin-bottom: 20px; }
+.footer-social { display: flex; gap: 16px; list-style: none; padding: 0; margin: 0; }
+.footer-social a { color: var(--gris-muted); transition: color .15s; display: inline-flex; }
+.footer-social a:hover { color: #fff; }
+.footer-social__icon { width: 20px; height: 20px; display: block; transition: opacity .15s; }
+.footer-social a:hover .footer-social__icon { opacity: 0.7; }
+.footer-col__title { font-family: var(--font-body); font-size: 12px; font-weight: 600; color: #fff; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; }
+.footer-col__links { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.footer-col__links a { font-size: 14px; color: var(--gris-muted); text-decoration: none; transition: color .15s; }
+.footer-col__links a:hover { color: #fff; }
+.footer-col__contact-email { font-size: 14px; color: #cbcbcb; text-decoration: underline; display: block; overflow-wrap: anywhere; margin-bottom: 8px; }
+.footer-col__contact-email:hover { color: #fff; }
+.footer-col__contact-hours { font-size: 14px; color: var(--gris-muted); margin-bottom: 20px; }
+.payment-img { max-width: 200px; width: 100%; margin-top: 16px; }
+.site-footer__bottom { background: #111; padding: 20px 0; }
+.site-footer__bottom .container { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.site-footer__copy,
+.site-footer__made { font-size: 12px; color: #6B6B6B; letter-spacing: .3px; }
+
+@media (min-width: 600px) {
+  .site-footer__grid { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 768px) {
+  .site-footer__bottom .container { flex-direction: row; justify-content: space-between; text-align: left; }
+}
+@media (min-width: 1024px) {
+  .site-footer__grid { grid-template-columns: 2fr 1fr 1fr 1.5fr; }
+}
+
+/* --------------------------------------------------------------------------
+   Accesibilidad
+   -------------------------------------------------------------------------- */
+:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
