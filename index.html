@@ -58,10 +58,10 @@
           <a class="nav-link" href="/tienda?cat=brochas">Brochas</a>
           <a class="nav-link" href="#historia">Historia</a>
         </nav>
-        <a href="/carrito" class="header-icon header-cart" aria-label="Carrito">
+        <button class="header-icon header-cart" id="btn-cart" aria-label="Abrir carrito" aria-controls="cart-drawer" aria-expanded="false">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           <span class="cart-count" id="cart-count">0</span>
-        </a>
+        </button>
       </div>
 
     </div>
@@ -96,6 +96,55 @@
       <a href="/cuenta">Mi cuenta</a>
     </nav>
   </aside>
+
+  <!-- ===== CARRITO · DRAWER deslizante (disponible en todas las páginas) ===== -->
+  <!-- Contrato JS: #btn-cart (abre, en header) · #cart-drawer · #cart-backdrop · #btn-cart-close (cierra)
+       · #cart-empty (estado vacío) · #cart-items (JS renderiza líneas desde localStorage `ap_cart`)
+       · #cart-foot (pie con subtotal+CTA, JS lo muestra al haber items) · #cart-subtotal (JS escribe €)
+       · #cart-checkout (→ carrito.html). Mecánica = menú móvil (X / Esc / click fuera).
+       Plantilla de línea reutilizable (drawer y carrito.html): #cart-line-tpl. -->
+  <div class="cart-backdrop" id="cart-backdrop" hidden></div>
+  <aside class="cart-drawer" id="cart-drawer" aria-label="Tu carrito" aria-hidden="true">
+    <div class="cart-drawer__top">
+      <h2 class="cart-drawer__title">Tu carrito</h2>
+      <button class="cart-close" id="btn-cart-close" aria-label="Cerrar carrito">✕</button>
+    </div>
+
+    <div class="cart-drawer__empty" id="cart-empty">
+      <svg class="cart-empty__icon" viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <p class="cart-empty__title">Tu carrito está vacío</p>
+      <p class="cart-empty__text">Aún no has añadido nada. La presencia empieza por elegir.</p>
+      <a href="catalogo.html" class="btn-editorial btn-editorial--solid">Ver catálogo</a>
+    </div>
+
+    <ul class="cart-drawer__items" id="cart-items"></ul>
+
+    <div class="cart-drawer__foot" id="cart-foot" hidden>
+      <div class="cart-drawer__summary">
+        <span>Subtotal</span>
+        <span id="cart-subtotal">0,00€</span>
+      </div>
+      <p class="cart-drawer__note">Envío e impuestos calculados al finalizar.</p>
+      <a href="carrito.html" class="btn-editorial btn-editorial--solid cart-drawer__checkout" id="cart-checkout">Ver carrito y pagar</a>
+    </div>
+  </aside>
+
+  <!-- Plantilla de línea de carrito (JS clona y rellena · contrato data-action en botones) -->
+  <template id="cart-line-tpl">
+    <li class="cart-line" data-id="">
+      <img class="cart-line__img" src="" alt="" width="64" height="64" loading="lazy">
+      <div class="cart-line__info">
+        <p class="cart-line__name"></p>
+        <p class="cart-line__price"></p>
+        <div class="cart-line__qty">
+          <button class="qty-btn" data-action="dec" aria-label="Quitar una unidad">−</button>
+          <span class="cart-line__qval">1</span>
+          <button class="qty-btn" data-action="inc" aria-label="Añadir una unidad">+</button>
+        </div>
+      </div>
+      <button class="cart-line__remove" data-action="remove" aria-label="Eliminar del carrito">✕</button>
+    </li>
+  </template>
 
   <main>
 
@@ -173,9 +222,13 @@
         <div class="spotlight-text">
           <p class="eyebrow">EL MÁS VENDIDO</p>
           <h2 id="spotlight-titulo">Power Lash</h2>
-          <p class="spotlight-line">Pestañas postizas de alta calidad que realzan la mirada. Ligeras, reutilizables, de acabado natural. La mirada que entra antes que tú.</p>
+          <p class="spotlight-line">Pestañas postizas de alta calidad que realzan la mirada. Ligeras, reutilizables, de acabado natural.</p>
+          <p class="spotlight-quote">La mirada que entra antes que tú</p>
           <p class="spotlight-price">19,90€</p>
-          <a href="/producto/power-lash" class="btn-editorial btn-editorial--solid">Descubrir</a>
+          <div class="spotlight-actions">
+            <button class="add-to-cart btn-editorial btn-editorial--solid" data-id="power-lash" data-name="Power Lash" data-price="1990" data-priceid="price_PLACEHOLDER" data-image="products/pestanas-destacado.jpg">Añadir</button>
+            <a href="/producto/power-lash" class="btn-editorial btn-editorial--ghost">Ver detalle</a>
+          </div>
         </div>
       </div>
     </section>

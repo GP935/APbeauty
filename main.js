@@ -127,11 +127,213 @@ function bindRail(trackId, prevId, nextId, cardSelector, perPage = 1) {
   updateArrows();
 }
 
-// 3 · Contador de carrito (en memoria, sin localStorage)
-let cartItems = 0;
+// 3 · Carrito — modelo persistente en localStorage `ap_cart` (AB-J6)
+// Forma: { items: [ { id, name, price, priceId, qty, image } ] }
+// `price` SIEMPRE en céntimos enteros (24,90€ → 2490); se formatea a € solo para mostrar.
+const CART_KEY = 'ap_cart';
+
+function readCart() {
+  try {
+    const data = JSON.parse(localStorage.getItem(CART_KEY));
+    if (data && Array.isArray(data.items)) return data;
+  } catch (_) { /* JSON corrupto → carrito vacío */ }
+  return { items: [] };
+}
+
+function writeCart(cart) {
+  localStorage.setItem(CART_KEY, JSON.stringify(cart));
+}
+
+// céntimos → "24,90€"
+function formatEuros(cents) {
+  return (cents / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '€';
+}
+
+const cartQty = (cart) => cart.items.reduce((n, i) => n + i.qty, 0);
+const cartSubtotal = (cart) => cart.items.reduce((n, i) => n + i.price * i.qty, 0);
+
+// Construye una línea clonando #cart-line-tpl (sin hardcodear markup)
+function buildLine(item) {
+  const tpl = document.getElementById('cart-line-tpl');
+  if (!tpl) return null;
+  const li = tpl.content.firstElementChild.cloneNode(true);
+  li.dataset.id = item.id;
+  const img = li.querySelector('.cart-line__img');
+  if (img) { img.src = item.image || ''; img.alt = item.name || ''; }
+  const name = li.querySelector('.cart-line__name');
+  if (name) name.textContent = item.name || '';
+  const price = li.querySelector('.cart-line__price');
+  if (price) price.textContent = formatEuros(item.price);
+  const qval = li.querySelector('.cart-line__qval');
+  if (qval) qval.textContent = item.qty;
+  return li;
+}
+
+function renderList(ul, cart) {
+  ul.textContent = '';
+  cart.items.forEach((item) => {
+    const li = buildLine(item);
+    if (li) ul.appendChild(li);
+  });
+}
+
+// Render único: badge (todas las páginas) + drawer + carrito.html. Cada bloque con guarda de presencia.
 function renderCart() {
-  const el = document.getElementById('cart-count');
-  if (el) el.textContent = cartItems;
+  const cart = readCart();
+  const subtotal = cartSubtotal(cart);
+  const hasItems = cart.items.length > 0;
+
+  const badge = document.getElementById('cart-count');
+  if (badge) badge.textContent = cartQty(cart);
+
+  const items = document.getElementById('cart-items');
+  if (items) {
+    renderList(items, cart);
+    const empty = document.getElementById('cart-empty');
+    const foot = document.getElementById('cart-foot');
+    const sub = document.getElementById('cart-subtotal');
+    if (empty) empty.hidden = hasItems;
+    if (foot) foot.hidden = !hasItems;
+    if (sub) sub.textContent = formatEuros(subtotal);
+  }
+
+  const pageItems = document.getElementById('cart-page-items');
+  if (pageItems) {
+    renderList(pageItems, cart);
+    const pageEmpty = document.getElementById('cart-page-empty');
+    const pageLayout = document.getElementById('cart-page-layout');
+    const pageSub = document.getElementById('cart-page-subtotal');
+    if (pageEmpty) pageEmpty.hidden = hasItems;
+    if (pageLayout) pageLayout.hidden = !hasItems;
+    if (pageSub) pageSub.textContent = formatEuros(subtotal);
+  }
+}
+
+function addToCart(data) {
+  const cart = readCart();
+  const existing = cart.items.find((i) => i.id === data.id);
+  if (existing) {
+    existing.qty += 1;
+  } else {
+    cart.items.push({
+      id: data.id,
+      name: data.name,
+      price: parseInt(data.price, 10) || 0,
+      priceId: data.priceid || '',
+      qty: 1,
+      image: data.image || '',
+    });
+  }
+  writeCart(cart);
+  renderCart();
+}
+
+function changeQty(id, delta) {
+  const cart = readCart();
+  const item = cart.items.find((i) => i.id === id);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) cart.items = cart.items.filter((i) => i.id !== id);
+  writeCart(cart);
+  renderCart();
+}
+
+function removeItem(id) {
+  const cart = readCart();
+  cart.items = cart.items.filter((i) => i.id !== id);
+  writeCart(cart);
+  renderCart();
+}
+
+function clearCart() {
+  writeCart({ items: [] });
+  renderCart();
+}
+
+// Drawer deslizante (misma mecánica que el menú móvil: .is-open en drawer+backdrop, X/Esc/click fuera)
+function initCartDrawer() {
+  const btnCart = document.getElementById('btn-cart');
+  const drawer = document.getElementById('cart-drawer');
+  const backdrop = document.getElementById('cart-backdrop');
+  const btnClose = document.getElementById('btn-cart-close');
+  if (!drawer || !backdrop) return null;
+
+  function open() {
+    backdrop.removeAttribute('hidden');
+    drawer.classList.add('is-open');
+    backdrop.classList.add('is-open');
+    if (btnCart) btnCart.setAttribute('aria-expanded', 'true');
+    drawer.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    if (btnClose) btnClose.focus();
+  }
+
+  function close() {
+    if (!drawer.classList.contains('is-open')) return;
+    drawer.classList.remove('is-open');
+    backdrop.classList.remove('is-open');
+    drawer.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    if (btnCart) { btnCart.setAttribute('aria-expanded', 'false'); btnCart.focus(); }
+
+    let restored = false;
+    const restore = () => {
+      if (restored || backdrop.classList.contains('is-open')) return;
+      restored = true;
+      backdrop.setAttribute('hidden', '');
+    };
+    backdrop.addEventListener('transitionend', restore, { once: true });
+    setTimeout(restore, 400);
+  }
+
+  if (btnCart) btnCart.addEventListener('click', open);
+  if (btnClose) btnClose.addEventListener('click', close);
+  backdrop.addEventListener('click', close);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drawer.classList.contains('is-open')) close();
+  });
+
+  return { open, close };
+}
+
+function initCart() {
+  const drawer = initCartDrawer();
+
+  // Delegación global: añadir / cambiar cantidad / eliminar (convive con páginas sin esos elementos)
+  document.addEventListener('click', (e) => {
+    const addBtn = e.target.closest('.add-to-cart');
+    if (addBtn) {
+      e.preventDefault();
+      addToCart(addBtn.dataset);
+      if (drawer) drawer.open();
+      return;
+    }
+    const actionBtn = e.target.closest('[data-action]');
+    if (!actionBtn) return;
+    const line = actionBtn.closest('.cart-line[data-id]');
+    if (!line) return;
+    const id = line.dataset.id;
+    const action = actionBtn.dataset.action;
+    if (action === 'inc') changeQty(id, 1);
+    else if (action === 'dec') changeQty(id, -1);
+    else if (action === 'remove') removeItem(id);
+  });
+
+  // STUB de checkout — NO cobra en esta pasada (sin Worker / sin Stripe live)
+  const btnCheckout = document.getElementById('btn-checkout');
+  if (btnCheckout) {
+    btnCheckout.addEventListener('click', () => {
+      // TODO (fase backend): POST /api/create-checkout-session
+      //   body: { items: readCart().items.map((i) => ({ price: i.priceId, quantity: i.qty })) }
+      //   → { url } → window.location = url
+      window.location.href = 'confirmacion.html';
+    });
+  }
+
+  // confirmacion.html (éxito) → vaciar carrito al cargar
+  if (location.pathname.endsWith('confirmacion.html')) clearCart();
+
+  renderCart();
 }
 
 // 4 · "Por qué AP Beauty" — count-up + reveal escalonado de stats
@@ -204,9 +406,57 @@ function initFooterYear() {
   if (el) el.textContent = new Date().getFullYear();
 }
 
+// 5 · Catálogo — filtro por categoría (?cat=) sin recargar (AB-J5)
+// Contrato CSS: filtra OCULTANDO (hidden), nunca reordena el DOM (la alternancia lado/fondo
+// es :nth-child por posición). Pill activa = .is-active. Salida #ver-todo-catalogo solo con filtro.
+function initCatalog() {
+  const list = document.querySelector('.catalog-list');
+  if (!list) return; // solo existe en catalogo.html — guarda para el home
+
+  const items = list.querySelectorAll('.cat-item');
+  const pills = Array.from(document.querySelectorAll('.catalog-pills .cat-pill'));
+  const verTodo = document.getElementById('ver-todo-catalogo');
+  const validCats = new Set(pills.map((p) => p.dataset.cat).filter(Boolean));
+
+  // Aplica una categoría (slug o '' = todos). Slug desconocido → cae a "todos" (sin página vacía).
+  function apply(cat) {
+    const active = validCats.has(cat) ? cat : '';
+    items.forEach((el) => {
+      el.hidden = active ? el.dataset.category !== active : false;
+    });
+    pills.forEach((p) => p.classList.toggle('is-active', (p.dataset.cat || '') === active));
+    if (verTodo) verTodo.hidden = !active;
+    return active;
+  }
+
+  const catFromURL = () => new URLSearchParams(location.search).get('cat') || '';
+
+  apply(catFromURL()); // estado inicial enlazable
+
+  pills.forEach((pill) => {
+    pill.addEventListener('click', (e) => {
+      e.preventDefault();
+      const cat = apply(pill.dataset.cat || '');
+      history.pushState({ cat }, '', cat ? `catalogo.html?cat=${cat}` : 'catalogo.html');
+    });
+  });
+
+  if (verTodo) {
+    verTodo.addEventListener('click', (e) => {
+      e.preventDefault();
+      apply('');
+      history.pushState({ cat: '' }, '', 'catalogo.html');
+    });
+  }
+
+  // Back/forward del navegador reaplica el estado de la URL
+  window.addEventListener('popstate', () => apply(catFromURL()));
+}
+
 initMobileMenu();
 initSearch();
 bindRail('cat-track', 'cat-prev', 'cat-next', '.category-card', 2);
 initWhyStats();
-renderCart();
+initCart();
 initFooterYear();
+initCatalog();

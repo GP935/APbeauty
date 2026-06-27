@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- ===== DOMINIO SEO ===== -->
+  <!-- Rellena aquí: <title>, meta description, canonical, Open Graph, Twitter Card.
+       Página = subpágina CATÁLOGO (listado de producto). Títulos/desc únicos para esta página
+       y, a poder ser, por categoría (?cat=labios|ojos|rostro|sets|brochas).
+       Canonical: decidir trato de ?cat= (a la base catalogo.html o por categoría) para no duplicar.
+       OG image placeholder en og/home-og.svg (sustituir por 1200x630 real).
+       JSON-LD: Product structured data SOLO en los SKUs activos (data-category sin cat-item--soon).
+       NUNCA schema Product en los "Próximamente" (Sets/Brochas). Va antes de </body>.
+       Front no toca este bloque. -->
+  <!-- ===== FIN bloque SEO ===== -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="brand/ap_ico_wnb-removebg-preview.png">
+</head>
+<body>
+
+  <!-- ===== 0 · PROMO BAR (reutilizada del home) ===== -->
+  <div class="promo-bar" role="complementary" aria-label="Promoción">
+    <p>Envío gratis en pedidos +35€ · Maquilladora profesional · 100% Cruelty-free</p>
+  </div>
+
+  <!-- ===== 1 · HEADER (reutilizado del home · hrefs de categoría → catalogo.html?cat=<slug>) ===== -->
+  <!-- Mismo componente que index.html (grid 3 zonas, logo centrado). Cambia SOLO el destino de los
+       enlaces de categoría: en el home apuntan a /tienda?cat=, aquí apuntan a catalogo.html?cat= para
+       que el filtro de esta misma página los recoja (contrato JS ?cat=). Logo → index.html. -->
+  <header class="site-header" id="site-header">
+    <div class="site-header__inner">
+
+      <!-- ZONA IZQUIERDA: buscar + ☰ (móvil) + nav 3 -->
+      <div class="header-left">
+        <button class="header-icon" id="btn-search" aria-label="Buscar" aria-expanded="false" aria-controls="search-panel">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <button class="menu-toggle" id="btn-menu" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu-panel">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <nav class="nav-cluster" aria-label="Categorías">
+          <a class="nav-link" href="catalogo.html?cat=labios">Labios</a>
+          <a class="nav-link" href="catalogo.html?cat=ojos">Ojos</a>
+          <a class="nav-link" href="catalogo.html?cat=rostro">Rostro</a>
+        </nav>
+      </div>
+
+      <!-- ZONA CENTRO: logo -->
+      <a class="header-logo" href="index.html" aria-label="AP Beauty inicio">
+        <img src="brand/ap_ico_wnb-removebg-preview.png" alt="AP Beauty">
+      </a>
+
+      <!-- ZONA DERECHA: nav 3 + carrito -->
+      <div class="header-right">
+        <nav class="nav-cluster" aria-label="Más categorías">
+          <a class="nav-link" href="catalogo.html?cat=sets">Sets</a>
+          <a class="nav-link" href="catalogo.html?cat=brochas">Brochas</a>
+          <a class="nav-link" href="index.html#historia">Historia</a>
+        </nav>
+        <button class="header-icon header-cart" id="btn-cart" aria-label="Abrir carrito" aria-controls="cart-drawer" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <span class="cart-count" id="cart-count">0</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Buscador desplegable (conservado · contrato JS #btn-search/#search-panel/#search-input) -->
+    <div class="search-panel" id="search-panel" hidden>
+      <div class="container">
+        <input type="search" id="search-input" placeholder="Busca labiales, paletas, brochas..." aria-label="Buscar productos">
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MENÚ MÓVIL (reutilizado · hrefs de categoría → catalogo.html?cat=) ===== -->
+  <div class="menu-backdrop" id="menu-backdrop" hidden></div>
+  <aside class="menu-panel" id="menu-panel" aria-label="Menú de navegación" aria-hidden="true">
+    <div class="menu-top">
+      <img src="brand/ap_ico_wnb-removebg-preview.png" alt="AP Beauty">
+      <button class="menu-close" id="btn-menu-close" aria-label="Cerrar menú">✕</button>
+    </div>
+    <nav class="menu-primary" aria-label="Categorías">
+      <a href="catalogo.html?cat=labios">Labios</a>
+      <a href="catalogo.html?cat=ojos">Ojos</a>
+      <a href="catalogo.html?cat=rostro">Rostro</a>
+      <a href="catalogo.html?cat=sets">Sets</a>
+      <a href="catalogo.html?cat=brochas">Brochas</a>
+    </nav>
+    <nav class="menu-secondary" aria-label="Más opciones">
+      <a href="index.html#historia">Historia</a>
+      <a href="#" id="menu-search-link" data-open-search>Buscar</a>
+      <a href="/cuenta">Mi cuenta</a>
+    </nav>
+  </aside>
+
+  <!-- ===== CARRITO · DRAWER deslizante (disponible en todas las páginas) ===== -->
+  <!-- Contrato JS: #btn-cart (abre, en header) · #cart-drawer · #cart-backdrop · #btn-cart-close (cierra)
+       · #cart-empty (estado vacío) · #cart-items (JS renderiza líneas desde localStorage `ap_cart`)
+       · #cart-foot (pie con subtotal+CTA, JS lo muestra al haber items) · #cart-subtotal (JS escribe €)
+       · #cart-checkout (→ carrito.html). Mecánica = menú móvil (X / Esc / click fuera).
+       Plantilla de línea reutilizable (drawer y carrito.html): #cart-line-tpl. -->
+  <div class="cart-backdrop" id="cart-backdrop" hidden></div>
+  <aside class="cart-drawer" id="cart-drawer" aria-label="Tu carrito" aria-hidden="true">
+    <div class="cart-drawer__top">
+      <h2 class="cart-drawer__title">Tu carrito</h2>
+      <button class="cart-close" id="btn-cart-close" aria-label="Cerrar carrito">✕</button>
+    </div>
+
+    <div class="cart-drawer__empty" id="cart-empty">
+      <svg class="cart-empty__icon" viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <p class="cart-empty__title">Tu carrito está vacío</p>
+      <p class="cart-empty__text">Aún no has añadido nada. La presencia empieza por elegir.</p>
+      <a href="catalogo.html" class="btn-editorial btn-editorial--solid">Ver catálogo</a>
+    </div>
+
+    <ul class="cart-drawer__items" id="cart-items"></ul>
+
+    <div class="cart-drawer__foot" id="cart-foot" hidden>
+      <div class="cart-drawer__summary">
+        <span>Subtotal</span>
+        <span id="cart-subtotal">0,00€</span>
+      </div>
+      <p class="cart-drawer__note">Envío e impuestos calculados al finalizar.</p>
+      <a href="carrito.html" class="btn-editorial btn-editorial--solid cart-drawer__checkout" id="cart-checkout">Ver carrito y pagar</a>
+    </div>
+  </aside>
+
+  <!-- Plantilla de línea de carrito (JS clona y rellena · contrato data-action en botones) -->
+  <template id="cart-line-tpl">
+    <li class="cart-line" data-id="">
+      <img class="cart-line__img" src="" alt="" width="64" height="64" loading="lazy">
+      <div class="cart-line__info">
+        <p class="cart-line__name"></p>
+        <p class="cart-line__price"></p>
+        <div class="cart-line__qty">
+          <button class="qty-btn" data-action="dec" aria-label="Quitar una unidad">−</button>
+          <span class="cart-line__qval">1</span>
+          <button class="qty-btn" data-action="inc" aria-label="Añadir una unidad">+</button>
+        </div>
+      </div>
+      <button class="cart-line__remove" data-action="remove" aria-label="Eliminar del carrito">✕</button>
+    </li>
+  </template>
+
+  <main>
+
+    <!-- ===== A · CABECERA CATÁLOGO (slim: eyebrow + título Playfair + pills) ===== -->
+    <!-- Pills = filtro enlazable. Cada pill es un <a> real (shareable, funciona sin JS) con data-cat
+         (contrato JS: leer data-cat, filtrar .cat-item[data-category], pushState sin recargar).
+         "Todos" → catalogo.html (sin ?cat=). Estado activo (is-active) lo gestiona JS según ?cat=. -->
+    <section class="catalog-head">
+      <div class="container">
+        <p class="eyebrow">EL CATÁLOGO</p>
+        <h1 class="catalog-head__title">Presencia, producto a producto</h1>
+        <nav class="catalog-pills" aria-label="Filtrar por categoría">
+          <a class="cat-pill is-active" href="catalogo.html" data-cat="">Todos</a>
+          <a class="cat-pill" href="catalogo.html?cat=labios" data-cat="labios">Labios</a>
+          <a class="cat-pill" href="catalogo.html?cat=ojos" data-cat="ojos">Ojos</a>
+          <a class="cat-pill" href="catalogo.html?cat=rostro" data-cat="rostro">Rostro</a>
+          <a class="cat-pill" href="catalogo.html?cat=sets" data-cat="sets">Sets</a>
+          <a class="cat-pill" href="catalogo.html?cat=brochas" data-cat="brochas">Brochas</a>
+        </nav>
+      </div>
+    </section>
+
+    <!-- ===== B · LISTADO EDITORIAL APILADO ===== -->
+    <!-- CONTRATO (ley): cada SKU = <article class="cat-item" data-category="<slug>"> con orden interno
+         media → content SIEMPRE. La alternancia de lado la hace CSS con :nth-child(even) order — NUNCA aquí.
+         Slugs: labios · ojos · rostro · sets · brochas. CTA "Descubrir" → ficha futura /producto/<handle>.
+         "Próximamente" (Sets/Brochas): cat-item--soon, sin precio ni CTA, badge en vez de precio.
+         SEO: Product schema SOLO en los activos (sin cat-item--soon). -->
+    <div class="catalog-list">
+
+      <!-- 1 · Lip Eclipse (activo · labios) -->
+      <article class="cat-item" data-category="labios">
+        <div class="cat-item__media">
+          <img src="products/labial-destacado.webp" alt="Labial mate Lip Eclipse de AP Beauty" fetchpriority="high" width="800" height="800">
+        </div>
+        <div class="cat-item__content">
+          <p class="eyebrow">LABIOS</p>
+          <h2 class="cat-item__name">Lip Eclipse</h2>
+          <p class="cat-item__desc">Labial mate de larga duración. Color pleno, acabado seco y un trazo que no se mueve en todo el día.</p>
+          <p class="cat-item__price">24,90€</p>
+          <div class="cat-item__actions">
+            <button class="add-to-cart btn-editorial btn-editorial--solid" data-id="lip-eclipse" data-name="Lip Eclipse" data-price="2490" data-priceid="price_PLACEHOLDER" data-image="products/labial-destacado.webp">Añadir</button>
+            <a href="/producto/lip-eclipse" class="btn-editorial btn-editorial--ghost">Ver detalle</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 2 · Power Matte (activo · rostro) -->
+      <article class="cat-item" data-category="rostro">
+        <div class="cat-item__media">
+          <img src="products/power-matte-destacado.webp" alt="Paleta de rubor y contorno Power Matte de AP Beauty" loading="lazy" width="800" height="800">
+        </div>
+        <div class="cat-item__content">
+          <p class="eyebrow">ROSTRO</p>
+          <h2 class="cat-item__name">Power Matte</h2>
+          <p class="cat-item__desc">Paleta de rubor y contorno en acabado mate. Estructura el rostro y define los volúmenes con precisión de estudio.</p>
+          <p class="cat-item__price">39,90€</p>
+          <div class="cat-item__actions">
+            <button class="add-to-cart btn-editorial btn-editorial--solid" data-id="power-matte" data-name="Power Matte" data-price="3990" data-priceid="price_PLACEHOLDER" data-image="products/power-matte-destacado.webp">Añadir</button>
+            <a href="/producto/power-matte" class="btn-editorial btn-editorial--ghost">Ver detalle</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 3 · Sculpt Liner (activo · ojos) -->
+      <article class="cat-item" data-category="ojos">
+        <div class="cat-item__media">
+          <img src="products/sculpt-liner-destacado.webp" alt="Delineador de precisión Sculpt Liner de AP Beauty" loading="lazy" width="800" height="800">
+        </div>
+        <div class="cat-item__content">
+          <p class="eyebrow">OJOS</p>
+          <h2 class="cat-item__name">Sculpt Liner</h2>
+          <p class="cat-item__desc">Delineador de precisión. Punta firme para un trazo limpio, de la línea más fina al alado más marcado.</p>
+          <p class="cat-item__price">18,90€</p>
+          <div class="cat-item__actions">
+            <button class="add-to-cart btn-editorial btn-editorial--solid" data-id="sculpt-liner" data-name="Sculpt Liner" data-price="1890" data-priceid="price_PLACEHOLDER" data-image="products/sculpt-liner-destacado.webp">Añadir</button>
+            <a href="/producto/sculpt-liner" class="btn-editorial btn-editorial--ghost">Ver detalle</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 4 · Power Lash (activo · ojos · el más vendido) -->
+      <article class="cat-item" data-category="ojos">
+        <div class="cat-item__media">
+          <img src="products/pestanas-destacado.jpg" alt="Pestañas postizas Power Lash de AP Beauty en su estuche" loading="lazy" width="800" height="800">
+        </div>
+        <div class="cat-item__content">
+          <p class="eyebrow">OJOS · EL MÁS VENDIDO</p>
+          <h2 class="cat-item__name">Power Lash</h2>
+          <p class="cat-item__desc">Pestañas postizas reutilizables de acabado natural. Ligeras, cómodas y diseñadas para realzar la mirada.</p>
+          <p class="cat-item__price">19,90€</p>
+          <div class="cat-item__actions">
+            <button class="add-to-cart btn-editorial btn-editorial--solid" data-id="power-lash" data-name="Power Lash" data-price="1990" data-priceid="price_PLACEHOLDER" data-image="products/pestanas-destacado.jpg">Añadir</button>
+            <a href="/producto/power-lash" class="btn-editorial btn-editorial--ghost">Ver detalle</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 5 · Sets (PRÓXIMAMENTE · sets) — sin precio ni CTA hasta datos de Paul -->
+      <article class="cat-item cat-item--soon" data-category="sets">
+        <div class="cat-item__media">
+          <img src="categories/kits-category.webp" alt="Sets y kits de maquillaje AP Beauty (próximamente)" loading="lazy" width="800" height="800">
+        </div>
+        <div class="cat-item__content">
+          <p class="eyebrow">SETS</p>
+          <h2 class="cat-item__name">Sets AP</h2>
+          <p class="cat-item__desc">Selecciones cerradas para construir tu presencia con criterio. Rutinas completas, sin pensar de más.</p>
+          <p class="cat-item__soon">Próximamente</p>
+        </div>
+      </article>
+
+      <!-- 6 · Brochas (PRÓXIMAMENTE · brochas) — sin precio ni CTA hasta datos de Paul -->
+      <article class="cat-item cat-item--soon" data-category="brochas">
+        <div class="cat-item__media">
+          <img src="categories/brochas-category.webp" alt="Brochas de maquillaje profesionales AP Beauty (próximamente)" loading="lazy" width="800" height="800">
+        </div>
+        <div class="cat-item__content">
+          <p class="eyebrow">BROCHAS</p>
+          <h2 class="cat-item__name">Brochas AP</h2>
+          <p class="cat-item__desc">Herramientas de precisión para una aplicación profesional. El control empieza por el pincel.</p>
+          <p class="cat-item__soon">Próximamente</p>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- Salida de la vista filtrada (1 producto = spotlight con salida). JS revela este link cuando hay
+         filtro activo (?cat=) y lo oculta en la vista completa. Contrato JS: #ver-todo-catalogo. -->
+    <div class="catalog-footer">
+      <a class="catalog-vertodo" id="ver-todo-catalogo" href="catalogo.html" hidden>← Ver todo el catálogo</a>
+    </div>
+
+  </main>
+
+  <!-- ===== NEWSLETTER (reutilizada del home) ===== -->
+  <section class="newsletter" aria-labelledby="news-titulo">
+    <div class="container">
+      <h2 id="news-titulo">Únete al estándar</h2>
+      <p>Lanzamientos, ediciones limitadas y notas de maquillaje profesional. Sin ruido.</p>
+      <form class="newsletter__form" action="#" method="post">
+        <input type="email" class="newsletter__input" name="email" placeholder="Tu correo electrónico" aria-label="Correo electrónico" autocomplete="email" required>
+        <button class="newsletter__btn" type="submit">Suscribirme</button>
+      </form>
+      <small>Sin spam. Solo lo que importa. Baja cuando quieras.</small>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER (reutilizado del home · hrefs de categoría → catalogo.html?cat=) ===== -->
+  <footer class="site-footer">
+    <div class="site-footer__main">
+      <div class="container site-footer__grid">
+
+        <!-- Columna 1 — Marca -->
+        <div class="footer-col footer-col--brand">
+          <div class="footer-col__brand-logo">
+            <img src="brand/ap_ico_bnw-removebg-preview.png" alt="AP Beauty" width="28" height="28">
+            <span class="footer-col__brand-name">AP Beauty</span>
+          </div>
+          <p class="footer-col__desc">
+            Maquillaje que define. Presencia controlada.
+          </p>
+          <ul class="footer-social" aria-label="Síguenos en redes sociales">
+            <li>
+              <a href="https://www.instagram.com/makeup.andrea.ps/" aria-label="Instagram">
+                <img class="footer-social__icon" src="trustelements/instagram.svg" alt="Instagram" width="20" height="20" loading="lazy">
+              </a>
+            </li>
+            <li>
+              <a href="https://tiktok.com/@apbeauty" aria-label="TikTok">
+                <img class="footer-social__icon" src="trustelements/tiktok.svg" alt="TikTok" width="20" height="20" loading="lazy">
+              </a>
+            </li>
+            <li>
+              <a href="https://youtube.com/@apbeauty" aria-label="YouTube">
+                <img class="footer-social__icon" src="trustelements/youtube.svg" alt="YouTube" width="20" height="20" loading="lazy">
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Columna 2 — Tienda (categorías de maquillaje) -->
+        <nav class="footer-col" aria-label="Tienda">
+          <h2 class="footer-col__title">Tienda</h2>
+          <ul class="footer-col__links">
+            <li><a href="catalogo.html?cat=labios">Labios</a></li>
+            <li><a href="catalogo.html?cat=ojos">Ojos</a></li>
+            <li><a href="catalogo.html?cat=rostro">Rostro</a></li>
+            <li><a href="catalogo.html?cat=sets">Sets / Kits</a></li>
+            <li><a href="catalogo.html?cat=brochas">Brochas</a></li>
+            <li><a href="catalogo.html">Ver todo</a></li>
+          </ul>
+        </nav>
+
+        <!-- Columna 3 — Ayuda -->
+        <nav class="footer-col" aria-label="Ayuda">
+          <h2 class="footer-col__title">Ayuda</h2>
+          <ul class="footer-col__links">
+            <li><a href="#">Preguntas frecuentes</a></li>
+            <li><a href="#">Cómo comprar</a></li>
+            <li><a href="#">Seguimiento de pedido</a></li>
+            <li><a href="#">Devoluciones</a></li>
+            <li><a href="legal/aviso-legal.html">Aviso legal</a></li>
+            <li><a href="legal/privacidad.html">Privacidad</a></li>
+            <li><a href="legal/cookies.html">Cookies</a></li>
+          </ul>
+        </nav>
+
+        <!-- Columna 4 — Contacto -->
+        <div class="footer-col footer-col--contact">
+          <h2 class="footer-col__title">Contacto</h2>
+          <a class="footer-col__contact-email" href="mailto:hola@apbeauty.com">hola@apbeauty.com</a>
+          <p class="footer-col__contact-hours">Lunes–Viernes 9:00–18:00 CET</p>
+          <img src="trustelements/card_payments.webp" alt="Métodos de pago aceptados: Visa, Mastercard, PayPal, Apple Pay" class="payment-img" loading="lazy">
+        </div>
+
+      </div>
+    </div>
+
+    <div class="site-footer__bottom">
+      <div class="container">
+        <span class="site-footer__copy">© <span id="footer-year">2026</span> AP Beauty. Todos los derechos reservados.</span>
+        <span class="site-footer__made">Controlled Presence</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== DOMINIO SEO: JSON-LD ===== -->
+  <!-- Inserta aquí los <script type="application/ld+json">. Product structured data SOLO en los
+       SKUs activos (Lip Eclipse, Power Matte, Sculpt Liner, Power Lash). NUNCA en Sets/Brochas
+       (cat-item--soon). Opcional: BreadcrumbList / CollectionPage. Front no toca este bloque. -->
+  <!-- ===== FIN JSON-LD SEO ===== -->
+
+  <script type="module" defer src="main.js"></script>
+</body>
+</html>

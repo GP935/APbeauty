@@ -63,7 +63,9 @@
    Reset
    -------------------------------------------------------------------------- */
 *, *::before, *::after { box-sizing: border-box; max-width: 100%; }
-html, body { margin: 0; padding: 0; overflow-x: hidden; }
+/* overflow-x: clip (no `hidden`): corta el desbordamiento horizontal sin crear
+   contenedor de scroll → no rompe el `position: sticky` del header (AB-C9). */
+html, body { margin: 0; padding: 0; overflow-x: clip; }
 body { font-family: var(--font-body); color: var(--negro); background: var(--blanco); line-height: 1.55; }
 img { display: block; max-width: 100%; height: auto; }
 
@@ -408,7 +410,14 @@ section { padding-block: var(--section-pad-y); }
 .spotlight-line {
   font: 400 clamp(1rem, 1.1vw, 1.1rem)/1.7 var(--font-body);
   color: #4A4A4A;
-  margin: 0 0 clamp(28px, 3vw, 40px); max-width: 34ch;
+  margin: 0 0 clamp(14px, 1.6vw, 20px); max-width: 34ch;   /* margen reducido: la quote va justo debajo */
+}
+/* Gancho — frase corta en Playfair itálica, entre descripción y precio (AB-C7 EXTRA).
+   Sin punto final (lo controla el HTML). NO es acento rojo: editorial en negro. */
+.spotlight-text .spotlight-quote {
+  font: italic 400 clamp(1.15rem, 1.6vw, 1.45rem)/1.35 var(--font-display);
+  color: var(--negro);
+  margin: 0 0 clamp(24px, 2.8vw, 34px); max-width: 28ch;
 }
 /* Precio en Playfair (tipografía editorial), separado del botón */
 .spotlight-price {
@@ -594,6 +603,262 @@ section { padding-block: var(--section-pad-y); }
 @media (min-width: 1024px) {
   .site-footer__grid { grid-template-columns: 2fr 1fr 1fr 1.5fr; }
 }
+
+/* --------------------------------------------------------------------------
+   14 · CATÁLOGO (catalogo.html · AB-C10)
+   Listado editorial apilado: 1 SKU = 1 item full-bleed, lado e (fondo claro/
+   charcoal) alternan por :nth-child(even) — NUNCA en HTML. Degrada a 1 item
+   (vista filtrada) sin verse vacío: queda como spotlight. Reutiliza el lenguaje
+   del spotlight (eyebrow con filete rojo, título Playfair, desc plana, precio
+   Playfair). Rojo ≤10%: filete eyebrow + pill activa + hover del CTA, nada más.
+   -------------------------------------------------------------------------- */
+
+/* A · Cabecera slim — eyebrow + título + pills de filtro */
+.catalog-head__title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem); line-height: 1.1; letter-spacing: -0.5px;
+  color: var(--negro); margin: 0;
+}
+.catalog-pills { display: flex; flex-wrap: wrap; gap: clamp(12px, 1.6vw, 22px); margin-top: clamp(18px, 2.2vw, 28px); }
+.cat-pill {
+  font: 600 .76rem/1 var(--font-body); letter-spacing: .12em; text-transform: uppercase;
+  color: var(--gris-texto); text-decoration: none;
+  padding-bottom: 6px; border-bottom: 2px solid transparent;
+  transition: color .2s, border-color .2s;
+}
+.cat-pill:hover { color: var(--negro); }
+.cat-pill.is-active { color: var(--negro); border-bottom-color: var(--color-red); }   /* filete rojo = pill activa */
+
+/* B · Listado apilado */
+.catalog-list { display: flex; flex-direction: column; }
+.cat-item {
+  display: grid; grid-template-columns: 1fr 1fr; align-items: center;
+  gap: clamp(28px, 4vw, 72px);
+  width: 100vw; margin-inline: calc(50% - 50vw);                       /* full-bleed: el charcoal sangra de borde a borde */
+  padding-block: clamp(48px, 6vw, 100px);
+  padding-inline: max(var(--gutter), calc(50vw - var(--container-max) / 2));
+}
+/* Alternancia de LADO (inviolable del briefing): media a la derecha en pares */
+.cat-item:nth-child(even) .cat-item__media { order: 2; }
+/* Alternancia de FONDO: pares en charcoal (texto invertido más abajo) */
+.cat-item:nth-child(even) { background: var(--color-charcoal); }
+
+/* Media — card editorial vertical, sin deformar */
+.cat-item__media { border-radius: var(--radius-card); overflow: hidden; }
+.cat-item__media img { width: 100%; aspect-ratio: 4/5; object-fit: cover; object-position: center; display: block; }
+
+/* Contenido — columna estrecha, jerarquía por márgenes (lenguaje spotlight) */
+.cat-item__content { display: flex; flex-direction: column; align-items: flex-start; max-width: 460px; }
+.cat-item__content .eyebrow {
+  display: inline-flex; align-items: center; gap: 12px;
+  color: var(--gris-texto); margin: 0 0 clamp(14px, 1.6vw, 20px);
+}
+.cat-item__content .eyebrow::before { content: ""; width: 28px; height: 2px; background: var(--color-red); }   /* filete rojo */
+.cat-item__name {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3vw, 2.6rem); line-height: 1.1;
+  color: var(--negro); margin: 0 0 clamp(14px, 1.6vw, 20px);
+}
+.cat-item__desc {
+  font: 400 clamp(1rem, 1.1vw, 1.08rem)/1.7 var(--font-body);
+  color: #4A4A4A; margin: 0 0 clamp(24px, 3vw, 34px); max-width: 42ch;   /* gris SÓLIDO, sin degradado */
+}
+.cat-item__price {
+  font: 600 clamp(1.4rem, 1.8vw, 1.8rem)/1 var(--font-display);
+  color: var(--negro); margin: 0 0 clamp(20px, 2.4vw, 28px);
+}
+.cat-item .btn-editorial { align-self: flex-start; }
+/* CTA — negro por defecto, ROJO solo en hover (el rojo del CTA es uno de los ≤10%) */
+.cat-item .btn-editorial--solid { background: var(--negro); }
+.cat-item .btn-editorial--solid:hover { background: var(--color-red); }
+
+/* Item "Próximamente" — badge en vez de precio, media atenuada, sin CTA */
+.cat-item__soon {
+  display: inline-block;
+  font: 600 .72rem/1 var(--font-body); letter-spacing: .18em; text-transform: uppercase;
+  color: var(--gris-texto); border: 1px solid var(--borde); border-radius: var(--radius-pill);
+  padding: 9px 18px; margin: clamp(4px, 1vw, 8px) 0 0;
+}
+.cat-item--soon .cat-item__media { opacity: .9; filter: grayscale(.25); }
+
+/* Items charcoal (pares) — inversión de texto a claro */
+.cat-item:nth-child(even) .cat-item__name,
+.cat-item:nth-child(even) .cat-item__price { color: #fff; }
+.cat-item:nth-child(even) .cat-item__desc { color: rgba(255, 255, 255, .76); }
+.cat-item:nth-child(even) .cat-item__content .eyebrow { color: rgba(255, 255, 255, .65); }
+.cat-item:nth-child(even) .cat-item__soon { color: rgba(255, 255, 255, .72); border-color: rgba(255, 255, 255, .25); }
+/* CTA sobre charcoal: blanco por defecto (el negro no contrastaría), rojo en hover */
+.cat-item:nth-child(even) .btn-editorial--solid { background: #fff; color: var(--negro); }
+.cat-item:nth-child(even) .btn-editorial--solid:hover { background: var(--color-red); color: #fff; }
+
+/* Salida vista filtrada */
+.catalog-footer { text-align: center; padding-block: clamp(36px, 4.5vw, 64px); }
+.catalog-vertodo {
+  font: 600 .8rem/1 var(--font-body); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--negro); text-decoration: none;
+  border-bottom: 2px solid var(--color-red); padding-bottom: 6px; transition: color .2s;
+}
+.catalog-vertodo:hover { color: var(--color-red); }
+.catalog-vertodo[hidden] { display: none; }
+
+/* MÓVIL — 1 columna, imagen SIEMPRE arriba (anula el order de los pares) */
+@media (max-width: 768px) {
+  .cat-item { grid-template-columns: 1fr; gap: clamp(20px, 5vw, 32px); }
+  .cat-item:nth-child(even) .cat-item__media { order: 0; }
+  .cat-item__content { max-width: none; }
+}
+
+/* --------------------------------------------------------------------------
+   15 · CARRITO + CHECKOUT UI (drawer global · carrito.html · confirmacion.html · AB-C11)
+   Flujo solo UI (Stripe Checkout hosted = redirect; sin form de tarjeta on-site).
+   Drawer = mismo patrón visual que el menú móvil (slide derecha + backdrop).
+   Lenguaje Controlled Presence: Playfair display, Montserrat UI, texto plano.
+   Rojo ≤10%: el CTA primario de conversión es el único rojo por vista
+   (`.btn-editorial--solid` ya rojo global). Estado vacío y estado con ítems son
+   mutuamente excluyentes → nunca hay 2 rojos a la vez.
+   -------------------------------------------------------------------------- */
+
+/* --- DRAWER (global, en todas las páginas) --- */
+.cart-backdrop {
+  position: fixed; inset: 0; z-index: 1090;
+  background: rgba(10, 10, 10, .45);
+  opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility .3s ease;
+}
+.cart-backdrop[hidden] { display: none; }
+.cart-backdrop.is-open { opacity: 1; visibility: visible; }
+
+.cart-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 1100;
+  width: min(100vw, 420px);                 /* full-width en móvil (ver media 600px), 420 en desktop */
+  background: #fff;
+  display: flex; flex-direction: column;
+  transform: translateX(100%); transition: transform .35s cubic-bezier(.4, 0, .2, 1);
+}
+.cart-drawer.is-open { transform: translateX(0); }
+
+.cart-drawer__top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: clamp(20px, 4vw, 28px) clamp(20px, 4vw, 28px) clamp(16px, 2vw, 20px);
+  border-bottom: 1px solid var(--borde);
+}
+.cart-drawer__title { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; color: var(--negro); margin: 0; }
+.cart-close {
+  width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--negro); color: #fff; font-size: 16px; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+/* Estado vacío — con dignidad: aire, icono fino, CTA (drawer y página comparten clases .cart-empty__*) */
+.cart-drawer__empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  gap: 14px; flex: 1; padding: clamp(24px, 5vw, 40px);
+}
+.cart-drawer__empty[hidden] { display: none; }
+.cart-empty__icon { color: var(--gris-muted); }
+.cart-empty__title { font-family: var(--font-display); font-size: 1.3rem; color: var(--negro); margin: 0; }
+.cart-empty__text { font: 400 .95rem/1.6 var(--font-body); color: var(--gris-texto); margin: 0; max-width: 32ch; }
+.cart-drawer__empty .btn-editorial { margin-top: 8px; }
+
+.cart-drawer__items { list-style: none; margin: 0; padding: 0 clamp(20px, 4vw, 28px); flex: 1; overflow-y: auto; }
+
+.cart-drawer__foot {
+  padding: clamp(18px, 3vw, 24px) clamp(20px, 4vw, 28px) clamp(22px, 4vw, 28px);
+  border-top: 1px solid var(--borde);
+}
+.cart-drawer__foot[hidden] { display: none; }
+.cart-drawer__summary {
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: var(--negro); margin-bottom: 6px;
+}
+.cart-drawer__note { font: 400 .8rem/1.5 var(--font-body); color: var(--gris-texto); margin: 0 0 16px; }
+.cart-drawer__checkout { display: flex; width: 100%; }   /* CTA primario a ancho completo */
+
+@media (max-width: 600px) { .cart-drawer { width: 100vw; } }
+
+/* --- LÍNEA DE CARRITO (#cart-line-tpl · drawer y carrito.html) --- */
+.cart-line {
+  display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; align-items: start;
+  padding: clamp(16px, 3vw, 20px) 0; border-bottom: 1px solid var(--borde);
+}
+.cart-line__img { width: 64px; height: 64px; object-fit: cover; border-radius: var(--radius-soft); }
+.cart-line__info { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.cart-line__name { font: 600 .95rem/1.3 var(--font-body); color: var(--negro); margin: 0; }
+.cart-line__price { font: 500 .9rem/1 var(--font-body); color: var(--gris-texto); margin: 0; }
+.cart-line__qty {
+  display: inline-flex; align-items: center; width: fit-content; margin-top: 4px;
+  border: 1px solid var(--borde); border-radius: var(--radius-pill);
+}
+.cart-line__qty .qty-btn {
+  width: 30px; height: 30px; border: 0; background: none; cursor: pointer;
+  font-size: 16px; line-height: 1; color: var(--negro);
+  display: inline-flex; align-items: center; justify-content: center; transition: color .2s;
+}
+.cart-line__qty .qty-btn:hover { color: var(--color-red); }
+.cart-line__qval { min-width: 28px; text-align: center; font: 600 .85rem/1 var(--font-body); color: var(--negro); }
+.cart-line__remove {
+  background: none; border: 0; cursor: pointer; color: var(--gris-muted);
+  font-size: 14px; padding: 4px; align-self: start; transition: color .2s;
+}
+.cart-line__remove:hover { color: var(--color-red); }
+
+/* --- carrito.html (revisión = checkout on-site) --- */
+.cart-page__head { margin-bottom: clamp(24px, 3vw, 40px); }
+.cart-page__head h1 { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3rem); line-height: 1.1; color: var(--negro); margin: 0; }
+
+.cart-page__empty {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: 16px; padding-block: clamp(40px, 8vw, 96px);
+}
+.cart-page__empty[hidden] { display: none; }
+
+.cart-page__layout { display: grid; grid-template-columns: 1fr; gap: clamp(24px, 4vw, 48px); align-items: start; }
+.cart-page__layout[hidden] { display: none; }
+.cart-page__items { list-style: none; margin: 0; padding: 0; }
+
+.cart-summary {
+  background: var(--fondo-alt); border-radius: var(--radius-card);
+  padding: clamp(22px, 3vw, 32px);
+}
+.cart-summary__title { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--negro); margin: 0 0 16px; }
+.cart-summary__row {
+  display: flex; align-items: center; justify-content: space-between;
+  font: 600 1.05rem/1 var(--font-body); color: var(--negro);
+  padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--borde);
+}
+.cart-summary__note { font: 400 .82rem/1.5 var(--font-body); color: var(--gris-texto); margin: 0 0 18px; }
+.cart-summary__checkout { display: flex; width: 100%; }   /* botón primario "Finalizar compra" — el rojo de la vista */
+.cart-summary__continue {
+  display: inline-block; margin-top: 16px;
+  font: 600 .8rem/1 var(--font-body); letter-spacing: .06em; text-transform: uppercase;
+  color: var(--negro); text-decoration: none; border-bottom: 1px solid var(--negro); padding-bottom: 4px;
+  transition: color .2s, border-color .2s;
+}
+.cart-summary__continue:hover { color: var(--color-red); border-color: var(--color-red); }
+.cart-summary__secure {
+  display: flex; align-items: center; justify-content: center; gap: 8px; margin: 18px 0 0;
+  font: 400 .78rem/1.4 var(--font-body); color: var(--gris-texto);
+}
+.cart-summary__secure svg { color: var(--gris-muted); flex-shrink: 0; }
+
+@media (min-width: 900px) {
+  .cart-page__layout { grid-template-columns: 1fr 360px; }
+  .cart-summary { position: sticky; top: 96px; }   /* acompaña el scroll bajo el header sticky */
+}
+
+/* --- confirmacion.html (success_url de Stripe) --- */
+.confirmation { padding-block: clamp(56px, 9vw, 120px); }
+.confirmation .container { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 560px; }
+.confirmation__icon { color: var(--negro); margin-bottom: clamp(16px, 2vw, 24px); }   /* check monocromo, on-brand (no verde) */
+.confirmation h1 { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3rem); line-height: 1.1; color: var(--negro); margin: 0 0 16px; }
+.confirmation__text {
+  font: 400 clamp(1rem, 1.1vw, 1.08rem)/1.7 var(--font-body);
+  color: var(--gris-texto); margin: 0 0 clamp(28px, 3vw, 40px); max-width: 46ch;
+}
+.confirmation__cta { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+/* Fix: el .btn-editorial--ghost global es BLANCO (para hero oscuro). En esta página
+   sobre fondo blanco sería invisible → variante oscura (igual que .btn-editorial--dark). */
+.confirmation .btn-editorial--ghost { color: var(--negro); border-color: var(--negro); }
+.confirmation .btn-editorial--ghost:hover { background: var(--negro); color: #fff; }
 
 /* --------------------------------------------------------------------------
    Accesibilidad
