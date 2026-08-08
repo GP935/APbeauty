@@ -319,14 +319,39 @@ function initCart() {
     else if (action === 'remove') removeItem(id);
   });
 
-  // STUB de checkout — NO cobra en esta pasada (sin Worker / sin Stripe live)
+  // Checkout real — Stripe Checkout hosted vía backend (AP-J1)
+  // POST /api/create-checkout-session { items:[{price,quantity}] } → { url } (mismo origen; en prod Nginx enruta /api → :3000)
   const btnCheckout = document.getElementById('btn-checkout');
   if (btnCheckout) {
-    btnCheckout.addEventListener('click', () => {
-      // TODO (fase backend): POST /api/create-checkout-session
-      //   body: { items: readCart().items.map((i) => ({ price: i.priceId, quantity: i.qty })) }
-      //   → { url } → window.location = url
-      window.location.href = 'confirmacion.html';
+    btnCheckout.addEventListener('click', async () => {
+      // Solo priceId + cantidad; el importe lo resuelve el servidor (nunca mandar precio desde el cliente)
+      const items = readCart().items
+        .filter((i) => i.priceId && i.qty > 0)
+        .map((i) => ({ price: i.priceId, quantity: i.qty }));
+      if (items.length === 0) return; // carrito vacío → no hacer nada
+
+      const textoOriginal = btnCheckout.textContent;
+      btnCheckout.disabled = true;
+      btnCheckout.textContent = 'Redirigiendo…';
+
+      try {
+        const res = await fetch('/api/create-checkout-session', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ items }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.url) {
+          window.location.href = data.url; // → Stripe Checkout hosted (no marcar "pagado" aquí: lo confirma el webhook)
+          return;
+        }
+        throw new Error(data.error || 'checkout_failed');
+      } catch (err) {
+        // Feedback dentro de mi dominio (sin clase CSS nueva): aviso en el propio botón y reactivar
+        btnCheckout.disabled = false;
+        btnCheckout.textContent = 'Error, inténtalo de nuevo';
+        setTimeout(() => { btnCheckout.textContent = textoOriginal; }, 3000);
+      }
     });
   }
 
@@ -431,13 +456,31 @@ function initCatalog() {
 
   const catFromURL = () => new URLSearchParams(location.search).get('cat') || '';
 
-  apply(catFromURL()); // estado inicial enlazable
+  // Lleva la vista al primer producto visible del filtro (sin esto, quien llega con ?cat=
+  // desde una category-card del home se queda arriba, sobre la cabecera y las pills)
+  function scrollToResults(smooth) {
+    const firstVisible = list.querySelector('.cat-item:not([hidden])');
+    if (firstVisible) firstVisible.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' });
+  }
+
+  const initialCat = apply(catFromURL()); // estado inicial enlazable
+
+  // El scroll nativo del navegador al cargar con #<id> ya corrió sobre el layout previo a
+  // ocultar items (apply() se ejecuta después) → si arriba se ocultó contenido, la posición
+  // queda desplazada. Forzamos el aterrizaje exacto sobre el <id> si quedó visible.
+  const hashTarget = location.hash && document.getElementById(location.hash.slice(1));
+  if (hashTarget && !hashTarget.hidden) {
+    hashTarget.scrollIntoView({ block: 'start' });
+  } else if (initialCat && !location.hash) {
+    scrollToResults(false);
+  }
 
   pills.forEach((pill) => {
     pill.addEventListener('click', (e) => {
       e.preventDefault();
       const cat = apply(pill.dataset.cat || '');
       history.pushState({ cat }, '', cat ? `catalogo.html?cat=${cat}` : 'catalogo.html');
+      if (cat) scrollToResults(true);
     });
   });
 
@@ -453,6 +496,50 @@ function initCatalog() {
   window.addEventListener('popstate', () => apply(catFromURL()));
 }
 
+// 6 · Políticas — acordeón exclusivo (AB-P3): un solo panel abierto a la vez
+function openPanel(panel) {
+  panel.hidden = false;
+  requestAnimationFrame(() => panel.classList.add('is-open'));
+}
+
+function closePanel(panel) {
+  panel.classList.remove('is-open');
+  panel.addEventListener('transitionend', () => { panel.hidden = true; }, { once: true });
+}
+
+function initPoliciesAccordion() {
+  const accordion = document.querySelector('[data-accordion]');
+  if (!accordion) return; // no existe fuera de politicas.html
+
+  const triggers = Array.from(accordion.querySelectorAll('.accordion-trigger'));
+
+  triggers.forEach((trigger) => {
+    trigger.addEventListener('click', () => {
+      const panel = document.getElementById(trigger.getAttribute('aria-controls'));
+      const isOpen = trigger.getAttribute('aria-expanded') === 'true';
+
+      triggers.forEach((t) => { // exclusivo: cierra todos primero
+        t.setAttribute('aria-expanded', 'false');
+        closePanel(document.getElementById(t.getAttribute('aria-controls')));
+      });
+
+      if (!isOpen) { // si estaba cerrado, ábrelo (toggle)
+        trigger.setAttribute('aria-expanded', 'true');
+        openPanel(panel);
+      }
+    });
+  });
+
+  // Abrir por hash del footer (politicas.html#privacidad, etc.)
+  const slug = location.hash.replace('#', '');
+  const hashTrigger = slug && document.getElementById('acc-trigger-' + slug);
+  if (hashTrigger) {
+    hashTrigger.setAttribute('aria-expanded', 'true');
+    openPanel(document.getElementById(hashTrigger.getAttribute('aria-controls')));
+    hashTrigger.scrollIntoView({ block: 'start' });
+  }
+}
+
 initMobileMenu();
 initSearch();
 bindRail('cat-track', 'cat-prev', 'cat-next', '.category-card', 2);
@@ -460,3 +547,4 @@ initWhyStats();
 initCart();
 initFooterYear();
 initCatalog();
+initPoliciesAccordion();

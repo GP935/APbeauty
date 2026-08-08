@@ -1,0 +1,13 @@
+# Secretos y dependencias — NUNCA versionar
+.env
+.env.local
+server/.env
+server/.env.local
+node_modules/
+server/node_modules/
+
+# Logs y basura
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
