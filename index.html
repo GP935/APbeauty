@@ -150,20 +150,27 @@
     <!-- ===== 2 · HERO ===== -->
     <section class="hero" aria-labelledby="hero-titulo">
       <div class="hero-media">
-        <img src="hero/hero-editorial.webp" alt="Retrato editorial en blanco y negro de modelo de AP Beauty con maquillaje definido" fetchpriority="high">
+        <picture>
+          <source media="(max-width: 768px)" srcset="hero/hero-editorial-movil.webp">
+          <img src="hero/hero-editorial.webp" alt="Retrato editorial en blanco y negro de modelo de AP Beauty con maquillaje definido" fetchpriority="high">
+        </picture>
       </div>
-      <!-- Scrim superior para legibilidad del header blanco — dominio CSS (.hero-overlay / scrim) -->
+      <!-- Scrim superior para legibilidad del header blanco — dominio CSS (scrim) -->
       <div class="hero-scrim" aria-hidden="true"></div>
-      <div class="hero-overlay">
-        <div class="container">
-          <span class="hero-eyebrow">CONTROLLED PRESENCE</span>
-          <h1 id="hero-titulo">PRESENCE IS POWER</h1>
-          <p class="hero-sub">Maquillaje que define. No que disimula.</p>
-          <div class="hero-cta">
-            <a href="catalogo.html" class="btn-editorial btn-editorial--solid">DESCUBRIR</a>
-            <a href="#historia" class="btn-editorial btn-editorial--ghost">Nuestra historia</a>
-          </div>
-        </div>
+      <!-- Wrapper `.hero-overlay` eliminado (petición directa de Paul, 2026-08-10): el titular/CTA
+           pasan a hijos directos de `.hero` en vez de vivir en un div propio. Motivo: en móvil
+           `.hero-overlay` se volvía `position:static` con fondo sólido propio (style.css, media
+           query del hero), lo que la convertía en un 2º bloque apilado debajo de `.hero-media`
+           en vez de superpuesto sobre la foto — la sección dejaba de leerse como "una sola imagen
+           de fondo" y pasaba a ser imagen+bloque-negro-separado. Sin el wrapper, la única forma de
+           que el titular quede legible en cualquier viewport es que CSS lo posicione superpuesto
+           (absolute/inset o similar) tanto en desktop como en móvil — la foto es el único fondo
+           real de la sección en todo momento, nunca dos bloques verticales. Handoff completo con
+           la regla CSS exacta a corregir en inbox/css.md (o el agente correspondiente). -->
+      <div class="container">
+        <span class="hero-eyebrow">AP BEAUTY</span>
+        <h1 id="hero-titulo">Tu poder está en tu mirada</h1>
+        <a href="#historia" class="btn-editorial btn-editorial--ghost hero-cta__btn">Descubrir</a>
       </div>
     </section>
 

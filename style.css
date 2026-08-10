@@ -201,29 +201,128 @@ section { padding-block: var(--section-pad-y); }
 }
 
 /* --------------------------------------------------------------------------
-   2 · Hero
-   -------------------------------------------------------------------------- */
+   2 · Hero — simplificado a petición directa de Paul: solo eyebrow (nombre/
+   identidad) + h1 (slogan) + 1 CTA. Se retiró `.hero-sub` (párrafo
+   descriptivo, huérfano ahora — ver más abajo) y el botón rojo sólido
+   (`.btn-editorial--solid`, era el único CTA rojo de la marca, el comentario
+   viejo de §90 sigue documentando eso porque la clase se sigue usando en
+   otras secciones, solo dejó de usarse AQUÍ). La foto sigue siendo el fondo
+   real de la sección completa (`.hero-media` absolute inset:0, sin cambios).
+
+   `.hero-cta` (div contenedor) RETIRADO (AB-C16, petición directa de Paul) —
+   con un solo botón ya no aportaba nada envolverlo en un div propio, su
+   contenido (el `<a>`) pasa a ser hijo directo de `.container`, mismo nivel
+   que eyebrow/h1. El botón transparente sigue flotando directo sobre la
+   foto, nunca un bloque sólido — eso no cambió, solo se aplanó el wrapper.
+
+   `.hero-overlay` (div wrapper) RETIRADO del HTML por front (AB-F18, petición
+   directa de Paul) — en móvil se volvía `position:static;background:var(--negro)`
+   (ver el `@media` de abajo, versión vieja), convirtiéndose en un 2º bloque
+   apilado debajo de la foto en vez de superpuesto: la sección se leía como
+   imagen+franja-negra-separada, no como una sola foto de fondo. `.container`
+   pasa a ser hijo directo de `.hero`, junto a `.hero-media`/`.hero-scrim`.
+   Retargeteo (mi parte, AB-C17): el gradiente horizontal de legibilidad NO se
+   movió a `.hero>.container` — `.container` es una clase genérica con
+   `width:100%;max-width:var(--container-max);margin-inline:auto` (línea 73),
+   si el gradiente viviera ahí quedaría acotado a ese `max-width` y dejaría de
+   cubrir el ancho completo de la sección. Se movió a `.hero::before` (full-
+   bleed, mismo `inset:0` que la foto) — `.hero>.container` ahora SOLO
+   resuelve el centrado/ancho del contenido de texto (rol que ya tenía antes,
+   sin cambios) + el centrado vertical (`height:100%;display:flex;align-
+   items:center`, antes lo hacía `.hero-overlay`). */
 .hero { position: relative; height: 82vh; min-height: 540px; max-height: 780px; overflow: hidden; padding-block: 0; }
 .hero-media, .hero-media img { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* `.hero-media picture` (AB-C16) — mismo `<picture>` de art-direction que ya
+   usa Makeup Andrea (`<source media>` móvil + `<img>` fallback desktop). No
+   cambia el mecanismo de tamaño: el `<img>` sigue siendo el que lleva
+   `position:absolute;inset:0` de la regla de arriba (selector por etiqueta,
+   alcanza el `<img>` sin importar que ahora esté un nivel más adentro,
+   dentro de `<picture>`) — este `display:block` es solo para que el propio
+   `<picture>` (inline por defecto) no interfiera en el flujo/tamaño. */
+.hero-media picture { display: block; width: 100%; height: 100%; }
 .hero-media img { object-fit: cover; object-position: center; }
 .hero-scrim { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(0,0,0,0.45) 0%, transparent 30%); }
-.hero-overlay { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; background: linear-gradient(90deg, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.30) 45%, rgba(0,0,0,0) 75%); }
-.hero-overlay .container { color: #fff; }
+.hero::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.30) 45%, rgba(0,0,0,0) 75%); }
+/* flex-direction:column (antes implícito: `.hero-overlay` era el flex de UN
+   solo hijo -`.container`-, así que row/column no importaba ahí; los hijos
+   reales -eyebrow/h1/botón- fluían en bloque normal DENTRO de `.container`.
+   Ahora que `.container` mismo es el flex container de esos 3 elementos,
+   hace falta `column` explícito o quedan en fila). */
+/* Contenido centrado en el ALTO del `.hero` (AB-C20, petición directa de
+   Paul sobre AB-C18: el bloque quedaba pegado al borde inferior con
+   `justify-content:flex-end`+`padding-bottom` — ahora `center` real, de
+   arriba a abajo). Esta base rige MÓVIL (sin cambios, AB-C19 no la toca a
+   propósito). `align-items:center`+`text-align:center` centra
+   horizontalmente (cubre también el caso de que el h1 rompa a 2 líneas de
+   distinto ancho — `align-items` solo centra la CAJA del h1, no el texto
+   dentro si hay más de una línea). Override de DESKTOP (AB-C19, ver
+   `@media(min-width:769px)` más abajo, después de `.hero-cta__btn`) vuelve
+   el eje horizontal a izquierda — el vertical (centrado) se mantiene igual
+   en ambos, AB-C20 no tocó ese override. */
+.hero > .container {
+  position: relative; z-index: 2; height: 100%;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  text-align: center;
+  color: #fff;
+}
 .hero-eyebrow { display: inline-block; font-family: var(--font-body); font-size: 13px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 18px; opacity: .9; }
 .hero h1 { font-family: var(--font-display); font-size: 64px; font-weight: 900; line-height: 1.04; letter-spacing: -0.5px; max-width: 640px; margin: 0 0 18px; }
-.hero-sub { font-family: var(--font-body); font-size: 19px; font-weight: 400; line-height: 1.5; max-width: 460px; margin: 0 0 32px; opacity: .95; }
-.hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
+/* Glow ambiental (petición directa de Paul) — mismo mecanismo que el botón
+   RESERVAR de Andrea Makeup (2 pseudo-elementos con anillo que escala y se
+   desvanece en loop, desfasados entre sí para que nunca se vea vacío), pero
+   en blanco/translúcido en vez de relleno de color: este botón sigue siendo
+   `.btn-editorial--ghost` (fondo transparente, texto blanco, borde blanco)
+   SIN ningún cambio de esos 3 valores — el glow es luz alrededor, no un
+   relleno. Scoped a `.hero-cta__btn` (no a `.btn-editorial--ghost` global)
+   para no heredar el pulso en otros ghost buttons del sitio (confirmación,
+   hero-novias/hero-clases si vuelven a usarse, etc.). */
+.hero-cta__btn {
+  position: relative;
+  box-shadow: 0 0 20px 2px rgba(255,255,255,.35), 0 0 46px 12px rgba(255,255,255,.18);
+}
+.hero-cta__btn::before, .hero-cta__btn::after {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit;
+  border: 1.5px solid rgba(255,255,255,.75);
+  filter: blur(1.5px);
+  animation: hero-cta-pulse-ring 2.8s ease-out infinite;
+  pointer-events: none;
+}
+.hero-cta__btn::after { animation-delay: 1.4s; }
+@keyframes hero-cta-pulse-ring {
+  0%   { transform: scale(1);   opacity: .35; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-cta__btn::before, .hero-cta__btn::after { animation: none; display: none; }
+}
+
+/* Desktop/laptop (AB-C19, petición directa de Paul): el contenido vuelve al
+   TERCIO IZQUIERDO — la foto deja espacio real sin cubrir de ese lado (el
+   rostro/producto ocupan el centro-derecha del encuadre). Vertical se
+   mantiene igual que la base (tercio inferior, AB-C18) — solo cambia el eje
+   horizontal, de centrado a alineado a la izquierda. `.hero h1{max-width:
+   640px}` (ya existente) + el `padding-inline` heredado de `.container`
+   bastan para que el bloque quede confinado al tercio izquierdo sin
+   necesitar un ancho nuevo — no se tocó esa regla. min-width:769px, justo
+   arriba del punto de quiebre de 768px ya usado por el resto del hero, para
+   no solaparse con la regla móvil de abajo (que Paul pidió no tocar). */
+@media (min-width: 769px) {
+  .hero > .container { align-items: flex-start; text-align: left; }
+}
 
 @media (max-width: 768px) {
-  .hero { height: auto; min-height: 0; max-height: none; }
-  .hero-media { position: relative; height: 64vw; min-height: 300px; }
-  .hero-media img { position: absolute; }
-  .hero-overlay { position: static; background: var(--negro); padding: 40px 0; }
+  /* `.hero-media`/`.hero-overlay` YA NO se sacan de `position:absolute` acá
+     (versión vieja, causaba el apilado que Paul pidió eliminar — ver nota
+     junto a `.hero` arriba) — desktop y móvil comparten ahora el mismo
+     mecanismo de superposición, la foto siempre es el fondo real completo.
+     `aspect-ratio:9/16` (en vez de `height:64vw` fijo) — la foto móvil
+     (`hero-editorial-movil.webp`) es 9:16 real; con el aspect-ratio del
+     contenedor igual al de la imagen, `object-fit:cover` no recorta nada
+     (encaja exacto), evitando el "se ve rota" que advirtió Paul. Reemplaza
+     `min-height`/`max-height` de escritorio en vez de sumarse a ellos. */
+  .hero { height: auto; aspect-ratio: 9 / 16; min-height: 0; max-height: none; }
   .hero h1 { font-size: 38px; }
-  .hero-sub { font-size: 16px; }
-  .hero-cta { flex-direction: column; }
-  .hero-cta .btn-editorial { width: 100%; }
-  /* el CTA rojo se MANTIENE sobre el bloque hero negro en móvil (firma de marca) */
+  .hero-cta__btn { width: 100%; }
 }
 
 /* --------------------------------------------------------------------------
