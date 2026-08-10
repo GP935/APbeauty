@@ -248,21 +248,23 @@ section { padding-block: var(--section-pad-y); }
    reales -eyebrow/h1/botón- fluían en bloque normal DENTRO de `.container`.
    Ahora que `.container` mismo es el flex container de esos 3 elementos,
    hace falta `column` explícito o quedan en fila). */
-/* Contenido centrado en el ALTO del `.hero` (AB-C20, petición directa de
-   Paul sobre AB-C18: el bloque quedaba pegado al borde inferior con
-   `justify-content:flex-end`+`padding-bottom` — ahora `center` real, de
-   arriba a abajo). Esta base rige MÓVIL (sin cambios, AB-C19 no la toca a
-   propósito). `align-items:center`+`text-align:center` centra
-   horizontalmente (cubre también el caso de que el h1 rompa a 2 líneas de
-   distinto ancho — `align-items` solo centra la CAJA del h1, no el texto
-   dentro si hay más de una línea). Override de DESKTOP (AB-C19, ver
-   `@media(min-width:769px)` más abajo, después de `.hero-cta__btn`) vuelve
-   el eje horizontal a izquierda — el vertical (centrado) se mantiene igual
-   en ambos, AB-C20 no tocó ese override. */
+/* Contenido anclado al TERCIO INFERIOR (AB-C18) — esta base rige MÓVIL.
+   AB-C20 había centrado esto verticalmente (`justify-content:center`, sin
+   `padding-bottom`) pensando que el pedido era universal, pero Paul aclaró
+   (AB-C21) que el móvil estaba perfecto tal cual y NO debía tocarse — el
+   centrado vertical de AB-C20 quedó movido exclusivamente al override de
+   DESKTOP (`@media(min-width:769px)` de abajo), esta base vuelve a los
+   valores originales de AB-C18 (`flex-end`+`padding-bottom`).
+   `align-items:center`+`text-align:center` centra horizontalmente (cubre
+   también el caso de que el h1 rompa a 2 líneas de distinto ancho —
+   `align-items` solo centra la CAJA del h1, no el texto dentro si hay más
+   de una línea) — esto SÍ sigue rigiendo en ambos breakpoints, el override
+   de desktop solo toca el eje horizontal (izquierda) desde AB-C19. */
 .hero > .container {
   position: relative; z-index: 2; height: 100%;
-  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
   text-align: center;
+  padding-bottom: clamp(48px, 8vw, 96px);
   color: #fff;
 }
 .hero-eyebrow { display: inline-block; font-family: var(--font-body); font-size: 13px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 18px; opacity: .9; }
@@ -296,18 +298,22 @@ section { padding-block: var(--section-pad-y); }
   .hero-cta__btn::before, .hero-cta__btn::after { animation: none; display: none; }
 }
 
-/* Desktop/laptop (AB-C19, petición directa de Paul): el contenido vuelve al
-   TERCIO IZQUIERDO — la foto deja espacio real sin cubrir de ese lado (el
-   rostro/producto ocupan el centro-derecha del encuadre). Vertical se
-   mantiene igual que la base (tercio inferior, AB-C18) — solo cambia el eje
-   horizontal, de centrado a alineado a la izquierda. `.hero h1{max-width:
+/* Desktop/laptop — 2 pedidos apilados en el mismo override. (AB-C19) el
+   contenido vive en el TERCIO IZQUIERDO — la foto deja espacio real sin
+   cubrir de ese lado (el rostro/producto ocupan el centro-derecha del
+   encuadre): `align-items:flex-start;text-align:left`. `.hero h1{max-width:
    640px}` (ya existente) + el `padding-inline` heredado de `.container`
-   bastan para que el bloque quede confinado al tercio izquierdo sin
-   necesitar un ancho nuevo — no se tocó esa regla. min-width:769px, justo
-   arriba del punto de quiebre de 768px ya usado por el resto del hero, para
-   no solaparse con la regla móvil de abajo (que Paul pidió no tocar). */
+   bastan para confinar el bloque al tercio izquierdo, no hizo falta un
+   ancho nuevo. (AB-C20/AB-C21) el eje VERTICAL se centra SOLO acá — Paul
+   pidió centrar el bloque "de arriba a abajo" pensando en desktop, pero el
+   móvil (base de arriba) estaba perfecto tal cual y no debía tocarse; el
+   `justify-content:center` (sin `padding-bottom`, no aplica con center) se
+   movió del rule base a este `@media` para que quede scoped solo a
+   escritorio. min-width:769px, justo arriba del punto de quiebre de 768px
+   ya usado por el resto del hero, para no solaparse con la regla móvil de
+   abajo. */
 @media (min-width: 769px) {
-  .hero > .container { align-items: flex-start; text-align: left; }
+  .hero > .container { justify-content: center; padding-bottom: 0; align-items: flex-start; text-align: left; }
 }
 
 @media (max-width: 768px) {
