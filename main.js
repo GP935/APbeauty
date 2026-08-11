@@ -132,6 +132,15 @@ function bindRail(trackId, prevId, nextId, cardSelector, perPage = 1) {
 // `price` SIEMPRE en céntimos enteros (24,90€ → 2490); se formatea a € solo para mostrar.
 const CART_KEY = 'ap_cart';
 
+// Mercado Pago (Fase 2, LatAm/Perú — AP-B5). Clave PÚBLICA de prueba, formato
+// corregido por Paul 2026-08-10 (el briefing original traía el prefijo inválido
+// `APP_USR-TEST-...` — `APP_USR-` es producción y `TEST-` es test, combinarlos
+// no es un formato real de Mercado Pago; probable causa raíz del Brick mudo).
+// A diferencia de MP_ACCESS_TOKEN (backend, secreta), esta va expuesta en el
+// cliente a propósito. PENDIENTE: swap a la clave pública real de producción
+// (APP_USR-..., no TEST-...) antes de lanzar.
+const MP_PUBLIC_KEY = 'TEST-547dad31-b803-4d01-bc8a-0ada2b986f62';
+
 function readCart() {
   try {
     const data = JSON.parse(localStorage.getItem(CART_KEY));
@@ -359,6 +368,202 @@ function initCart() {
   if (location.pathname.endsWith('confirmacion.html')) clearCart();
 
   renderCart();
+
+  // Fase 2 — router dual-market (AP-B5). No bloquea el flujo Stripe: si falla
+  // o el mercado sigue siendo 'stripe', #btn-checkout queda tal cual ya lo
+  // dejó el bloque de arriba.
+  initPaymentGateway();
+}
+
+// Carga perezosa del SDK de Mercado Pago (solo si el mercado lo requiere).
+// Reutiliza el <script> si ya se insertó (evita duplicarlo en re-renders).
+function loadMercadoPagoSdk() {
+  if (window.MercadoPago) return Promise.resolve();
+  const existing = document.getElementById('mp-sdk');
+  if (existing) {
+    return new Promise((resolve, reject) => {
+      existing.addEventListener('load', resolve, { once: true });
+      existing.addEventListener('error', reject, { once: true });
+    });
+  }
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.id = 'mp-sdk';
+    script.src = 'https://sdk.mercadopago.com/js/v2';
+    script.addEventListener('load', resolve, { once: true });
+    script.addEventListener('error', reject, { once: true });
+    document.head.appendChild(script);
+  });
+}
+
+// Mensaje de error inline junto al Brick — mismo criterio que el error de
+// #btn-checkout (Stripe): feedback dentro de mi dominio, sin clase CSS nueva
+// pedida a css para esto (estilo mínimo heredado de párrafo simple).
+function showMpError(el, msg) {
+  if (!el) return;
+  el.textContent = msg;
+  el.hidden = false;
+}
+
+// Monta el Card Payment Brick dentro de `container` (ya insertado en el DOM
+// por initPaymentGateway). `orderId`/`amount` vienen de POST /api/mp/create-order
+// — el Brick nunca decide el importe, solo lo muestra (initialization.amount).
+async function mountMercadoPagoBrick(container, errorEl, orderId, amount) {
+  await loadMercadoPagoSdk();
+  const mp = new window.MercadoPago(MP_PUBLIC_KEY, { locale: 'es-PE' });
+  const bricksBuilder = mp.bricks();
+
+  await bricksBuilder.create('cardPayment', container.id, {
+    initialization: { amount },
+    customization: {
+      visual: {
+        style: {
+          theme: 'default',
+          // Paleta "tinta" del proyecto — el briefing deja abierto si el Brick
+          // soporta paridad 1:1 con el Payment Element de Stripe; sin credenciales
+          // válidas no pude verificar el render final con clic real, solo que
+          // customVariables se acepta sin error de la SDK.
+          customVariables: {
+            textPrimaryColor: '#0A0A0A',
+            formBackgroundColor: '#F7F7F5',
+            baseColor: '#6B2737',
+          },
+        },
+      },
+    },
+    callbacks: {
+      onReady: () => {},
+      // El argumento de onSubmit varía entre ejemplos/versiones de la SDK de MP:
+      // el briefing lo muestra plano (`cardFormData`), otras referencias lo
+      // envuelven en `{ formData }`. Soporto ambas formas sin asumir cuál aplica.
+      onSubmit: (payload) => new Promise((resolve, reject) => {
+        const formData = (payload && payload.formData) || payload || {};
+        // Solo orderId + datos de tarjeta tokenizados: el importe SIEMPRE lo
+        // resuelve el servidor desde el pedido (AP-B5, invariante 1) — nunca
+        // se manda transaction_amount/installments del formData del Brick.
+        const payload = {
+          orderId,
+          token: formData.token,
+          issuer_id: formData.issuer_id,
+          payment_method_id: formData.payment_method_id,
+          payer: { email: formData.payer?.email },
+        };
+        fetch('/api/mp/process-payment', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+          .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+          .then(({ ok, data }) => {
+            resolve(); // resuelve siempre: el Brick solo espera que la promesa termine
+            if (!ok) { showMpError(errorEl, 'No se pudo procesar el pago. Inténtalo de nuevo.'); return; }
+            if (data.status === 'approved') {
+              clearCart();
+              window.location.href = 'confirmacion.html';
+            } else if (data.status === 'in_process' || data.status === 'pending') {
+              // Común en bancos peruanos: el pago queda en revisión, el webhook
+              // confirma después — no marcar "pagado" aquí (invariante 5).
+              clearCart();
+              window.location.href = 'confirmacion.html?estado=pendiente';
+            } else {
+              showMpError(errorEl, 'El pago fue rechazado. Prueba con otra tarjeta.');
+            }
+          })
+          .catch(() => {
+            reject();
+            showMpError(errorEl, 'No se pudo procesar el pago. Inténtalo de nuevo.');
+          });
+      }),
+      onError: (error) => {
+        console.error('Mercado Pago — error del Brick:', error);
+        showMpError(errorEl, 'No se pudo cargar el formulario de pago.');
+      },
+    },
+  });
+}
+
+// Router dual-market (AP-B5) — GET /api/market es la fuente única (evita
+// duplicar `pasarelaPara` en el cliente). Si el mercado es 'stripe' (default,
+// incluye cualquier fallo de red) no toca nada: #btn-checkout ya está cableado
+// arriba (AP-J1). Si es 'mercadopago', reemplaza ese botón por el Card Payment
+// Brick — construye el contenedor por JS (sin depender de markup nuevo en
+// carrito.html) siguiendo el mismo criterio que el resto del archivo usa para
+// nodos que no existen de antemano (`buildLine` clona `#cart-line-tpl`).
+async function initPaymentGateway() {
+  const btnCheckout = document.getElementById('btn-checkout');
+  if (!btnCheckout) return; // solo aplica en carrito.html
+
+  let market;
+  try {
+    const res = await fetch('/api/market');
+    market = await res.json();
+  } catch (_) {
+    return;
+  }
+  if (!market || market.gateway !== 'mercadopago') return;
+
+  const summary = btnCheckout.closest('.cart-summary');
+  if (!summary) return;
+
+  const cart = readCart();
+  const items = cart.items.filter((i) => i.qty > 0).map((i) => ({ id: i.id, quantity: i.qty }));
+  if (items.length === 0) return; // carrito vacío: se resuelve al recargar con items
+
+  // NO uso `.hidden` aquí: `.cart-summary__checkout`/`.cart-summary__secure` ya
+  // traen `display:flex` propio en style.css, que gana por especificidad sobre
+  // la regla `[hidden]{display:none}` del user-agent (mismo bug documentado en
+  // AP Beauty catálogo — `.cat-item[hidden]`/`.accordion-panel[hidden]` existen
+  // ahí por esto). Clase `.is-hidden-mp` a definir por css (pedido en su inbox).
+  btnCheckout.classList.add('is-hidden-mp');
+  // Copy "Pago seguro gestionado por Stripe" no aplica a este mercado — la
+  // oculto en vez de reescribirla (el texto es dominio de front/copy, no mío).
+  // Solicitud dejada en inbox/front.md: versión de este texto agnóstica de proveedor.
+  const secure = summary.querySelector('.cart-summary__secure');
+  if (secure) secure.classList.add('is-hidden-mp');
+
+  const container = document.createElement('div');
+  container.id = 'cardPaymentBrick_container';
+  container.className = 'mp-brick-container';
+  btnCheckout.insertAdjacentElement('afterend', container);
+
+  const errorEl = document.createElement('p');
+  errorEl.className = 'mp-brick-error';
+  errorEl.setAttribute('role', 'alert');
+  errorEl.hidden = true;
+  container.insertAdjacentElement('afterend', errorEl);
+
+  try {
+    const orderRes = await fetch('/api/mp/create-order', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ items }),
+    });
+    const order = await orderRes.json().catch(() => ({}));
+    if (!orderRes.ok || !order.orderId) throw new Error(order.error || 'order_failed');
+
+    await mountMercadoPagoBrick(container, errorEl, order.orderId, order.amount);
+  } catch (err) {
+    console.error('Mercado Pago — no se pudo iniciar el checkout:', err);
+    showMpError(errorEl, 'No se pudo cargar el pago. Recarga la página o inténtalo más tarde.');
+  }
+}
+
+// confirmacion.html — variante "pago en revisión" (Mercado Pago in_process/
+// pending, común en bancos peruanos). El estado "aprobado" reutiliza el texto
+// existente tal cual (mismo destino que el success_url de Stripe). Copy propio
+// de criterio (no hay brief de front para este caso nuevo) — señalado en el log.
+function initConfirmationState() {
+  if (!location.pathname.endsWith('confirmacion.html')) return;
+  if (new URLSearchParams(location.search).get('estado') !== 'pendiente') return;
+
+  const section = document.querySelector('.confirmation');
+  if (!section) return;
+  const eyebrow = section.querySelector('.eyebrow');
+  const title = section.querySelector('h1');
+  const text = section.querySelector('.confirmation__text');
+  if (eyebrow) eyebrow.textContent = 'PEDIDO EN REVISIÓN';
+  if (title) title.textContent = 'Estamos confirmando tu pago';
+  if (text) text.textContent = 'Tu banco está procesando el pago — algunos bancos peruanos tardan unos minutos en confirmar. Te avisaremos por correo en cuanto quede aprobado.';
 }
 
 // 4 · "Por qué AP Beauty" — count-up + reveal escalonado de stats
@@ -548,3 +753,4 @@ initCart();
 initFooterYear();
 initCatalog();
 initPoliciesAccordion();
+initConfirmationState();

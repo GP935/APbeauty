@@ -964,6 +964,9 @@ section { padding-block: var(--section-pad-y); }
   font: 400 .78rem/1.4 var(--font-body); color: var(--gris-texto);
 }
 .cart-summary__secure svg { color: var(--gris-muted); flex-shrink: 0; }
+/* [hidden] no gana por especificidad a .cart-summary__checkout{display:flex}/.cart-summary__secure{display:flex} (mismo bug que .cat-item[hidden]) — NUNCA usar [hidden] a secas aquí, siempre esta clase */
+.cart-summary__checkout.is-hidden-mp,
+.cart-summary__secure.is-hidden-mp { display: none; }
 
 @media (min-width: 900px) {
   .cart-page__layout { grid-template-columns: 1fr 360px; }
