@@ -161,6 +161,7 @@
           <a class="cat-pill is-active" href="catalogo.html" data-cat="">Todos</a>
           <a class="cat-pill" href="catalogo.html?cat=labios" data-cat="labios">Labios</a>
           <a class="cat-pill" href="catalogo.html?cat=ojos" data-cat="ojos">Ojos</a>
+          <a class="cat-pill" href="catalogo.html?cat=pestanas" data-cat="pestanas">Pestañas</a>
           <a class="cat-pill" href="catalogo.html?cat=rostro" data-cat="rostro">Rostro</a>
           <a class="cat-pill" href="catalogo.html?cat=sets" data-cat="sets">Sets</a>
           <a class="cat-pill" href="catalogo.html?cat=brochas" data-cat="brochas">Brochas</a>
@@ -172,29 +173,148 @@
     <!-- ===== B · LISTADO EDITORIAL APILADO ===== -->
     <!-- CONTRATO (ley): cada SKU = <article class="cat-item" data-category="<slug>"> con orden interno
          media → content SIEMPRE. La alternancia de lado la hace CSS con :nth-child(even) order — NUNCA aquí.
-         Slugs: labios · ojos · rostro · sets · brochas. CTA "Descubrir" → ficha futura /producto/<handle>.
-         "Próximamente" (Sets/Brochas): cat-item--soon, sin precio ni CTA, badge en vez de precio.
-         SEO: Product schema SOLO en los activos (sin cat-item--soon). -->
+         Slugs: labios · ojos · pestanas · rostro · sets · brochas. CTA "Descubrir" → ficha futura /producto/<handle>.
+         "Próximamente" (Sets/Brochas/Paquetes): cat-item--soon, sin precio ni CTA, badge en vez de precio.
+         "Agotado" (Sculpt Liner/Lip Eclipse/Power Matte): cat-item--agotado, precio visible + badge "Agotado", SIN CTA.
+         Único SKU comprable ahora mismo: Individuales (pestañas). Los demás quedan en catálogo como escaparate.
+         SEO: Product schema con availability OutOfStock en cat-item--agotado; InStock solo en Individuales. -->
     <div class="catalog-list">
 
-      <!-- 1 · Power Lash (activo · ojos · el más vendido) -->
-      <article class="cat-item" id="power-lash" data-category="ojos">
+      <!-- 1 · Individuales (activo · pestañas · UN solo producto con selector de diseño + talla) -->
+      <!-- ============ CONTRATO JS — initLashPicker() (dominio js) ==================================
+           Un producto, 5 diseños, tallas por diseño. El botón .add-to-cart lee SU dataset al hacer
+           clic (initCart → addToCart(btn.dataset)); JS debe mantener esos data-* sincronizados con la
+           selección activa en todo momento (mantener SIEMPRE una selección válida).
+
+           Fuentes de verdad en el markup:
+           · .lash-swatch (5) → data-slug · data-tallas ("S,M,L" | "unica") · data-cart-name ·
+                                data-price (céntimos, coincide con el precio visible) · data-priceid ·
+                                data-image · aria-controls (id del .lash-panel) · aria-pressed
+           · .lash-panel (5)  → copy visible del diseño (desc + meta + precio). [hidden] salvo el activo.
+           · #lash-sizes .lash-size (S/M/L) + #lash-size-unica (texto "Talla única")
+           · .cat-item__media img[data-lash-media] → foto que cambia por diseño
+
+           Al elegir diseño (.lash-swatch):
+             1. .is-active + aria-pressed="true" en el swatch (resto a false)
+             2. quitar [hidden] de su .lash-panel (aria-controls); [hidden] en los otros 4
+             3. img[data-lash-media]: src = data-image ; alt = "Pestañas individuales <cart-name> de AP Beauty en su estuche"
+             4. data-tallas="unica"  → [hidden] en #lash-sizes, quitar [hidden] de #lash-size-unica, talla efectiva = "Talla única"
+                data-tallas="S,M,L"  → quitar [hidden] de #lash-sizes, [hidden] en #lash-size-unica (conservar/normalizar talla activa)
+             5. recomponer el botón .add-to-cart (abajo)
+           Al elegir talla (.lash-size): marcar activa (.is-active + aria-pressed) y recomponer el botón.
+
+           Recomposición de .add-to-cart desde swatch activo + talla activa:
+             data-id      = "individuales-" + slug + "-" + (size | "unica")   (id único diseño+talla → líneas separadas)
+             data-name    = "Individuales · " + cartName + " · Talla " + size   (o " · Talla única")
+             data-price   = swatch.dataset.price
+             data-priceid = swatch.dataset.priceid
+             data-image   = swatch.dataset.image
+
+           Estado inicial servido por front: Icónica / Talla M (editable moviendo .is-active +
+           aria-pressed + [hidden]). Precios en S/ (soles) — ver handoff en inbox/js sobre formatEuros().
+           Fotos: pestanas-catalogo/<slug>.jpg (entregadas por Paul 2026-08-31).
+           PENDIENTE Paul: 5 Price IDs de Stripe (placeholders TODO_STRIPE_PRICE_ID_*).
+           ========================================================================================= -->
+      <article class="cat-item cat-item--lash" id="individuales" data-category="pestanas">
         <div class="cat-item__media">
-          <img src="products/pestanas-destacado.jpg" alt="Pestañas postizas Power Lash de AP Beauty en su estuche" fetchpriority="high" width="800" height="800">
+          <img src="pestanas-catalogo/iconica.jpg" alt="Pestañas individuales Icónica de AP Beauty en su estuche" data-lash-media fetchpriority="high" width="800" height="800">
         </div>
         <div class="cat-item__content">
-          <p class="eyebrow">OJOS · EL MÁS VENDIDO</p>
-          <h2 class="cat-item__name">Power Lash</h2>
-          <p class="cat-item__desc">Pestañas postizas reutilizables de acabado natural. Ligeras, cómodas y diseñadas para realzar la mirada.</p>
-          <p class="cat-item__price">S/ 45,00</p>
+          <p class="eyebrow">PESTAÑAS · INDIVIDUALES</p>
+          <h2 class="cat-item__name">Línea de Individuales</h2>
+
+          <div class="lash-picker__group">
+            <p class="lash-picker__label" id="lash-design-label">Diseño</p>
+            <div class="lash-swatches" role="group" aria-labelledby="lash-design-label">
+              <button class="lash-swatch" type="button" data-slug="esencial" data-tallas="S,M,L" data-cart-name="Esencial" data-price="2500" data-priceid="TODO_STRIPE_PRICE_ID_ESENCIAL" data-image="pestanas-catalogo/esencial.jpg" aria-pressed="false" aria-controls="lash-panel-esencial">
+                <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-catalogo/esencial.jpg" alt="" width="128" height="128" loading="lazy"></span>
+                <span class="lash-swatch__name">Esencial</span>
+              </button>
+              <button class="lash-swatch is-active" type="button" data-slug="iconica" data-tallas="S,M,L" data-cart-name="Icónica" data-price="3500" data-priceid="TODO_STRIPE_PRICE_ID_ICONICA" data-image="pestanas-catalogo/iconica.jpg" aria-pressed="true" aria-controls="lash-panel-iconica">
+                <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-catalogo/iconica.jpg" alt="" width="128" height="128" loading="lazy"></span>
+                <span class="lash-swatch__name">Icónica</span>
+              </button>
+              <button class="lash-swatch" type="button" data-slug="despierta" data-tallas="unica" data-cart-name="Despierta" data-price="3000" data-priceid="TODO_STRIPE_PRICE_ID_DESPIERTA" data-image="pestanas-catalogo/despierta.jpg" aria-pressed="false" aria-controls="lash-panel-despierta">
+                <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-catalogo/despierta.jpg" alt="" width="128" height="128" loading="lazy"></span>
+                <span class="lash-swatch__name">Despierta</span>
+              </button>
+              <button class="lash-swatch" type="button" data-slug="suspiro" data-tallas="S,M,L" data-cart-name="Suspiro" data-price="2500" data-priceid="TODO_STRIPE_PRICE_ID_SUSPIRO" data-image="pestanas-catalogo/suspiro.jpg" aria-pressed="false" aria-controls="lash-panel-suspiro">
+                <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-catalogo/suspiro.jpg" alt="" width="128" height="128" loading="lazy"></span>
+                <span class="lash-swatch__name">Suspiro</span>
+              </button>
+              <button class="lash-swatch" type="button" data-slug="anhelada" data-tallas="S,M,L" data-cart-name="Anhelada" data-price="4000" data-priceid="TODO_STRIPE_PRICE_ID_ANHELADA" data-image="pestanas-catalogo/anhelada.jpg" aria-pressed="false" aria-controls="lash-panel-anhelada">
+                <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-catalogo/anhelada.jpg" alt="" width="128" height="128" loading="lazy"></span>
+                <span class="lash-swatch__name">Anhelada</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="lash-panels" aria-live="polite">
+            <div class="lash-panel" id="lash-panel-esencial" data-slug="esencial" hidden>
+              <p class="cat-item__desc">Pensada para piel madura y novias reales. Se mezcla a la perfección con la pestaña natural, realzando sin alterar la mirada. La elección ideal cuando el objetivo es que "parezca que no traes nada puesto".</p>
+              <dl class="lash-panel__meta">
+                <div class="lash-panel__row"><dt>Ideal para</dt><dd>Piel madura, novias, looks de día</dd></div>
+                <div class="lash-panel__row"><dt>Efecto</dt><dd>Natural, integrado, imperceptible</dd></div>
+                <div class="lash-panel__row"><dt>Contenido</dt><dd>48 pestañas</dd></div>
+              </dl>
+              <p class="cat-item__price">S/ 25,00</p>
+            </div>
+            <div class="lash-panel" id="lash-panel-iconica" data-slug="iconica">
+              <p class="cat-item__desc">Nuestro modelo más pedido. Se ve poblada y con carácter, pero conserva un aire natural que la hace versátil para cualquier ocasión. La favorita de nuestras clientas.</p>
+              <dl class="lash-panel__meta">
+                <div class="lash-panel__row"><dt>Ideal para</dt><dd>Uso diario, looks versátiles</dd></div>
+                <div class="lash-panel__row"><dt>Efecto</dt><dd>Volumen poblado, natural</dd></div>
+                <div class="lash-panel__row"><dt>Contenido</dt><dd>60 pestañas</dd></div>
+              </dl>
+              <p class="cat-item__price">S/ 35,00</p>
+            </div>
+            <div class="lash-panel" id="lash-panel-despierta" data-slug="despierta" hidden>
+              <p class="cat-item__desc">Puntas que abren y agrandan la mirada, dando un efecto despierto y luminoso. Perfecta para quienes buscan una mirada más grande sin recurrir a técnicas dramáticas.</p>
+              <dl class="lash-panel__meta">
+                <div class="lash-panel__row"><dt>Ideal para</dt><dd>Agrandar la mirada, looks frescos</dd></div>
+                <div class="lash-panel__row"><dt>Efecto</dt><dd>Ojo abierto, "eye-opening"</dd></div>
+                <div class="lash-panel__row"><dt>Contenido</dt><dd>60 pestañas</dd></div>
+              </dl>
+              <p class="cat-item__price">S/ 30,00</p>
+            </div>
+            <div class="lash-panel" id="lash-panel-suspiro" data-slug="suspiro" hidden>
+              <p class="cat-item__desc">Un efecto lateral sutil que estira la mirada con delicadeza. Elegante y liviano, ideal para quienes buscan una mirada alargada sin perder naturalidad.</p>
+              <dl class="lash-panel__meta">
+                <div class="lash-panel__row"><dt>Ideal para</dt><dd>Mirada alargada y sutil</dd></div>
+                <div class="lash-panel__row"><dt>Efecto</dt><dd>Cat eye suave, elegante</dd></div>
+                <div class="lash-panel__row"><dt>Contenido</dt><dd>72 pestañas</dd></div>
+              </dl>
+              <p class="cat-item__price">S/ 25,00</p>
+            </div>
+            <div class="lash-panel" id="lash-panel-anhelada" data-slug="anhelada" hidden>
+              <p class="cat-item__desc">El modelo más querido por nuestra comunidad. Su efecto alargado crea una mirada envolvente y memorable — el favorito indiscutible.</p>
+              <dl class="lash-panel__meta">
+                <div class="lash-panel__row"><dt>Ideal para</dt><dd>Looks de impacto, ocasiones especiales</dd></div>
+                <div class="lash-panel__row"><dt>Efecto</dt><dd>Alargado, dramático pero elegante</dd></div>
+                <div class="lash-panel__row"><dt>Contenido</dt><dd>30 pestañas</dd></div>
+              </dl>
+              <p class="cat-item__price">S/ 40,00</p>
+            </div>
+          </div>
+
+          <div class="lash-picker__group">
+            <p class="lash-picker__label" id="lash-size-label">Talla</p>
+            <div class="lash-sizes" id="lash-sizes" role="group" aria-labelledby="lash-size-label">
+              <button class="lash-size" type="button" data-size="S" aria-pressed="false">S</button>
+              <button class="lash-size is-active" type="button" data-size="M" aria-pressed="true">M</button>
+              <button class="lash-size" type="button" data-size="L" aria-pressed="false">L</button>
+            </div>
+            <p class="lash-size-unica" id="lash-size-unica" hidden>Talla única</p>
+          </div>
+
           <div class="cat-item__actions">
-            <button class="add-to-cart btn-editorial btn-editorial--solid" data-id="power-lash" data-name="Power Lash" data-price="1990" data-priceid="price_1TqB7ARsF6KmY8R7maXDZ6CQ" data-image="products/pestanas-destacado.jpg">Añadir</button>
+            <button class="add-to-cart btn-editorial btn-editorial--solid" data-id="individuales-iconica-M" data-name="Individuales · Icónica · Talla M" data-price="3500" data-priceid="TODO_STRIPE_PRICE_ID_ICONICA" data-image="pestanas-catalogo/iconica.jpg">Añadir</button>
           </div>
         </div>
       </article>
 
-      <!-- 2 · Sculpt Liner (activo · ojos) -->
-      <article class="cat-item" id="sculpt-liner" data-category="ojos">
+      <!-- 2 · Sculpt Liner (AGOTADO · ojos) — sin CTA hasta reposición -->
+      <article class="cat-item cat-item--agotado" id="sculpt-liner" data-category="ojos">
         <div class="cat-item__media">
           <img src="products/sculpt-liner-destacado.webp" alt="Delineador de precisión Sculpt Liner de AP Beauty" loading="lazy" width="800" height="800">
         </div>
@@ -203,14 +323,12 @@
           <h2 class="cat-item__name">Sculpt Liner</h2>
           <p class="cat-item__desc">Delineador de precisión. Punta firme para un trazo limpio, de la línea más fina al alado más marcado.</p>
           <p class="cat-item__price">S/ 39,99</p>
-          <div class="cat-item__actions">
-            <button class="add-to-cart btn-editorial btn-editorial--solid" data-id="sculpt-liner" data-name="Sculpt Liner" data-price="1890" data-priceid="price_1TqB75RsF6KmY8R7b6qDipxm" data-image="products/sculpt-liner-destacado.webp">Añadir</button>
-          </div>
+          <p class="cat-item__soon cat-item__agotado">Agotado</p>
         </div>
       </article>
 
-      <!-- 3 · Lip Eclipse (activo · labios) -->
-      <article class="cat-item" id="labial-lip-eclipse" data-category="labios">
+      <!-- 3 · Lip Eclipse (AGOTADO · labios) — sin CTA hasta reposición -->
+      <article class="cat-item cat-item--agotado" id="labial-lip-eclipse" data-category="labios">
         <div class="cat-item__media">
           <img src="products/labial-destacado.webp" alt="Labial mate Lip Eclipse de AP Beauty" loading="lazy" width="800" height="800">
         </div>
@@ -219,14 +337,12 @@
           <h2 class="cat-item__name">Lip Eclipse</h2>
           <p class="cat-item__desc">Labial mate de larga duración. Color pleno, acabado seco y un trazo que no se mueve en todo el día.</p>
           <p class="cat-item__price">S/ 55,99</p>
-          <div class="cat-item__actions">
-            <button class="add-to-cart btn-editorial btn-editorial--solid" data-id="lip-eclipse" data-name="Lip Eclipse" data-price="2490" data-priceid="price_1TqB72RsF6KmY8R7jUG5QSaR" data-image="products/labial-destacado.webp">Añadir</button>
-          </div>
+          <p class="cat-item__soon cat-item__agotado">Agotado</p>
         </div>
       </article>
 
-      <!-- 4 · Power Matte (activo · rostro) -->
-      <article class="cat-item" id="power-matte" data-category="rostro">
+      <!-- 4 · Power Matte (AGOTADO · rostro) — sin CTA hasta reposición -->
+      <article class="cat-item cat-item--agotado" id="power-matte" data-category="rostro">
         <div class="cat-item__media">
           <img src="products/power-matte-destacado.webp" alt="Paleta de rubor y contorno Power Matte de AP Beauty" loading="lazy" width="800" height="800">
         </div>
@@ -235,9 +351,7 @@
           <h2 class="cat-item__name">Power Matte</h2>
           <p class="cat-item__desc">Paleta de rubor y contorno en acabado mate. Estructura el rostro y define los volúmenes con precisión de estudio.</p>
           <p class="cat-item__price">S/ 79,99</p>
-          <div class="cat-item__actions">
-            <button class="add-to-cart btn-editorial btn-editorial--solid" data-id="power-matte" data-name="Power Matte" data-price="3990" data-priceid="price_1TqB74RsF6KmY8R7B9IPDLCd" data-image="products/power-matte-destacado.webp">Añadir</button>
-          </div>
+          <p class="cat-item__soon cat-item__agotado">Agotado</p>
         </div>
       </article>
 

@@ -533,11 +533,22 @@ section { padding-block: var(--section-pad-y); }
   font: 600 clamp(1.5rem, 1.8vw, 1.85rem)/1 var(--font-display);
   color: var(--negro); margin: 0 0 clamp(20px, 2.4vw, 28px);
 }
-.spotlight-text .btn-editorial { align-self: flex-start; margin-top: 4px; }
+/* Acciones — wrapper de los 2 botones (Añadir + "Ver todos los modelos"), AB-C23.
+   El align-self/margin-top vivían en `.spotlight-text .btn-editorial` cuando había
+   un solo botón hijo directo; con el wrapper se mueven aquí. */
+.spotlight-actions { display: flex; flex-wrap: wrap; gap: 14px; align-self: flex-start; margin-top: 4px; }
+/* la columna de texto es estrecha (max-width:460) → los 2 botones se apilan;
+   sin nowrap el label largo ("Ver todos los modelos") parte en 2 líneas. */
+.spotlight-actions .btn-editorial { white-space: nowrap; }
 /* CTA NEGRO — el único acento rojo de la sección es el filete del eyebrow; el
    único CTA rojo de la página es "DESCUBRIR" del hero (regla rojo ≤10%/escasez). */
 .spotlight .btn-editorial--solid { background: var(--negro); }
 .spotlight .btn-editorial--solid:hover { background: var(--color-ink-soft); }
+/* `.btn-editorial--ghost` global es blanco (texto+borde, para hero oscuro); sobre
+   `.spotlight { background: var(--color-bg-alt) }` es casi invisible → variante
+   oscura scopeada (mismo fix que `.confirmation` / `.hero-novias__cta`). */
+.spotlight-actions .btn-editorial--ghost { color: var(--negro); border-color: var(--negro); }
+.spotlight-actions .btn-editorial--ghost:hover { background: var(--negro); color: #fff; }
 /* MÓVIL — apila: imagen arriba, texto debajo */
 @media (max-width: 768px) {
   .spotlight-grid { grid-template-columns: 1fr; min-height: 0; }
@@ -831,6 +842,84 @@ section { padding-block: var(--section-pad-y); }
   .cat-item { grid-template-columns: 1fr; gap: clamp(20px, 5vw, 32px); }
   .cat-item:nth-child(even) .cat-item__media { order: 0; }
   .cat-item__content { max-width: none; }
+}
+
+/* --------------------------------------------------------------------------
+   14b · SELECTOR DE INDIVIDUALES (catalogo.html · .cat-item--lash · AB-C22)
+   El primer .cat-item es UN producto con 5 diseños + talla (tarjeta "hero" del
+   catálogo). Fondo claro (nth-child impar) — sin inversión charcoal. Hereda
+   eyebrow con filete rojo + título Playfair + .cat-item__desc/.cat-item__price.
+   Rojo ≤10%: sin rojo nuevo aquí — la selección activa se marca en negro.
+   GOTCHA [hidden]: .lash-panel / .lash-sizes / .lash-size-unica los togglea JS
+   con el atributo hidden → regla [hidden]{display:none} repuesta abajo (mismo
+   bug que .cat-item[hidden] / .accordion-panel[hidden]).
+   -------------------------------------------------------------------------- */
+.cat-item--lash { align-items: start; }                         /* contenido alto: imagen al tope, no centrada */
+.cat-item--lash .cat-item__content { max-width: 520px; }
+
+/* Grupo Diseño / Talla — rótulo + control */
+.lash-picker__group { width: 100%; margin: 0 0 clamp(20px, 2.6vw, 30px); }
+.lash-picker__label {
+  display: block;
+  font: 600 .7rem/1 var(--font-body); letter-spacing: .18em; text-transform: uppercase;
+  color: var(--gris-texto); margin: 0 0 12px;
+}
+
+/* Diseño — grid de 5 miniaturas */
+.lash-swatches { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; }
+.lash-swatch {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 8px 4px 10px;
+  background: none; border: 1px solid var(--borde); border-radius: var(--radius-soft);
+  cursor: pointer; transition: border-color .18s, background .18s;
+}
+.lash-swatch:hover { border-color: var(--color-gray); }
+.lash-swatch.is-active { border-color: var(--negro); background: var(--fondo-alt); }
+.lash-swatch__thumb {
+  display: block; width: 100%; aspect-ratio: 1; overflow: hidden;
+  border-radius: 6px; background: var(--fondo-alt);
+}
+.lash-swatch__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.lash-swatch__name {
+  font: 600 .68rem/1.2 var(--font-body); letter-spacing: .03em; text-align: center;
+  color: var(--gris-texto);
+}
+.lash-swatch.is-active .lash-swatch__name { color: var(--negro); }
+
+/* Panel del diseño activo — .cat-item__desc (heredada) + specs + .cat-item__price (heredada) */
+.lash-panels { width: 100%; }
+.lash-panel__meta { margin: 0 0 clamp(20px, 2.4vw, 28px); width: 100%; }
+.lash-panel__row {
+  display: flex; gap: 16px; align-items: baseline;
+  padding: 8px 0; border-bottom: 1px solid var(--borde);
+  font: 400 .9rem/1.5 var(--font-body);
+}
+.lash-panel__row dt { flex: 0 0 8.5rem; font-weight: 600; color: var(--gris-texto); }
+.lash-panel__row dd { flex: 1; margin: 0; color: #4A4A4A; }
+
+/* Talla — S/M/L o "Talla única" */
+.lash-sizes { display: flex; gap: 8px; }
+.lash-size {
+  min-width: 48px; padding: 10px 14px;
+  background: none; border: 1px solid var(--borde); border-radius: var(--radius-soft);
+  font: 600 .8rem/1 var(--font-body); color: var(--gris-texto);
+  cursor: pointer; transition: border-color .18s, background .18s, color .18s;
+}
+.lash-size:hover { border-color: var(--color-gray); }
+.lash-size.is-active { background: var(--negro); border-color: var(--negro); color: #fff; }
+.lash-size-unica { margin: 0; font: 500 .9rem/1.4 var(--font-body); color: var(--gris-texto); }
+
+/* GOTCHA OBLIGATORIO — restaura el hide del navegador (JS togglea `hidden`) */
+.lash-panel[hidden],
+.lash-sizes[hidden],
+.lash-size-unica[hidden] { display: none; }
+
+/* Móvil — miniaturas más juntas, specs apiladas */
+@media (max-width: 768px) {
+  .lash-swatches { gap: 6px; }
+  .lash-swatch__name { font-size: .62rem; }
+  .lash-panel__row { flex-direction: column; gap: 2px; }
+  .lash-panel__row dt { flex: none; }
 }
 
 /* --------------------------------------------------------------------------

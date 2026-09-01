@@ -129,7 +129,8 @@ function bindRail(trackId, prevId, nextId, cardSelector, perPage = 1) {
 
 // 3 · Carrito — modelo persistente en localStorage `ap_cart` (AB-J6)
 // Forma: { items: [ { id, name, price, priceId, qty, image } ] }
-// `price` SIEMPRE en céntimos enteros (24,90€ → 2490); se formatea a € solo para mostrar.
+// `price` SIEMPRE en céntimos enteros (S/ 24,90 → 2490); se formatea a soles solo para mostrar.
+// Moneda visible de AP Beauty: soles peruanos (S/) — alineado con el catálogo (AB-F21/AB-F22).
 const CART_KEY = 'ap_cart';
 
 // Mercado Pago (Fase 2, LatAm/Perú — AP-B5). Clave PÚBLICA de prueba, formato
@@ -153,9 +154,9 @@ function writeCart(cart) {
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
 }
 
-// céntimos → "24,90€"
-function formatEuros(cents) {
-  return (cents / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '€';
+// céntimos → "S/ 24,90"  (mismo formato numérico que el catálogo: coma decimal, punto de millar)
+function formatPEN(cents) {
+  return 'S/ ' + (cents / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 const cartQty = (cart) => cart.items.reduce((n, i) => n + i.qty, 0);
@@ -172,7 +173,7 @@ function buildLine(item) {
   const name = li.querySelector('.cart-line__name');
   if (name) name.textContent = item.name || '';
   const price = li.querySelector('.cart-line__price');
-  if (price) price.textContent = formatEuros(item.price);
+  if (price) price.textContent = formatPEN(item.price);
   const qval = li.querySelector('.cart-line__qval');
   if (qval) qval.textContent = item.qty;
   return li;
@@ -203,7 +204,7 @@ function renderCart() {
     const sub = document.getElementById('cart-subtotal');
     if (empty) empty.hidden = hasItems;
     if (foot) foot.hidden = !hasItems;
-    if (sub) sub.textContent = formatEuros(subtotal);
+    if (sub) sub.textContent = formatPEN(subtotal);
   }
 
   const pageItems = document.getElementById('cart-page-items');
@@ -214,7 +215,7 @@ function renderCart() {
     const pageSub = document.getElementById('cart-page-subtotal');
     if (pageEmpty) pageEmpty.hidden = hasItems;
     if (pageLayout) pageLayout.hidden = !hasItems;
-    if (pageSub) pageSub.textContent = formatEuros(subtotal);
+    if (pageSub) pageSub.textContent = formatPEN(subtotal);
   }
 }
 
@@ -313,6 +314,16 @@ function initCart() {
     const addBtn = e.target.closest('.add-to-cart');
     if (addBtn) {
       e.preventDefault();
+      // Producto agotado / no disponible → no se añade. Front marca el botón con
+      // `disabled`/`aria-disabled="true"` o el artículo con `[data-estado="agotado"]`
+      // (o `.cat-item--soon`, "Próximamente"). Guarda defensiva: un `<button disabled>`
+      // nativo ni dispara click, pero esto cubre `<a>`/div estilados y el caso del
+      // artículo marcado sin tocar el botón.
+      if (addBtn.disabled
+        || addBtn.getAttribute('aria-disabled') === 'true'
+        || addBtn.closest('[data-estado="agotado"], .cat-item--soon')) {
+        return;
+      }
       addToCart(addBtn.dataset);
       if (drawer) drawer.open();
       return;
@@ -701,6 +712,84 @@ function initCatalog() {
   window.addEventListener('popstate', () => apply(catFromURL()));
 }
 
+// 5b · Catálogo — Línea de Individuales (pestañas): selector de diseño + talla (AB-J9)
+// Un producto (#individuales), 5 diseños (.lash-swatch), tallas por diseño. Mantiene los data-*
+// del botón .add-to-cart sincronizados con la selección activa en todo momento (initCart lee
+// btn.dataset en el clic). Contrato completo en el comentario <!-- CONTRATO JS --> de catalogo.html.
+function initLashPicker() {
+  const article = document.getElementById('individuales');
+  if (!article) return; // solo existe en catalogo.html
+
+  const swatches = Array.from(article.querySelectorAll('.lash-swatch'));
+  const panels = Array.from(article.querySelectorAll('.lash-panel'));
+  const sizeWrap = article.querySelector('#lash-sizes');
+  const sizeButtons = Array.from(article.querySelectorAll('#lash-sizes .lash-size'));
+  const sizeUnica = article.querySelector('#lash-size-unica');
+  const media = article.querySelector('.cat-item__media img[data-lash-media]');
+  const addBtn = article.querySelector('.add-to-cart');
+  if (!swatches.length || !addBtn) return;
+
+  const activeSwatch = () => swatches.find((s) => s.classList.contains('is-active')) || swatches[0];
+  const activeSizeBtn = () => sizeButtons.find((b) => b.classList.contains('is-active')) || sizeButtons[0];
+
+  function recomposeButton() {
+    const swatch = activeSwatch();
+    const unica = swatch.dataset.tallas === 'unica';
+    const btn = activeSizeBtn();
+    const size = unica || !btn ? 'unica' : btn.dataset.size;
+    const sizeLabel = unica ? 'Talla única' : 'Talla ' + size;
+
+    addBtn.dataset.id = 'individuales-' + swatch.dataset.slug + '-' + size;
+    addBtn.dataset.name = 'Individuales · ' + swatch.dataset.cartName + ' · ' + sizeLabel;
+    addBtn.dataset.price = swatch.dataset.price;
+    addBtn.dataset.priceid = swatch.dataset.priceid;
+    addBtn.dataset.image = swatch.dataset.image;
+  }
+
+  function selectSize(btn) {
+    sizeButtons.forEach((b) => {
+      const on = b === btn;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    recomposeButton();
+  }
+
+  function selectSwatch(swatch) {
+    swatches.forEach((s) => {
+      const on = s === swatch;
+      s.classList.toggle('is-active', on);
+      s.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+
+    const panelId = swatch.getAttribute('aria-controls');
+    panels.forEach((p) => { p.hidden = p.id !== panelId; });
+
+    if (media) {
+      media.src = swatch.dataset.image;
+      media.alt = 'Pestañas individuales ' + swatch.dataset.cartName + ' de AP Beauty en su estuche';
+    }
+
+    const unica = swatch.dataset.tallas === 'unica';
+    if (sizeWrap) sizeWrap.hidden = unica;
+    if (sizeUnica) sizeUnica.hidden = !unica;
+
+    // Al volver de un diseño de talla única, garantizar una talla S/M/L activa
+    if (!unica && sizeButtons.length && !sizeButtons.some((b) => b.classList.contains('is-active'))) {
+      sizeButtons[0].classList.add('is-active');
+      sizeButtons[0].setAttribute('aria-pressed', 'true');
+    }
+
+    recomposeButton();
+  }
+
+  swatches.forEach((s) => s.addEventListener('click', () => selectSwatch(s)));
+  sizeButtons.forEach((b) => b.addEventListener('click', () => selectSize(b)));
+
+  // Alinear el botón con el estado inicial servido por front (Icónica / M)
+  recomposeButton();
+}
+
 // 6 · Políticas — acordeón exclusivo (AB-P3): un solo panel abierto a la vez
 function openPanel(panel) {
   panel.hidden = false;
@@ -752,5 +841,6 @@ initWhyStats();
 initCart();
 initFooterYear();
 initCatalog();
+initLashPicker();
 initPoliciesAccordion();
 initConfirmationState();
