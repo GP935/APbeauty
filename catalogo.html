@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20260902">
   <link rel="icon" href="brand/ap_ico_wnb-removebg-preview.png">
 </head>
 <body>
@@ -176,8 +176,9 @@
          Slugs: labios · ojos · pestanas · rostro · sets · brochas. CTA "Descubrir" → ficha futura /producto/<handle>.
          "Próximamente" (Sets/Brochas/Paquetes): cat-item--soon, sin precio ni CTA, badge en vez de precio.
          "Agotado" (Sculpt Liner/Lip Eclipse/Power Matte): cat-item--agotado, precio visible + badge "Agotado", SIN CTA.
-         Único SKU comprable ahora mismo: Individuales (pestañas). Los demás quedan en catálogo como escaparate.
-         SEO: Product schema con availability OutOfStock en cat-item--agotado; InStock solo en Individuales. -->
+         SKUs comprables ahora mismo: Individuales y Tiras (ambos data-category="pestanas", cada uno
+         un article.cat-item--lash con selector de diseño propio). Los demás quedan como escaparate.
+         SEO: Product schema con availability OutOfStock en cat-item--agotado; InStock en Individuales y Tiras. -->
     <div class="catalog-list">
 
       <!-- 1 · Individuales (activo · pestañas · UN solo producto con selector de diseño + talla) -->
@@ -313,7 +314,113 @@
         </div>
       </article>
 
-      <!-- 2 · Sculpt Liner (AGOTADO · ojos) — sin CTA hasta reposición -->
+      <!-- 2 · Tiras (activo · pestañas · UN solo producto con selector de diseño · TODAS talla única) -->
+      <!-- ============ CONTRATO JS — selector de Tiras (dominio js) ================================
+           Mismo patrón que #individuales pero SIN tallas (las 4 son talla única). Lo ideal es
+           GENERALIZAR initLashPicker() para que itere sobre cada article.cat-item--lash y derive
+           el prefijo de ids de article.id — así cubre #individuales y #tiras con un solo código.
+
+           Fuentes de verdad en el markup de #tiras:
+           · .lash-swatch (4) → data-slug · data-tallas="unica" · data-cart-name ·
+                                data-price (céntimos, = precio visible) · data-priceid ·
+                                data-image · aria-controls (id del .lash-panel) · aria-pressed
+           · .lash-panel (4) → copy visible (desc + meta). [hidden] salvo el activo.
+           · .cat-item__media img[data-lash-media] → foto que cambia por diseño
+           · NO hay #lash-sizes en #tiras: "Talla única" es texto estático siempre visible.
+
+           Al elegir diseño (.lash-swatch dentro de #tiras):
+             1. .is-active + aria-pressed="true" en el swatch (resto a false)
+             2. quitar [hidden] de su .lash-panel (aria-controls); [hidden] en los otros 3
+             3. img[data-lash-media]: src = data-image ; alt = "Pestañas de tira <cart-name> de AP Beauty en su estuche"
+             4. recomponer .add-to-cart:
+                  data-id      = "tiras-" + slug + "-unica"
+                  data-name    = "Tiras · " + cartName + " · Talla única"
+                  data-price   = swatch.dataset.price
+                  data-priceid = swatch.dataset.priceid
+                  data-image   = swatch.dataset.image
+
+           Estado inicial servido por front: Destellos (editable moviendo .is-active + aria-pressed + [hidden]).
+           Precios en S/ (soles), formatPEN() ya renombrada en AB-J9. Todas S/ 10,00.
+           Fotos: pestanas-tiras-catalogo/<slug>.jpg (entregadas por Paul 2026-09-02).
+           PENDIENTE Paul: 4 Price IDs de Stripe (placeholders TODO_STRIPE_PRICE_ID_*).
+           ========================================================================================= -->
+      <article class="cat-item cat-item--lash" id="tiras" data-category="pestanas">
+        <div class="cat-item__media">
+          <img src="pestanas-tiras-catalogo/destellos.jpg" alt="Pestañas de tira Destellos de AP Beauty en su estuche" data-lash-media loading="lazy" width="800" height="800">
+        </div>
+        <div class="cat-item__content">
+          <p class="eyebrow">PESTAÑAS · TIRAS</p>
+          <h2 class="cat-item__name">Línea de Tiras</h2>
+
+          <div class="lash-picker__group">
+            <p class="lash-picker__label" id="tiras-design-label">Diseño</p>
+            <div class="lash-swatches" role="group" aria-labelledby="tiras-design-label">
+              <button class="lash-swatch is-active" type="button" data-slug="destellos" data-tallas="unica" data-cart-name="Destellos" data-price="1000" data-priceid="TODO_STRIPE_PRICE_ID_DESTELLOS" data-image="pestanas-tiras-catalogo/destellos.jpg" aria-pressed="true" aria-controls="tiras-panel-destellos">
+                <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-tiras-catalogo/destellos.jpg" alt="" width="128" height="128" loading="lazy"></span>
+                <span class="lash-swatch__name">Destellos</span>
+              </button>
+              <button class="lash-swatch" type="button" data-slug="hechizo" data-tallas="unica" data-cart-name="Hechizo" data-price="1000" data-priceid="TODO_STRIPE_PRICE_ID_HECHIZO" data-image="pestanas-tiras-catalogo/hechizo.jpg" aria-pressed="false" aria-controls="tiras-panel-hechizo">
+                <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-tiras-catalogo/hechizo.jpg" alt="" width="128" height="128" loading="lazy"></span>
+                <span class="lash-swatch__name">Hechizo</span>
+              </button>
+              <button class="lash-swatch" type="button" data-slug="velada" data-tallas="unica" data-cart-name="Velada" data-price="1000" data-priceid="TODO_STRIPE_PRICE_ID_VELADA" data-image="pestanas-tiras-catalogo/velada.jpg" aria-pressed="false" aria-controls="tiras-panel-velada">
+                <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-tiras-catalogo/velada.jpg" alt="" width="128" height="128" loading="lazy"></span>
+                <span class="lash-swatch__name">Velada</span>
+              </button>
+              <button class="lash-swatch" type="button" data-slug="vertigo" data-tallas="unica" data-cart-name="Vértigo" data-price="1000" data-priceid="TODO_STRIPE_PRICE_ID_VERTIGO" data-image="pestanas-tiras-catalogo/vertigo.jpg" aria-pressed="false" aria-controls="tiras-panel-vertigo">
+                <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-tiras-catalogo/vertigo.jpg" alt="" width="128" height="128" loading="lazy"></span>
+                <span class="lash-swatch__name">Vértigo</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="lash-panels" aria-live="polite">
+            <div class="lash-panel" id="tiras-panel-destellos" data-slug="destellos">
+              <p class="cat-item__desc">Puntas definidas que abren la mirada con un efecto muñeca/anime, sin perder un aire natural. Ideal para looks frescos y con vida, donde los ojos son protagonistas.</p>
+              <dl class="lash-panel__meta">
+                <div class="lash-panel__row"><dt>Ideal para</dt><dd>Looks frescos, mirada abierta y despierta</dd></div>
+                <div class="lash-panel__row"><dt>Efecto</dt><dd>Muñeca/anime, natural</dd></div>
+              </dl>
+              <p class="cat-item__price">S/ 10,00</p>
+            </div>
+            <div class="lash-panel" id="tiras-panel-hechizo" data-slug="hechizo" hidden>
+              <p class="cat-item__desc">Un efecto ligero y etéreo, como salido de un cuento. Textura delicada que envuelve la mirada con un toque mágico, perfecta para looks soñadores y llenos de encanto.</p>
+              <dl class="lash-panel__meta">
+                <div class="lash-panel__row"><dt>Ideal para</dt><dd>Looks etéreos, románticos, con encanto</dd></div>
+                <div class="lash-panel__row"><dt>Efecto</dt><dd>Hada, ligero, mágico</dd></div>
+              </dl>
+              <p class="cat-item__price">S/ 10,00</p>
+            </div>
+            <div class="lash-panel" id="tiras-panel-velada" data-slug="velada" hidden>
+              <p class="cat-item__desc">Un toque de soft glam para esas salidas que piden un poco más de brillo. Volumen elegante y bien distribuido, perfecto para una noche entre amigas o una cita, sin perder ese aire natural.</p>
+              <dl class="lash-panel__meta">
+                <div class="lash-panel__row"><dt>Ideal para</dt><dd>Salidas, soft glam, looks de noche</dd></div>
+                <div class="lash-panel__row"><dt>Efecto</dt><dd>Natural con volumen elegante</dd></div>
+              </dl>
+              <p class="cat-item__price">S/ 10,00</p>
+            </div>
+            <div class="lash-panel" id="tiras-panel-vertigo" data-slug="vertigo" hidden>
+              <p class="cat-item__desc">Volumen denso y textura cruzada para looks que no pasan desapercibidos. Un efecto dramático pero elegante, ideal para quien quiere hacer una entrada memorable.</p>
+              <dl class="lash-panel__meta">
+                <div class="lash-panel__row"><dt>Ideal para</dt><dd>Looks de impacto, ocasiones especiales</dd></div>
+                <div class="lash-panel__row"><dt>Efecto</dt><dd>Denso, cruzado, dramático</dd></div>
+              </dl>
+              <p class="cat-item__price">S/ 10,00</p>
+            </div>
+          </div>
+
+          <div class="lash-picker__group">
+            <p class="lash-picker__label">Talla</p>
+            <p class="lash-size-unica">Talla única</p>
+          </div>
+
+          <div class="cat-item__actions">
+            <button class="add-to-cart btn-editorial btn-editorial--solid" data-id="tiras-destellos-unica" data-name="Tiras · Destellos · Talla única" data-price="1000" data-priceid="TODO_STRIPE_PRICE_ID_DESTELLOS" data-image="pestanas-tiras-catalogo/destellos.jpg">Añadir</button>
+          </div>
+        </div>
+      </article>
+
+      <!-- 3 · Sculpt Liner (AGOTADO · ojos) — sin CTA hasta reposición -->
       <article class="cat-item cat-item--agotado" id="sculpt-liner" data-category="ojos">
         <div class="cat-item__media">
           <img src="products/sculpt-liner-destacado.webp" alt="Delineador de precisión Sculpt Liner de AP Beauty" loading="lazy" width="800" height="800">
@@ -327,7 +434,7 @@
         </div>
       </article>
 
-      <!-- 3 · Lip Eclipse (AGOTADO · labios) — sin CTA hasta reposición -->
+      <!-- 4 · Lip Eclipse (AGOTADO · labios) — sin CTA hasta reposición -->
       <article class="cat-item cat-item--agotado" id="labial-lip-eclipse" data-category="labios">
         <div class="cat-item__media">
           <img src="products/labial-destacado.webp" alt="Labial mate Lip Eclipse de AP Beauty" loading="lazy" width="800" height="800">
@@ -341,7 +448,7 @@
         </div>
       </article>
 
-      <!-- 4 · Power Matte (AGOTADO · rostro) — sin CTA hasta reposición -->
+      <!-- 5 · Power Matte (AGOTADO · rostro) — sin CTA hasta reposición -->
       <article class="cat-item cat-item--agotado" id="power-matte" data-category="rostro">
         <div class="cat-item__media">
           <img src="products/power-matte-destacado.webp" alt="Paleta de rubor y contorno Power Matte de AP Beauty" loading="lazy" width="800" height="800">
@@ -355,7 +462,7 @@
         </div>
       </article>
 
-      <!-- 5 · Sets (PRÓXIMAMENTE · sets) — sin precio ni CTA hasta datos de Paul -->
+      <!-- 6 · Sets (PRÓXIMAMENTE · sets) — sin precio ni CTA hasta datos de Paul -->
       <article class="cat-item cat-item--soon" id="sets-ap" data-category="sets">
         <div class="cat-item__media">
           <img src="categories/kits-category.webp" alt="Sets y kits de maquillaje AP Beauty (próximamente)" loading="lazy" width="800" height="800">
@@ -368,7 +475,7 @@
         </div>
       </article>
 
-      <!-- 6 · Brochas (PRÓXIMAMENTE · brochas) — sin precio ni CTA hasta datos de Paul -->
+      <!-- 7 · Brochas (PRÓXIMAMENTE · brochas) — sin precio ni CTA hasta datos de Paul -->
       <article class="cat-item cat-item--soon" id="brochas-ap" data-category="brochas">
         <div class="cat-item__media">
           <img src="categories/brochas-category.webp" alt="Brochas de maquillaje profesionales AP Beauty (próximamente)" loading="lazy" width="800" height="800">
@@ -381,7 +488,7 @@
         </div>
       </article>
 
-      <!-- 7 · Paquete inicial personalizable (PRÓXIMAMENTE · paquetes) — sin precio ni CTA hasta datos de Paul -->
+      <!-- 8 · Paquete inicial personalizable (PRÓXIMAMENTE · paquetes) — sin precio ni CTA hasta datos de Paul -->
       <article class="cat-item cat-item--soon" id="paquete-inicial" data-category="paquetes">
         <div class="cat-item__media">
           <img src="categories/bundles-category.jpg" alt="Paquete inicial personalizable de AP Beauty (próximamente)" loading="lazy" width="800" height="800">
@@ -477,7 +584,7 @@
         <!-- Columna 4 — Contacto -->
         <div class="footer-col footer-col--contact">
           <h2 class="footer-col__title">Contacto</h2>
-          <a class="footer-col__contact-email" href="mailto:hola@apbeauty.com">hola@apbeauty.com</a>
+          <a class="footer-col__contact-email" href="mailto:apbeautyoficial@gmail.com">apbeautyoficial@gmail.com</a>
           <p class="footer-col__contact-hours">Lunes–Viernes 9:00–18:00 CET</p>
           <img src="trustelements/card_payments.webp" alt="Métodos de pago aceptados: Visa, Mastercard, PayPal, Apple Pay" class="payment-img" loading="lazy">
         </div>
@@ -499,6 +606,6 @@
        (cat-item--soon). Opcional: BreadcrumbList / CollectionPage. Front no toca este bloque. -->
   <!-- ===== FIN JSON-LD SEO ===== -->
 
-  <script type="module" defer src="main.js"></script>
+  <script type="module" defer src="main.js?v=20260902"></script>
 </body>
 </html>

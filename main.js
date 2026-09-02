@@ -712,13 +712,25 @@ function initCatalog() {
   window.addEventListener('popstate', () => apply(catFromURL()));
 }
 
-// 5b · Catálogo — Línea de Individuales (pestañas): selector de diseño + talla (AB-J9)
-// Un producto (#individuales), 5 diseños (.lash-swatch), tallas por diseño. Mantiene los data-*
-// del botón .add-to-cart sincronizados con la selección activa en todo momento (initCart lee
-// btn.dataset en el clic). Contrato completo en el comentario <!-- CONTRATO JS --> de catalogo.html.
+// 5b · Catálogo — Pestañas: selector de diseño (+ talla en la línea que la tenga) (AB-J9 · AB-J11)
+// Cada <article class="cat-item--lash"> es un producto con N diseños (.lash-swatch):
+//   #individuales → 5 diseños con talla (S/M/L, Despierta = única)
+//   #tiras        → 4 diseños, todos talla única (sin #lash-sizes)
+// Mantiene los data-* del botón .add-to-cart sincronizados con la selección activa (initCart
+// lee btn.dataset en el clic). Contratos completos en los comentarios <!-- CONTRATO JS --> de
+// catalogo.html. Prefijo de id, nombre de carrito y frase del alt se derivan de article.id.
+const LASH_LINES = {
+  individuales: { cartPrefix: 'Individuales', altNoun: 'Pestañas individuales' },
+  tiras: { cartPrefix: 'Tiras', altNoun: 'Pestañas de tira' },
+};
+
 function initLashPicker() {
-  const article = document.getElementById('individuales');
-  if (!article) return; // solo existe en catalogo.html
+  document.querySelectorAll('.cat-item--lash').forEach(setupLashArticle);
+}
+
+function setupLashArticle(article) {
+  const line = LASH_LINES[article.id];
+  if (!line) return;
 
   const swatches = Array.from(article.querySelectorAll('.lash-swatch'));
   const panels = Array.from(article.querySelectorAll('.lash-panel'));
@@ -734,13 +746,13 @@ function initLashPicker() {
 
   function recomposeButton() {
     const swatch = activeSwatch();
-    const unica = swatch.dataset.tallas === 'unica';
     const btn = activeSizeBtn();
-    const size = unica || !btn ? 'unica' : btn.dataset.size;
+    const unica = swatch.dataset.tallas === 'unica' || !btn;
+    const size = unica ? 'unica' : btn.dataset.size;
     const sizeLabel = unica ? 'Talla única' : 'Talla ' + size;
 
-    addBtn.dataset.id = 'individuales-' + swatch.dataset.slug + '-' + size;
-    addBtn.dataset.name = 'Individuales · ' + swatch.dataset.cartName + ' · ' + sizeLabel;
+    addBtn.dataset.id = article.id + '-' + swatch.dataset.slug + '-' + size;
+    addBtn.dataset.name = line.cartPrefix + ' · ' + swatch.dataset.cartName + ' · ' + sizeLabel;
     addBtn.dataset.price = swatch.dataset.price;
     addBtn.dataset.priceid = swatch.dataset.priceid;
     addBtn.dataset.image = swatch.dataset.image;
@@ -767,7 +779,7 @@ function initLashPicker() {
 
     if (media) {
       media.src = swatch.dataset.image;
-      media.alt = 'Pestañas individuales ' + swatch.dataset.cartName + ' de AP Beauty en su estuche';
+      media.alt = line.altNoun + ' ' + swatch.dataset.cartName + ' de AP Beauty en su estuche';
     }
 
     const unica = swatch.dataset.tallas === 'unica';
@@ -786,7 +798,7 @@ function initLashPicker() {
   swatches.forEach((s) => s.addEventListener('click', () => selectSwatch(s)));
   sizeButtons.forEach((b) => b.addEventListener('click', () => selectSize(b)));
 
-  // Alinear el botón con el estado inicial servido por front (Icónica / M)
+  // Alinear el botón con el estado inicial servido por front (#individuales: Icónica/M · #tiras: Destellos)
   recomposeButton();
 }
 

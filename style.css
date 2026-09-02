@@ -845,10 +845,11 @@ section { padding-block: var(--section-pad-y); }
 }
 
 /* --------------------------------------------------------------------------
-   14b · SELECTOR DE INDIVIDUALES (catalogo.html · .cat-item--lash · AB-C22)
-   El primer .cat-item es UN producto con 5 diseños + talla (tarjeta "hero" del
-   catálogo). Fondo claro (nth-child impar) — sin inversión charcoal. Hereda
-   eyebrow con filete rojo + título Playfair + .cat-item__desc/.cat-item__price.
+   14b · SELECTOR DE PESTAÑAS (catalogo.html · .cat-item--lash · AB-C22 / AB-C25)
+   Cada .cat-item--lash es UN producto con selector de diseño (tarjeta "hero"
+   del catálogo). Dos instancias: #individuales (5 diseños + talla S/M/L) y
+   #tiras (4 diseños, todas talla única). Hereda eyebrow con filete rojo +
+   título Playfair + .cat-item__desc/.cat-item__price.
    Rojo ≤10%: sin rojo nuevo aquí — la selección activa se marca en negro.
    GOTCHA [hidden]: .lash-panel / .lash-sizes / .lash-size-unica los togglea JS
    con el atributo hidden → regla [hidden]{display:none} repuesta abajo (mismo
@@ -856,6 +857,17 @@ section { padding-block: var(--section-pad-y); }
    -------------------------------------------------------------------------- */
 .cat-item--lash { align-items: start; }                         /* contenido alto: imagen al tope, no centrada */
 .cat-item--lash .cat-item__content { max-width: 520px; }
+
+/* AB-C25 · la tarjeta hero de pestañas va SIEMPRE sobre fondo claro, aunque
+   caiga en posición par (#tiras es el 2º .cat-item). Se conserva el lado
+   alternado de la imagen (order), se anula solo la inversión charcoal. */
+.cat-item--lash:nth-child(even) { background: var(--blanco); }
+.cat-item--lash:nth-child(even) .cat-item__name,
+.cat-item--lash:nth-child(even) .cat-item__price { color: var(--negro); }
+.cat-item--lash:nth-child(even) .cat-item__desc { color: #4A4A4A; }
+.cat-item--lash:nth-child(even) .cat-item__content .eyebrow { color: var(--gris-texto); }
+.cat-item--lash:nth-child(even) .btn-editorial--solid { background: var(--negro); color: #fff; }
+.cat-item--lash:nth-child(even) .btn-editorial--solid:hover { background: var(--color-red); }
 
 /* Grupo Diseño / Talla — rótulo + control */
 .lash-picker__group { width: 100%; margin: 0 0 clamp(20px, 2.6vw, 30px); }
@@ -865,8 +877,8 @@ section { padding-block: var(--section-pad-y); }
   color: var(--gris-texto); margin: 0 0 12px;
 }
 
-/* Diseño — grid de 5 miniaturas */
-.lash-swatches { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; }
+/* Diseño — miniaturas repartidas a partes iguales (4 en #tiras, 5 en #individuales) */
+.lash-swatches { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; width: 100%; }
 .lash-swatch {
   display: flex; flex-direction: column; align-items: center; gap: 8px;
   padding: 8px 4px 10px;
