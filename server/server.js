@@ -9,17 +9,33 @@ const {
   MP_WEBHOOK_SECRET,
   PUBLIC_BASE_URL = 'https://apbeauty.com',
   PORT = 3000,
+  // Interruptor único de pasarela (Paul, 2026-09-05). Valores:
+  //   'none'        → no hay pago vivo; /api/create-checkout-session responde 503.
+  //   'stripe'      → Stripe Checkout hosted (requiere Price IDs REALES en PEN).
+  //   'mercadopago' → Card Payment Brick (requiere MP_ACCESS_TOKEN válido).
+  // AP Beauty opera solo en Perú y en soles (PEN); no hay ruteo geográfico.
+  CHECKOUT_GATEWAY = 'none',
 } = process.env;
 
+const GATEWAY = ['none', 'stripe', 'mercadopago'].includes(CHECKOUT_GATEWAY)
+  ? CHECKOUT_GATEWAY
+  : 'none';
+
 if (!STRIPE_SECRET_KEY) {
-  console.error('Falta STRIPE_SECRET_KEY en el entorno. Abortando.');
-  process.exit(1);
+  // Stripe está dormido por defecto (CHECKOUT_GATEWAY=none): no abortamos por
+  // falta de clave, solo si se pide explícitamente usar Stripe sin configurarlo.
+  if (GATEWAY === 'stripe') {
+    console.error('CHECKOUT_GATEWAY=stripe pero falta STRIPE_SECRET_KEY. Abortando.');
+    process.exit(1);
+  }
+  console.warn('AVISO: STRIPE_SECRET_KEY no configurado — Stripe dormido.');
 }
 if (!STRIPE_WEBHOOK_SECRET) {
   // No abortamos: el server puede crear sesiones, pero el webhook rechazará
   // todo hasta configurarlo. Avisamos fuerte en el arranque.
   console.warn('AVISO: STRIPE_WEBHOOK_SECRET no configurado — el webhook rechazará eventos.');
 }
+console.log(`Pasarela activa (CHECKOUT_GATEWAY): ${GATEWAY}`);
 if (!MP_ACCESS_TOKEN) {
   console.warn('AVISO: MP_ACCESS_TOKEN no configurado — el checkout LatAm (Mercado Pago) devolverá error.');
 }
@@ -27,40 +43,50 @@ if (!MP_WEBHOOK_SECRET) {
   console.warn('AVISO: MP_WEBHOOK_SECRET no configurado — el webhook de Mercado Pago rechazará notificaciones.');
 }
 
-const stripe = new Stripe(STRIPE_SECRET_KEY);
+// `null` si Stripe está dormido y sin clave — las rutas Stripe lo comprueban.
+const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
 
 // ─────────────────────────────────────────────────────────────
-// CATÁLOGO — fuente de verdad server-side (invariante 1)
-// precio en céntimos de EUR · priceId = Price de Stripe (dashboard)
+// CATÁLOGO — fuente de verdad server-side, MONEDA ÚNICA: PEN (Paul, 2026-09-05).
+// `price` = céntimos de sol (S/ 35,00 → 3500), coincide 1:1 con el `data-price`
+// del frontend (catalogo.html / index.html). La API de Mercado Pago usa la
+// unidad mayor → se divide entre 100 al construir transaction_amount.
+// `priceId` = Price de Stripe CREADO EN PEN. Stripe está DORMIDO: mientras el
+// valor empiece por `TODO_` la ruta de checkout Stripe responde 503.
 // Nunca se lee el precio del body del cliente: solo id/priceId + cantidad.
+//
+// SKUs = líneas de pestañas (único catálogo comprable hoy; AB-F22/AB-F30).
+// La talla (S/M/L/única) es metadata y NO cambia el precio → 1 SKU por diseño.
 // ─────────────────────────────────────────────────────────────
 const CATALOGO = {
-  'lip-eclipse':  { title: 'Lip Eclipse',  price: 2490, priceId: 'price_1TqB72RsF6KmY8R7jUG5QSaR' },
-  'power-matte':  { title: 'Power Matte',  price: 3990, priceId: 'price_1TqB74RsF6KmY8R7B9IPDLCd' },
-  'sculpt-liner': { title: 'Sculpt Liner', price: 1890, priceId: 'price_1TqB75RsF6KmY8R7b6qDipxm' },
-  'power-lash':   { title: 'Power Lash',   price: 1990, priceId: 'price_1TqB7ARsF6KmY8R7maXDZ6CQ' },
+  // Línea Individuales — 5 diseños, S/ 25–40
+  'individuales-esencial':  { title: 'Individuales · Esencial',  price: 2500, priceId: 'TODO_STRIPE_PRICE_ID_ESENCIAL' },
+  'individuales-iconica':   { title: 'Individuales · Icónica',   price: 3500, priceId: 'TODO_STRIPE_PRICE_ID_ICONICA' },
+  'individuales-despierta': { title: 'Individuales · Despierta', price: 3000, priceId: 'TODO_STRIPE_PRICE_ID_DESPIERTA' },
+  'individuales-suspiro':   { title: 'Individuales · Suspiro',   price: 2500, priceId: 'TODO_STRIPE_PRICE_ID_SUSPIRO' },
+  'individuales-anhelada':  { title: 'Individuales · Anhelada',  price: 4000, priceId: 'TODO_STRIPE_PRICE_ID_ANHELADA' },
+  // Línea Tiras — 4 diseños, todas S/ 10, todas talla única
+  'tiras-destellos': { title: 'Tiras · Destellos', price: 1000, priceId: 'TODO_STRIPE_PRICE_ID_DESTELLOS' },
+  'tiras-hechizo':   { title: 'Tiras · Hechizo',   price: 1000, priceId: 'TODO_STRIPE_PRICE_ID_HECHIZO' },
+  'tiras-velada':    { title: 'Tiras · Velada',    price: 1000, priceId: 'TODO_STRIPE_PRICE_ID_VELADA' },
+  'tiras-vertigo':   { title: 'Tiras · Vértigo',   price: 1000, priceId: 'TODO_STRIPE_PRICE_ID_VERTIGO' },
 };
+
+const MONEDA = 'PEN';
+
+// Un priceId sigue sin configurar (placeholder del HTML) mientras empiece así.
+const esPlaceholder = (priceId) => !priceId || String(priceId).startsWith('TODO_');
+
+// El frontend manda el id de carrito con la talla al final
+// (`individuales-iconica-M`, `tiras-destellos-unica`). El precio es por diseño,
+// así que se recorta el sufijo de talla para resolver el SKU del catálogo.
+const skuBase = (id) => String(id || '').replace(/-(S|M|L|unica)$/i, '');
 
 // Índice inverso priceId → SKU, para validar lo que llega del cliente
 // contra una allowlist (nunca confiamos en un priceId arbitrario).
 const PRICE_ID_INDEX = new Map(
   Object.entries(CATALOGO).map(([id, p]) => [p.priceId, { id, ...p }]),
 );
-
-// ─────────────────────────────────────────────────────────────
-// CATÁLOGO_MP — Fase 2 (LatAm/Perú, PEN). Mismos SKUs que CATALOGO,
-// precio en soles (unidad entera, no céntimos: la API de MP usa
-// transaction_amount en la unidad mayor de la moneda).
-// PENDIENTE (bloquea producción): conversión EUR→PEN aproximada
-// (tasa ~3.90, 2026-08-10) redondeada a dígito final 0/5/7/9 por
-// decisión del usuario. Confirmar precios PEN reales antes de lanzar.
-// ─────────────────────────────────────────────────────────────
-const CATALOGO_MP = {
-  'lip-eclipse':  { title: 'Lip Eclipse',  price: 97 },
-  'power-matte':  { title: 'Power Matte',  price: 155 },
-  'sculpt-liner': { title: 'Sculpt Liner', price: 75 },
-  'power-lash':   { title: 'Power Lash',   price: 77 },
-};
 
 // ─────────────────────────────────────────────────────────────
 // Almacén de pedidos — Map en memoria (idempotencia + verificación importe).
@@ -99,8 +125,8 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req,
   // Invariante 2 — validar firma ANTES de tocar ningún dato del pedido.
   // stripe.webhooks.constructEvent hace HMAC-SHA256 + comparación en
   // tiempo constante internamente (equivalente a timingSafeEqual).
-  if (!STRIPE_WEBHOOK_SECRET) {
-    console.error('Falta STRIPE_WEBHOOK_SECRET. Rechazando webhook.');
+  if (!STRIPE_WEBHOOK_SECRET || !stripe) {
+    console.error('Stripe no configurado (clave o webhook secret). Rechazando webhook.');
     return res.status(500).send('webhook no configurado');
   }
 
@@ -174,30 +200,22 @@ function rateLimit({ windowMs, max }) {
 }
 const checkoutLimiter = rateLimit({ windowMs: 60_000, max: 20 });
 
-// Fase 2 (geo-ruteo) — Cloudflare inyecta el país en cf-ipcountry.
-// Alcance AP-B5 (decisión usuario 2026-08-10): SOLO Perú → Mercado Pago.
-// Cualquier otro país no-UE sigue sin resolver (501) hasta definirse.
-function pasarelaPara(pais) {
-  if (pais === 'PE') return 'mercadopago';
-  return 'stripe';
-}
-
 // ─────────────────────────────────────────────────────────────
 // POST /api/create-checkout-session
 // Body: { items: [{ price, quantity }] }   (price = priceId de Stripe)
 // Respuesta: { url }  → el cliente hace window.location = url
+// Stripe DORMIDO por defecto: 503 mientras CHECKOUT_GATEWAY !== 'stripe' o
+// cualquier priceId siga siendo placeholder (TODO_...).
 // ─────────────────────────────────────────────────────────────
 app.post('/api/create-checkout-session', checkoutLimiter, async (req, res) => {
   try {
+    if (GATEWAY !== 'stripe' || !stripe) {
+      return res.status(503).json({ error: 'checkout no disponible todavía' });
+    }
+
     const { items } = req.body || {};
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'carrito vacío o inválido' });
-    }
-
-    const pais = req.headers['cf-ipcountry'] || 'XX';
-    const pasarela = pasarelaPara(pais); // Fase 2: enrutará a MP para LatAm
-    if (pasarela !== 'stripe') {
-      return res.status(501).json({ error: 'pasarela no disponible para tu región todavía' });
     }
 
     const lineItems = [];
@@ -214,6 +232,12 @@ app.post('/api/create-checkout-session', checkoutLimiter, async (req, res) => {
       const producto = PRICE_ID_INDEX.get(item?.price);
       if (!producto) {
         return res.status(400).json({ error: `producto no reconocido: ${item?.price}` });
+      }
+
+      // El SKU existe pero su Price de Stripe (PEN) aún no está creado.
+      if (esPlaceholder(producto.priceId)) {
+        console.warn(`checkout bloqueado: falta Price ID real de Stripe para ${producto.id}`);
+        return res.status(503).json({ error: 'checkout no disponible todavía' });
       }
 
       // El precio efectivo lo resuelve Stripe desde el Price del dashboard;
@@ -240,32 +264,38 @@ app.post('/api/create-checkout-session', checkoutLimiter, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/market — fuente única del router dual-market (evita que
-// front duplique la lógica de pasarelaPara en JS de cliente).
+// GET /api/market — fuente única de pasarela/moneda para el frontend
+// (evita duplicar la lógica en JS de cliente).
+// AP Beauty: moneda única PEN, sin ruteo geográfico. `gateway` sale del
+// interruptor CHECKOUT_GATEWAY: 'none' (default) → el frontend deja
+// #btn-checkout inerte / en "próximamente".
 // Respuesta: { country, gateway, currency }
 // ─────────────────────────────────────────────────────────────
 app.get('/api/market', (req, res) => {
   const pais = req.headers['cf-ipcountry'] || 'XX';
-  const gateway = pasarelaPara(pais);
-  const currency = gateway === 'mercadopago' ? 'PEN' : 'EUR';
-  return res.json({ country: pais, gateway, currency });
+  return res.json({ country: pais, gateway: GATEWAY, currency: MONEDA });
 });
 
 const mpLimiter = rateLimit({ windowMs: 60_000, max: 20 });
 
 // ─────────────────────────────────────────────────────────────
 // POST /api/mp/create-order
-// Body: { items: [{ id, quantity }] }   (id = SKU de CATALOGO_MP)
-// Respuesta: { orderId, amount }  → amount alimenta initialization.amount del Brick
-// Invariante 1: el precio SIEMPRE sale de CATALOGO_MP, nunca del cliente.
+// Body: { items: [{ id, quantity }] }   (id = id de carrito, con talla al final)
+// Respuesta: { orderId, amount }  → amount (SOLES) alimenta initialization.amount del Brick
+// Invariante 1: el precio SIEMPRE sale de CATALOGO, nunca del cliente.
+// CATALOGO.price está en céntimos de sol → /100 para la unidad mayor que usa MP.
 // ─────────────────────────────────────────────────────────────
 app.post('/api/mp/create-order', mpLimiter, (req, res) => {
+  if (GATEWAY !== 'mercadopago') {
+    return res.status(503).json({ error: 'checkout no disponible todavía' });
+  }
+
   const { items } = req.body || {};
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'carrito vacío o inválido' });
   }
 
-  let amountExpected = 0;
+  let amountExpected = 0; // en soles (unidad mayor), como espera la API de MP
   const resumen = [];
 
   for (const item of items) {
@@ -274,15 +304,17 @@ app.post('/api/mp/create-order', mpLimiter, (req, res) => {
       return res.status(400).json({ error: `cantidad inválida para ${item?.id}` });
     }
 
-    // Allowlist — solo SKUs que existen en CATALOGO_MP.
-    const producto = CATALOGO_MP[item?.id];
+    // Allowlist — resolver el SKU del catálogo recortando el sufijo de talla.
+    const producto = CATALOGO[skuBase(item?.id)];
     if (!producto) {
       return res.status(400).json({ error: `producto no reconocido: ${item?.id}` });
     }
 
-    amountExpected += producto.price * cantidad;
+    amountExpected += (producto.price / 100) * cantidad;
     resumen.push({ id: item.id, cantidad });
   }
+
+  amountExpected = Math.round(amountExpected * 100) / 100; // 2 decimales, sin artefactos float
 
   const orderId = crypto.randomUUID();
   pedidosMP.set(orderId, { amountExpected, estado: 'pendiente', items: resumen, paymentId: null });
@@ -306,8 +338,8 @@ app.post('/api/mp/create-order', mpLimiter, (req, res) => {
 // en Perú) y actúa como red de seguridad/reconciliación.
 // ─────────────────────────────────────────────────────────────
 app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
-  if (!MP_ACCESS_TOKEN) {
-    return res.status(500).json({ error: 'Mercado Pago no configurado' });
+  if (GATEWAY !== 'mercadopago' || !MP_ACCESS_TOKEN) {
+    return res.status(503).json({ error: 'checkout no disponible todavía' });
   }
 
   try {
@@ -337,7 +369,14 @@ app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
         transaction_amount: pedido.amountExpected,
         description: pedido.items.map((i) => `${i.id}x${i.cantidad}`).join(', '),
         external_reference: orderId, // correlación con el webhook
-        payer: { email: payer?.email },
+        payer: {
+          email: payer?.email,
+          // Perú (MPE): MP suele exigir identificación (DNI) para aprobar.
+          // El Brick la recoge; se reenvía si el frontend la manda (no la fabricamos).
+          ...(payer?.identification?.number
+            ? { identification: { type: payer.identification.type || 'DNI', number: String(payer.identification.number) } }
+            : {}),
+        },
       }),
     });
 
@@ -451,7 +490,7 @@ app.post('/api/mp/webhook', async (req, res) => {
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
-const server = app.listen(PORT, () => console.log(`AP Beauty backend (Stripe) escuchando en :${PORT}`));
+const server = app.listen(PORT, () => console.log(`AP Beauty backend escuchando en :${PORT} · moneda ${MONEDA} · pasarela ${GATEWAY}`));
 
 // Apagado limpio para reloads de PM2 sin cortar peticiones en curso.
 for (const sig of ['SIGTERM', 'SIGINT']) {

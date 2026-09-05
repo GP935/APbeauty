@@ -11,9 +11,11 @@ module.exports = {
       script: 'server.js',
       // Carga ./server/.env (Node >= 20.12). El .env NUNCA se versiona.
       node_args: '--env-file-if-exists=.env',
-      // instances:1 / fork A PROPÓSITO: la idempotencia del webhook y el
-      // tracking de importes están en memoria por proceso. NO usar cluster
-      // hasta migrar el estado a DB/KV compartido.
+      // instances:1 / fork A PROPÓSITO: la idempotencia de los webhooks
+      // (eventosProcesados/notificacionesMP) y el tracking de importes
+      // (pedidos/pedidosMP) están en memoria por proceso. Con la pasarela
+      // Mercado Pago activa (2026-09-05) esto sigue igual de obligatorio.
+      // NO usar cluster hasta migrar el estado a DB/KV compartido.
       instances: 1,
       exec_mode: 'fork',
       max_memory_restart: '300M',

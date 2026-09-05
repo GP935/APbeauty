@@ -133,14 +133,13 @@ function bindRail(trackId, prevId, nextId, cardSelector, perPage = 1) {
 // Moneda visible de AP Beauty: soles peruanos (S/) — alineado con el catálogo (AB-F21/AB-F22).
 const CART_KEY = 'ap_cart';
 
-// Mercado Pago (Fase 2, LatAm/Perú — AP-B5). Clave PÚBLICA de prueba, formato
-// corregido por Paul 2026-08-10 (el briefing original traía el prefijo inválido
-// `APP_USR-TEST-...` — `APP_USR-` es producción y `TEST-` es test, combinarlos
-// no es un formato real de Mercado Pago; probable causa raíz del Brick mudo).
-// A diferencia de MP_ACCESS_TOKEN (backend, secreta), esta va expuesta en el
-// cliente a propósito. PENDIENTE: swap a la clave pública real de producción
-// (APP_USR-..., no TEST-...) antes de lanzar.
-const MP_PUBLIC_KEY = 'TEST-547dad31-b803-4d01-bc8a-0ada2b986f62';
+// Mercado Pago (AP-B5 / AP-J2). Clave PÚBLICA de PRODUCCIÓN — cuenta Perú (MPE)
+// de Paul, credenciales `APP_USR-` válidas verificadas por backend contra
+// `GET /users/me` 2026-09-05 (el fallo de agosto era el prefijo compuesto
+// `APP_USR-TEST-...`, que no es un formato real de MP). Va expuesta en el cliente
+// a propósito; el Access Token secreto vive solo en `server/.env` del backend.
+// El backend enruta con `CHECKOUT_GATEWAY=mercadopago` (env, no geo-IP).
+const MP_PUBLIC_KEY = 'APP_USR-61ebb75a-2d17-45e0-a1ae-8d2edf6cdd6c';
 
 function readCart() {
   try {
@@ -447,17 +446,22 @@ async function mountMercadoPagoBrick(container, errorEl, orderId, amount) {
       // El argumento de onSubmit varía entre ejemplos/versiones de la SDK de MP:
       // el briefing lo muestra plano (`cardFormData`), otras referencias lo
       // envuelven en `{ formData }`. Soporto ambas formas sin asumir cuál aplica.
-      onSubmit: (payload) => new Promise((resolve, reject) => {
-        const formData = (payload && payload.formData) || payload || {};
+      onSubmit: (brickData) => new Promise((resolve, reject) => {
+        const formData = (brickData && brickData.formData) || brickData || {};
         // Solo orderId + datos de tarjeta tokenizados: el importe SIEMPRE lo
         // resuelve el servidor desde el pedido (AP-B5, invariante 1) — nunca
         // se manda transaction_amount/installments del formData del Brick.
+        // `payer.identification` (DNI) va incluido: Perú (MPE) suele rechazar el
+        // pago sin él; el backend lo reenvía a MP si viene y lo ignora si no.
         const payload = {
           orderId,
           token: formData.token,
           issuer_id: formData.issuer_id,
           payment_method_id: formData.payment_method_id,
-          payer: { email: formData.payer?.email },
+          payer: {
+            email: formData.payer?.email,
+            identification: formData.payer?.identification,
+          },
         };
         fetch('/api/mp/process-payment', {
           method: 'POST',
@@ -513,24 +517,20 @@ async function initPaymentGateway() {
   }
   if (!market || market.gateway !== 'mercadopago') return;
 
-  const summary = btnCheckout.closest('.cart-summary');
-  if (!summary) return;
+  if (!btnCheckout.closest('.cart-summary')) return; // guarda: estructura esperada de carrito.html
 
   const cart = readCart();
   const items = cart.items.filter((i) => i.qty > 0).map((i) => ({ id: i.id, quantity: i.qty }));
   if (items.length === 0) return; // carrito vacío: se resuelve al recargar con items
 
-  // NO uso `.hidden` aquí: `.cart-summary__checkout`/`.cart-summary__secure` ya
-  // traen `display:flex` propio en style.css, que gana por especificidad sobre
-  // la regla `[hidden]{display:none}` del user-agent (mismo bug documentado en
-  // AP Beauty catálogo — `.cat-item[hidden]`/`.accordion-panel[hidden]` existen
-  // ahí por esto). Clase `.is-hidden-mp` a definir por css (pedido en su inbox).
+  // NO uso `.hidden` aquí: `.cart-summary__checkout` ya trae `display:flex`
+  // propio en style.css, que gana por especificidad sobre la regla
+  // `[hidden]{display:none}` del user-agent (mismo bug documentado en AP Beauty
+  // catálogo — `.cat-item[hidden]`/`.accordion-panel[hidden]` existen ahí por
+  // esto). Clase `.is-hidden-mp` definida por css.
+  // `.cart-summary__secure` ya NO se oculta: front dejó su copy agnóstico de
+  // proveedor ("Pago seguro", AB-F20) → sirve igual para Stripe y Mercado Pago.
   btnCheckout.classList.add('is-hidden-mp');
-  // Copy "Pago seguro gestionado por Stripe" no aplica a este mercado — la
-  // oculto en vez de reescribirla (el texto es dominio de front/copy, no mío).
-  // Solicitud dejada en inbox/front.md: versión de este texto agnóstica de proveedor.
-  const secure = summary.querySelector('.cart-summary__secure');
-  if (secure) secure.classList.add('is-hidden-mp');
 
   const container = document.createElement('div');
   container.id = 'cardPaymentBrick_container';

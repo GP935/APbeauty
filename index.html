@@ -174,9 +174,17 @@
       </div>
     </section>
 
-    <!-- ===== 3 · DESTACADOS (3 cards cuadradas estáticas — antes carrusel marquee) ===== -->
-    <!-- Carrusel giratorio eliminado. 3 cards de misma dimensión, simétricas dentro del .container
-         (sin sangrar márgenes). Necesita CSS nuevo: .product-rail__grid (3 col iguales) + .rail-card cuadrada. -->
+    <!-- ===== 3 · DESTACADOS (cards cuadradas estáticas — antes carrusel marquee) ===== -->
+    <!-- Carrusel giratorio eliminado. Cards de misma dimensión, simétricas dentro del .container
+         (sin sangrar márgenes). CSS: .product-rail__grid + .rail-card cuadrada.
+         AB-F33 (2026-09-05): los 3 SKUs anteriores (Lip Eclipse / Power Matte / Sculpt Liner) están
+         agotados / fuera de producción → salen de Destacados y quedan al final del catálogo. Aquí solo
+         los 2 productos activos: Individuales y Tiras. Ahora son 2 cards, no 3 → ver handoff css AB-C26
+         (grid a 2 columnas + sección OSCURA con texto claro sobre la paleta ya definida).
+         AB-F34 (2026-09-05): cada .rail-card pasa de <a> envolvente a <article> + botón visible
+         <a class="rail-card-cta">Ver más</a> que enlaza a la ficha del producto en el catálogo
+         (?cat=pestanas#individuales / #tiras). css: estilar .rail-card-cta (ghost sobre fondo oscuro);
+         opcional pattern "stretched link" (::after inset:0) para que toda la card siga siendo clicable. -->
     <section class="product-rail" id="destacados" aria-labelledby="rail-titulo">
       <div class="container">
         <div class="rail-head">
@@ -186,26 +194,21 @@
 
         <div class="product-rail__grid">
 
-          <a href="catalogo.html?cat=labios#labial-lip-eclipse" class="rail-card">
-            <div class="rail-card-img"><img src="products/labial-destacado.webp" alt="Labial Lip Eclipse de AP Beauty" loading="lazy"></div>
-            <h3 class="rail-card-name">Lip Eclipse</h3>
-            <p class="rail-card-meta">Labial mate de larga duración</p>
-            <p class="rail-card-price">S/ 55,99</p>
-          </a>
+          <article class="rail-card">
+            <div class="rail-card-img"><img src="pestanas-catalogo/iconica.jpg" alt="Pestañas individuales de AP Beauty en su estuche" loading="lazy"></div>
+            <h3 class="rail-card-name">Línea de Individuales</h3>
+            <p class="rail-card-meta">Pestañas individuales · 5 diseños</p>
+            <p class="rail-card-price">Desde S/ 25,00</p>
+            <a href="catalogo.html?cat=pestanas#individuales" class="rail-card-cta btn-editorial btn-editorial--ghost">Ver más</a>
+          </article>
 
-          <a href="catalogo.html?cat=rostro#power-matte" class="rail-card">
-            <div class="rail-card-img"><img src="products/power-matte-destacado.webp" alt="Paleta de rubor y contorno Power Matte" loading="lazy"></div>
-            <h3 class="rail-card-name">Power Matte</h3>
-            <p class="rail-card-meta">Paleta rubor + contorno</p>
-            <p class="rail-card-price">S/ 79,99</p>
-          </a>
-
-          <a href="catalogo.html?cat=ojos#sculpt-liner" class="rail-card">
-            <div class="rail-card-img"><img src="products/sculpt-liner-destacado.webp" alt="Delineador de precisión Sculpt Liner" loading="lazy"></div>
-            <h3 class="rail-card-name">Sculpt Liner</h3>
-            <p class="rail-card-meta">Delineador de precisión</p>
-            <p class="rail-card-price">S/ 39,99</p>
-          </a>
+          <article class="rail-card">
+            <div class="rail-card-img"><img src="pestanas-tiras-catalogo/destellos.jpg" alt="Pestañas de tira de AP Beauty en su estuche" loading="lazy"></div>
+            <h3 class="rail-card-name">Línea de Tiras</h3>
+            <p class="rail-card-meta">Pestañas de tira · 4 diseños</p>
+            <p class="rail-card-price">S/ 10,00</p>
+            <a href="catalogo.html?cat=pestanas#tiras" class="rail-card-cta btn-editorial btn-editorial--ghost">Ver más</a>
+          </article>
 
         </div>
       </div>
@@ -389,21 +392,21 @@
     <!-- Sin gradiente IG (§6.2): handle en rojo/negro según contraste — dominio CSS. -->
     <section class="insta" aria-labelledby="insta-titulo">
       <div class="container">
-        <h2 class="insta-handle" id="insta-titulo">@apbeauty</h2>
+        <h2 class="insta-handle" id="insta-titulo">@apbeauty.official</h2>
         <p class="insta-text">You are the standard. Precision is power. Presence before emotion.</p>
         <div class="insta-links">
-          <a href="https://www.instagram.com/makeup.andrea.ps/" class="insta-link">Síguenos en Instagram</a>
+          <a href="https://www.instagram.com/apbeauty.official/" class="insta-link">Síguenos en Instagram</a>
           <a href="https://tiktok.com/@apbeauty" class="insta-link">Síguenos en TikTok</a>
         </div>
         <div class="insta-grid">
-          <a href="https://www.instagram.com/makeup.andrea.ps/" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-1.jpeg" alt="" loading="lazy"></a>
-          <a href="https://www.instagram.com/makeup.andrea.ps/" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-2.jpeg" alt="" loading="lazy"></a>
-          <a href="https://www.instagram.com/makeup.andrea.ps/" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-3.jpeg" alt="" loading="lazy"></a>
-          <a href="https://www.instagram.com/makeup.andrea.ps/" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-4.jpeg" alt="" loading="lazy"></a>
-          <a href="https://www.instagram.com/makeup.andrea.ps/" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-5.jpeg" alt="" loading="lazy"></a>
-          <a href="https://www.instagram.com/makeup.andrea.ps/" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-6.jpeg" alt="" loading="lazy"></a>
-          <a href="https://www.instagram.com/makeup.andrea.ps/" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-7.jpeg" alt="" loading="lazy"></a>
-          <a href="https://www.instagram.com/makeup.andrea.ps/" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-8.jpeg" alt="" loading="lazy"></a>
+          <a href="https://www.instagram.com/apbeauty.official/" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-1.jpeg" alt="" loading="lazy"></a>
+          <a href="https://www.instagram.com/apbeauty.official/" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-2.jpeg" alt="" loading="lazy"></a>
+          <a href="https://www.instagram.com/apbeauty.official/" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-3.jpeg" alt="" loading="lazy"></a>
+          <a href="https://www.instagram.com/apbeauty.official/" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-4.jpeg" alt="" loading="lazy"></a>
+          <a href="https://www.instagram.com/apbeauty.official/" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-5.jpeg" alt="" loading="lazy"></a>
+          <a href="https://www.instagram.com/apbeauty.official/" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-6.jpeg" alt="" loading="lazy"></a>
+          <a href="https://www.instagram.com/apbeauty.official/" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-7.jpeg" alt="" loading="lazy"></a>
+          <a href="https://www.instagram.com/apbeauty.official/" class="insta-cell" aria-label="Ver AP Beauty en Instagram"><img src="insta/post-8.jpeg" alt="" loading="lazy"></a>
         </div>
       </div>
     </section>
@@ -439,7 +442,7 @@
           </p>
           <ul class="footer-social" aria-label="Síguenos en redes sociales">
             <li>
-              <a href="https://www.instagram.com/makeup.andrea.ps/" aria-label="Instagram">
+              <a href="https://www.instagram.com/apbeauty.official/" aria-label="Instagram">
                 <img class="footer-social__icon" src="trustelements/instagram.svg" alt="Instagram" width="20" height="20" loading="lazy">
               </a>
             </li>

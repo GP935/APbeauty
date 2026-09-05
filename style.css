@@ -332,9 +332,12 @@ section { padding-block: var(--section-pad-y); }
 }
 
 /* --------------------------------------------------------------------------
-   3 · Destacados (3 cards cuadradas estáticas) + arrows compartidas
-   AB-F3: el carrusel marquee se eliminó. Grid simétrico dentro del .container.
-   .rail-head / .rail-explore / .rail-arrow se conservan: los reusa la categoría.
+   3 · Destacados (cards cuadradas estáticas) + arrows compartidas
+   AB-F3: el carrusel marquee se eliminó. Grid dentro del .container.
+   .rail-head / .rail-explore / .rail-arrow se conservan: los reusa la categoría
+   → los overrides de color van SCOPEADOS a .product-rail, nunca globales.
+   AB-C26 (petición Paul, vía front): la sección pasa a OSCURA con la paleta
+   ya definida (sin color nuevo) y el grid de 3 → 2 cards (AB-F33).
    -------------------------------------------------------------------------- */
 .rail-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: clamp(20px, 2vw, 32px); gap: 16px; flex-wrap: wrap; }
 .rail-arrows { display: flex; align-items: center; gap: 12px; }
@@ -343,18 +346,32 @@ section { padding-block: var(--section-pad-y); }
 .rail-arrow { width: 38px; height: 38px; border: 1px solid var(--borde); background: #fff; border-radius: 50%; font-size: 20px; line-height: 1; cursor: pointer; color: var(--negro); transition: all .15s; }
 .rail-arrow:hover { border-color: var(--color-ink); color: var(--color-ink); }
 
-/* Grid de 3 destacados: columnas iguales, cards cuadradas, sin sangrar (dentro del .container). */
-.product-rail__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gutter); }
-.rail-card { display: block; text-decoration: none; color: var(--negro); }
-.rail-card-img { position: relative; background: var(--fondo-alt); border-radius: 12px; overflow: hidden; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+/* AB-C26 · Sección OSCURA. Fondo negro de la paleta (`--color-ink`). El vecino
+   anterior (hero) es imagen a sangre con scrims —no una losa de color plano—
+   así que no cuenta como "2 oscuras encadenadas"; el siguiente (.spotlight) es
+   `--color-bg-alt` claro → el ritmo claro/oscuro se respeta. Texto invertido a
+   claro sólo dentro de .product-rail (los mismos selectores en la categoría
+   siguen en su versión clara). */
+.product-rail { background: var(--color-ink); color: #fff; }
+.product-rail .section-title { color: #fff; }
+.product-rail .rail-explore { color: #fff; }
+.product-rail .rail-explore:hover { color: rgba(255, 255, 255, 0.6); }
+
+/* Grid de destacados: 2 cards. `minmax(0, 440px)` + `justify-content: start`
+   las mantiene a tamaño editorial alineadas bajo el .rail-head (no se agigantan
+   en desktop ancho como pasaría con `1fr`) y deja que encojan en viewports
+   medianos. */
+.product-rail__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 440px)); justify-content: start; gap: var(--gutter); }
+.rail-card { display: block; text-decoration: none; color: #fff; }
+.rail-card-img { position: relative; background: var(--color-ink-soft); border-radius: 12px; overflow: hidden; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
 .rail-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; }
 .rail-card:hover .rail-card-img img { transform: scale(1.04); }
-.rail-card-name { font-family: var(--font-body); font-size: 15px; font-weight: 700; margin: 0 0 4px; }
-.rail-card-meta { font-size: 13px; color: var(--gris-muted); margin: 0 0 6px; }
-.rail-card-price { font-size: 16px; font-weight: 800; margin: 0; }
+.rail-card-name { font-family: var(--font-body); font-size: 15px; font-weight: 700; margin: 0 0 4px; color: #fff; }
+.rail-card-meta { font-size: 13px; color: rgba(255, 255, 255, 0.66); margin: 0 0 6px; }
+.rail-card-price { font-size: 16px; font-weight: 800; margin: 0; color: #fff; }
 
 @media (max-width: 768px) {
-  .product-rail__grid { grid-template-columns: repeat(2, 1fr); }
+  .product-rail__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .rail-explore { display: none; }
 }
 @media (max-width: 520px) { .product-rail__grid { grid-template-columns: 1fr; } }

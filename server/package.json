@@ -1,7 +1,7 @@
 {
   "name": "apbeauty-backend",
   "version": "1.0.0",
-  "description": "Backend de pagos AP Beauty — Stripe Checkout (Fase 1)",
+  "description": "Backend de pagos AP Beauty — moneda PEN; Stripe / Mercado Pago vía CHECKOUT_GATEWAY",
   "type": "module",
   "main": "server.js",
   "scripts": {
