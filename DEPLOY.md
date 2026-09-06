@@ -18,7 +18,11 @@ de `GET /api/market` → `{ country, gateway, currency:"PEN" }`.
 
 ## 0. Requisitos en el VPS
 - Node.js ≥ 20.12, `npm`, `git`, `nginx`, `pm2` (`npm i -g pm2`).
-- Dominio `apbeauty.com` gestionado en Cloudflare.
+- Dominio `apbeauty-lima.com` gestionado en Cloudflare.
+- VPS **Hetzner** — el acceso SSH del agente devops (host, usuario `claudeagent`,
+  clave, reglas) está en `acceso_vps/acceso_vps_apbeauty.md` en la raíz del repo
+  `ecosistema_IA` (git-ignored, NO en este repo). Desde 2026-09-06 el agente
+  devops puede ejecutar los pasos de servidor de este runbook él mismo.
 
 ## 1. Código en el VPS
 ```bash
@@ -39,7 +43,7 @@ nano server/.env   # rellenar con valores REALES (ver abajo)
 CHECKOUT_GATEWAY=mercadopago
 MP_ACCESS_TOKEN=<Access Token APP_USR-... de PRODUCCIÓN — cópialo del .env local o pídeselo a Paul>
 MP_WEBHOOK_SECRET=<lo genera Paul al crear el endpoint de notificaciones — paso 6bis>
-PUBLIC_BASE_URL=https://<dominio real>
+PUBLIC_BASE_URL=https://apbeauty-lima.com
 PORT=3000
 ```
 
@@ -48,7 +52,7 @@ PORT=3000
 | `CHECKOUT_GATEWAY` | `mercadopago` | `none` = checkout apagado (503 limpio); `stripe` = dormido; `mercadopago` = activo. Con `none` el server **no aborta** aunque falten claves Stripe. |
 | `MP_ACCESS_TOKEN` | `APP_USR-...` (producción) | Secreto, backend only. NUNCA `APP_USR-TEST-...` (prefijo compuesto inválido). Distinto de `MP_PUBLIC_KEY`. |
 | `MP_WEBHOOK_SECRET` | firma del webhook MP | Paso 6bis. Sin él: los pagos `approved` inmediatos se confirman igual (respuesta directa de la API); solo se pierde la reconciliación de `in_process`. |
-| `PUBLIC_BASE_URL` | `https://<dominio>` | Sin barra final. |
+| `PUBLIC_BASE_URL` | `https://apbeauty-lima.com` | Sin barra final. |
 | `PORT` | `3000` | Nginx hace reverse proxy aquí. |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | **vacías** | Stripe dormido. Solo hacen falta si `CHECKOUT_GATEWAY=stripe`. |
 
@@ -70,12 +74,12 @@ está en memoria. No pasar a cluster sin migrar el estado a DB/KV.
 sudo cp nginx/apbeauty.conf /etc/nginx/sites-available/apbeauty.conf
 sudo ln -s /etc/nginx/sites-available/apbeauty.conf /etc/nginx/sites-enabled/
 # Certificado del origen (una opción):
-sudo certbot --nginx -d apbeauty.com -d www.apbeauty.com
+sudo certbot --nginx -d apbeauty-lima.com -d www.apbeauty-lima.com
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
 ## 5. Cloudflare
-- DNS: `A apbeauty.com → <IP del VPS>` (proxied, nube naranja) + `www` igual.
+- DNS: `A apbeauty-lima.com → <IP del VPS>` (proxied, nube naranja) + `www` igual.
 - SSL/TLS: modo **Full (strict)** (con cert válido en el origen).
 - Regla para `/api/*`: **Cache = Bypass** y desactivar "Bot Fight Mode" ahí
   (que no interfiera con el webhook ni con la creación de sesión).
@@ -83,7 +87,7 @@ sudo nginx -t && sudo systemctl reload nginx
 ## 6. Webhook de Mercado Pago (producción) — PASARELA ACTIVA
 - Dashboard Mercado Pago → **Tus integraciones** → tu aplicación → **Webhooks**
   → configurar notificaciones:
-  - URL: `https://<dominio>/api/mp/webhook`
+  - URL: `https://apbeauty-lima.com/api/mp/webhook`
   - Evento: **`payments`**
 - Copia la **Firma secreta** → `MP_WEBHOOK_SECRET` en `server/.env`.
 - Completar la **dirección en el perfil MP** — hoy `billing.allow:false` code
@@ -96,21 +100,29 @@ sudo nginx -t && sudo systemctl reload nginx
   (server→server en `/api/mp/process-payment`); solo se pierde la reconciliación
   de `in_process` vía webhook. → tarea de Paul: **AB-D6**.
 
-## 6bis. CSP del Brick embebido — verificar con clic real
-- El Card Payment Brick va **embebido** (sin redirect) → el CSP de
-  `nginx/apbeauty.conf` incluye los orígenes de Mercado Pago
-  (`sdk.mercadopago.com`, `api.mercadopago.com`, `*.mlstatic.com`,
-  `www.mercadopago.com`, `www.mercadolibre.com`).
-- ⚠️ **NO verificado con clic real contra este conf.** Cuando js monte el Brick
-  de producción (AP-J2, desbloqueado 2026-09-05): abrir consola del navegador
-  en `carrito.html` con `CHECKOUT_GATEWAY=mercadopago`, confirmar **0 CSP
-  violations**, y ampliar el CSP con cualquier subdominio que falte.
+## 6bis. CSP del Brick embebido — VERIFICADA 2026-09-06
+- El Card Payment Brick va **embebido** (sin redirect). ✅ **CSP verificada con
+  clic real** por devops (Chrome + proxy local replicando la cabecera de
+  `nginx/apbeauty.conf` contra el backend de producción): Brick renderiza
+  completo (secure fields + campo DNI), **0 CSP violations**.
+- **Requiere `script-src 'unsafe-inline'`** — el SDK de MP inyecta scripts
+  inline y Bricks embebido no admite nonce/hash en hosting estático. Tradeoff
+  aceptado (la alternativa sería Checkout Pro por redirect, descartada por
+  producto). El sitio no renderiza HTML de usuario, así que el riesgo XSS es
+  acotado.
+- Orígenes MP en el CSP (wildcards por subdominio): `sdk.mercadopago.com` +
+  `*.mlstatic.com` + `*.mercadopago.com` (script/connect/frame/img),
+  `*.mercadolibre.com` + `*.mercadolivre.com` (connect/img — telemetría).
+- ⚠️ Antes de este fix (commit `68dfbf9` y anteriores) el CSP **bloqueaba el
+  Brick en producción** (`Bricks.create: component initialization failed`). Al
+  desplegar este `apbeauty.conf`: `sudo nginx -t && sudo systemctl reload
+  nginx`, luego re-verificar en `https://apbeauty-lima.com/carrito.html`.
 
 ## 6ter. Stripe (dormido — solo si se reactiva)
 - Poner `CHECKOUT_GATEWAY=stripe` + Price IDs reales **en PEN** en el `CATALOGO`
   de `server.js` + `STRIPE_SECRET_KEY`.
 - Dashboard Stripe → Developers → Webhooks → **Add endpoint**:
-  URL `https://<dominio>/api/stripe/webhook`, evento `checkout.session.completed`.
+  URL `https://apbeauty-lima.com/api/stripe/webhook`, evento `checkout.session.completed`.
 - **Signing secret** (`whsec_...`) → `STRIPE_WEBHOOK_SECRET`. `pm2 reload`.
 - Añadir los orígenes `js.stripe.com` / `checkout.stripe.com` / `api.stripe.com`
   al CSP de Nginx (hoy no están).
@@ -120,9 +132,9 @@ sudo nginx -t && sudo systemctl reload nginx
 # Desde el VPS (directo a Node, sin pasar por Nginx/Cloudflare):
 curl -s http://127.0.0.1:3000/health
 # Desde fuera (Nginx proxya /health a Node — cadena completa):
-curl -s https://apbeauty.com/health
+curl -s https://apbeauty-lima.com/health
 ```
-- `curl -s https://<dominio>/api/market` → `{"country":"PE","gateway":"mercadopago","currency":"PEN"}`.
+- `curl -s https://apbeauty-lima.com/api/market` → `{"country":"PE","gateway":"mercadopago","currency":"PEN"}`.
 - Añadir producto → `carrito.html` → aparece el **Card Payment Brick embebido**
   (no redirect). Consola del navegador: **0 CSP violations** (§6bis).
 - Pagar con tarjeta real (o de prueba MP en modo test).
@@ -149,8 +161,8 @@ cd /var/www/apbeauty && ./scripts/deploy.sh
       (backend AB-B2; sin conversión EUR→PEN)
 - [ ] Webhook MP de producción creado → `MP_WEBHOOK_SECRET` real en `.env` (§6) — **AB-D6, Paul**
 - [ ] Dirección del perfil MP completada (`address_pending`) — **AB-D6, Paul**
-- [ ] CSP de Nginx con orígenes MP verificados sin violations en consola (§6bis) — **js, con el Brick montado**
-- [ ] Brick de producción montado en `carrito.html` (AP-J2 — js)
+- [x] CSP de Nginx verificada (§6bis, devops 2026-09-06: Brick renderiza, 0 violations) — **falta DESPLEGAR este `apbeauty.conf` al VPS** (`nginx -t && systemctl reload nginx`); el CSP en producción hoy bloquea el Brick
+- [x] Brick de producción montado en `carrito.html` (AP-J2 — js, 2026-09-05)
 - [ ] `pm2 reload apbeauty-backend` tras cada cambio de `.env`
 
 **Reactivar Stripe (opcional, hoy dormido):** ver §6ter — `CHECKOUT_GATEWAY=stripe`,
