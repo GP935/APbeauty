@@ -497,6 +497,25 @@ async function mountMercadoPagoBrick(container, errorEl, orderId, amount) {
   });
 }
 
+// Confirma que el Brick llegó a pintar su iframe. En producción se ha visto que
+// si un CSP / adblock / fallo de red impide cargar el código del Brick, la SDK
+// de MP **ni rechaza `create()` ni dispara `onError` de forma fiable** — solo
+// loguea "Bricks.create: initialization failed" y deja el contenedor vacío. Sin
+// esta comprobación el cliente se queda con la página de pago EN BLANCO (sin
+// botón — lo ocultamos — y sin formulario). Resuelve `true` en cuanto aparece un
+// iframe, o `false` al agotar el tiempo.
+function brickRendered(container, timeoutMs) {
+  return new Promise((resolve) => {
+    if (container.querySelector('iframe')) { resolve(true); return; }
+    const done = (val) => { obs.disconnect(); clearTimeout(timer); resolve(val); };
+    const obs = new MutationObserver(() => {
+      if (container.querySelector('iframe')) done(true);
+    });
+    obs.observe(container, { childList: true, subtree: true });
+    const timer = setTimeout(() => done(!!container.querySelector('iframe')), timeoutMs);
+  });
+}
+
 // Router dual-market (AP-B5) — GET /api/market es la fuente única (evita
 // duplicar `pasarelaPara` en el cliente). Si el mercado es 'stripe' (default,
 // incluye cualquier fallo de red) no toca nada: #btn-checkout ya está cableado
@@ -552,10 +571,16 @@ async function initPaymentGateway() {
     const order = await orderRes.json().catch(() => ({}));
     if (!orderRes.ok || !order.orderId) throw new Error(order.error || 'order_failed');
 
-    await mountMercadoPagoBrick(container, errorEl, order.orderId, order.amount);
+    // Sin await bloqueante: si el código del Brick está bloqueado, `create()`
+    // puede colgarse sin resolver ni rechazar. Lanzamos el montaje y verificamos
+    // aparte que el iframe aparece; si no, mensaje visible en vez de página en blanco.
+    mountMercadoPagoBrick(container, errorEl, order.orderId, order.amount)
+      .catch((err) => console.error('Mercado Pago — el Brick no montó:', err));
+
+    if (!(await brickRendered(container, 8000))) throw new Error('brick_no_render');
   } catch (err) {
     console.error('Mercado Pago — no se pudo iniciar el checkout:', err);
-    showMpError(errorEl, 'No se pudo cargar el pago. Recarga la página o inténtalo más tarde.');
+    showMpError(errorEl, 'No se pudo cargar el formulario de pago. Recarga la página e inténtalo de nuevo.');
   }
 }
 
