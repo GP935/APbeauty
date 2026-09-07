@@ -1,0 +1,6 @@
+# robots.txt — AP Beauty (https://apbeauty-lima.com)
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://apbeauty-lima.com/sitemap.xml
