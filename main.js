@@ -477,14 +477,20 @@ function buildShippingForm() {
 // Lee el formulario a la forma que consume el backend (POST /api/mp/process-payment).
 // El backend valida/sanea de nuevo y decide qué reenvía a MP (`additional_info`)
 // y a n8n — aquí sólo se recogen y normalizan strings.
+// `address.line` (calle + número en un string) es lo que exige `sanearShipping`
+// del backend como mínimo obligatorio; `street`/`number` van aparte por si algún
+// día se mapean a `street_name`/`street_number` de MP.
 function readShippingForm(form) {
   const val = (n) => (form.elements[n]?.value || '').trim();
+  const street = val('calle');
+  const number = val('numero');
   return {
     name: val('nombre'),
     phone: val('telefono'),
     address: {
-      street: val('calle'),
-      number: val('numero'),
+      line: [street, number].filter(Boolean).join(' '),
+      street,
+      number,
       reference: val('referencia'),
       district: val('distrito'),
       province: val('provincia'),
@@ -548,6 +554,12 @@ async function mountMercadoPagoBrick(container, errorEl, orderId, amount, shippi
         // pago sin él; el backend lo reenvía a MP si viene y lo ignora si no.
         // `shipping` va aparte del `payer` de MP: el backend decide qué mapea a
         // `additional_info`/`shipments` de MP y qué manda a n8n (su dominio).
+        // `device_id`: fingerprint antifraude que el SDK de MP recolecta solo
+        // (lo carga `loadMercadoPagoSdk()` + `new MercadoPago()`) y expone en
+        // `window.MP_DEVICE_SESSION_ID`. Verificado en producción: se puebla a
+        // los pocos segundos de instanciar la SDK, muy antes de este onSubmit.
+        // Sin él, MP rechaza pagos en Perú ("no pasó los controles de
+        // seguridad"). El backend lo revalida y lo reenvía como `X-meli-session-id`.
         const payload = {
           orderId,
           token: formData.token,
@@ -558,6 +570,7 @@ async function mountMercadoPagoBrick(container, errorEl, orderId, amount, shippi
             identification: formData.payer?.identification,
           },
           ...(shipping ? { shipping } : {}),
+          ...(window.MP_DEVICE_SESSION_ID ? { device_id: window.MP_DEVICE_SESSION_ID } : {}),
         };
         fetch('/api/mp/process-payment', {
           method: 'POST',
@@ -928,14 +941,31 @@ function setupLashArticle(article) {
 }
 
 // 6 · Políticas — acordeón exclusivo (AB-P3): un solo panel abierto a la vez
+// El cierre difiere `hidden = true` con un timer cancelable (no con un listener
+// `transitionend` de un solo uso): al reabrir el mismo panel se cancelaba tarde y
+// la animación de apertura disparaba el listener obsoleto → ocultaba el panel
+// recién abierto. `.is-open` se añade tras un reflow síncrono, no en rAF (que no
+// dispara en algunos entornos y dejaba el panel colapsado a 0fr).
+const panelCloseTimers = new WeakMap();
+const PANEL_TRANSITION_MS = 300; // == transition: grid-template-rows .3s (style.css)
+
 function openPanel(panel) {
+  if (!panel) return;
+  clearTimeout(panelCloseTimers.get(panel));
+  panelCloseTimers.delete(panel);
   panel.hidden = false;
-  requestAnimationFrame(() => panel.classList.add('is-open'));
+  void panel.offsetHeight; // reflow: permite la transición desde el estado oculto
+  panel.classList.add('is-open');
 }
 
 function closePanel(panel) {
+  if (!panel) return;
   panel.classList.remove('is-open');
-  panel.addEventListener('transitionend', () => { panel.hidden = true; }, { once: true });
+  clearTimeout(panelCloseTimers.get(panel));
+  panelCloseTimers.set(panel, setTimeout(() => {
+    panel.hidden = true;
+    panelCloseTimers.delete(panel);
+  }, PANEL_TRANSITION_MS));
 }
 
 function initPoliciesAccordion() {
@@ -949,15 +979,15 @@ function initPoliciesAccordion() {
       const panel = document.getElementById(trigger.getAttribute('aria-controls'));
       const isOpen = trigger.getAttribute('aria-expanded') === 'true';
 
-      triggers.forEach((t) => { // exclusivo: cierra todos primero
+      triggers.forEach((t) => { // exclusivo: cierra los demás
+        if (t === trigger) return;
         t.setAttribute('aria-expanded', 'false');
         closePanel(document.getElementById(t.getAttribute('aria-controls')));
       });
 
-      if (!isOpen) { // si estaba cerrado, ábrelo (toggle)
-        trigger.setAttribute('aria-expanded', 'true');
-        openPanel(panel);
-      }
+      trigger.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+      if (isOpen) closePanel(panel);
+      else openPanel(panel);
     });
   });
 

@@ -674,7 +674,7 @@ app.post('/api/mp/create-order', mpLimiter, (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // POST /api/mp/process-payment — callback onSubmit del Card Payment Brick.
-// Body: { orderId, token, issuer_id, payment_method_id, payer: { email } }
+// Body: { orderId, token, issuer_id, payment_method_id, payer: { email }, shipping, device_id }
 // Respuesta: { status, id }
 //
 // Invariante 1: transaction_amount SIEMPRE sale de pedidosMP (orderId), nunca
@@ -693,7 +693,7 @@ app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
   }
 
   try {
-    const { orderId, token, issuer_id, payment_method_id, payer, shipping } = req.body || {};
+    const { orderId, token, issuer_id, payment_method_id, payer, shipping, device_id } = req.body || {};
     const pedido = pedidosMP.get(orderId);
     if (!pedido) {
       return res.status(400).json({ error: 'pedido no encontrado o expirado' });
@@ -709,6 +709,14 @@ app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
     const envio = sanearShipping(shipping);
     if (envio) pedido.shipping = envio;
 
+    // Device ID (fingerprint antifraude de MP). Lo recolecta el SDK JS de MP en
+    // el navegador (security.js / Card Payment Brick) y lo manda el frontend en
+    // el body. Sin él, MP rechaza pagos en Perú con "no pasó los controles de
+    // seguridad". Se reenvía tal cual como header `X-meli-session-id`.
+    const deviceId = /^[\w.\-]{1,300}$/.test(String(device_id || '')) ? String(device_id) : '';
+    if (deviceId) pedido.deviceId = deviceId;
+    else console.warn(`process-payment ${orderId}: sin device_id — riesgo de rechazo antifraude de MP.`);
+
     const response = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
@@ -717,6 +725,7 @@ app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
         // Idempotencia propia del orderId: si el cliente reintenta la misma
         // orden (doble click, retry de red), MP no duplica el cobro.
         'X-Idempotency-Key': orderId,
+        ...(deviceId ? { 'X-meli-session-id': deviceId } : {}),
       },
       body: JSON.stringify({
         token,
