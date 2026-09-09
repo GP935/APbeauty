@@ -11,3 +11,6 @@ server/node_modules/
 npm-debug.log*
 .DS_Store
 Thumbs.db
+
+# Log de compras / reservas del backend — datos personales de clientes
+server/logs/

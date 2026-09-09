@@ -1,0 +1,109 @@
+{
+  "name": "AP Beauty · Comprobante de pago",
+  "meta": {
+    "skeleton": "BLOQUE 2 del briefing 2026-09-06. Importar en n8n, configurar credenciales (Header Auth del Webhook + SMTP del emailSend), rellenar los [PLACEHOLDER] y activar.",
+    "trigger": "POST desde server.js (notificarComprobante) cuando un pago Mercado Pago queda 'approved'. server.js YA valida la firma HMAC de MP — este flujo NO la revalida.",
+    "decisionPendientePaul": "Opcion A (email HTML, implementada aqui) vs Opcion B (adjuntar PDF: insertar un nodo HTML-to-PDF antes de los emailSend y pasar su binario como attachment)."
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pago-confirmado",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-in",
+      "name": "Webhook · pago-confirmado",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "ap-beauty-pago-confirmado",
+      "notes": "Header Auth: crear credencial con el MISMO valor que N8N_WEBHOOK_TOKEN del .env del backend. El backend manda 'Authorization: Bearer <token>'."
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Idempotencia (briefing): mismo order_id/payment_id no reenvia el correo.\n// Reintentos de red del backend, o process-payment + webhook para la misma orden.\nconst d = $json.body ?? $json;\nconst key = String(d.payment_id || d.order_id || '');\nif (!key) { throw new Error('payload sin order_id/payment_id'); }\n\nconst store = $getWorkflowStaticData('global');\nstore.procesados = store.procesados || {};\nif (store.procesados[key]) {\n  return [{ json: { duplicate: true, key } }];\n}\nstore.procesados[key] = new Date().toISOString();\n\n// Poda: conserva solo los ultimos 500 para no crecer sin limite.\nconst claves = Object.keys(store.procesados);\nif (claves.length > 500) {\n  claves.sort((a, b) => store.procesados[a].localeCompare(store.procesados[b]));\n  for (const k of claves.slice(0, claves.length - 500)) delete store.procesados[k];\n}\n\n// Formateo para las plantillas de correo.\nconst money = (n) => 'S/ ' + Number(n).toFixed(2);\nconst filas = (d.items || []).map((i) =>\n  `<tr><td>${i.name}</td><td align=\"center\">${i.quantity}</td><td align=\"right\">${money(i.price_pen)}</td><td align=\"right\">${money(i.price_pen * i.quantity)}</td></tr>`\n).join('');\nconst fecha = new Date(d.payment_date || Date.now()).toLocaleString('es-PE', { timeZone: 'America/Lima' });\n\nreturn [{ json: {\n  duplicate: false,\n  order_id: d.order_id,\n  payment_id: d.payment_id,\n  customer_name: d.customer_name || 'cliente',\n  customer_email: d.customer_email,\n  total_pen: d.total_pen,\n  total_fmt: money(d.total_pen),\n  fecha_fmt: fecha,\n  items_rows_html: filas,\n} }];"
+      },
+      "id": "normaliza",
+      "name": "Idempotencia + formato",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "strict" },
+          "conditions": [
+            { "leftValue": "={{ $json.duplicate }}", "rightValue": false, "operator": { "type": "boolean", "operation": "equals" } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-nuevo",
+      "name": "¿Pedido nuevo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "[PLACEHOLDER: remitente de marca, ej. hola@apbeauty-lima.com]",
+        "toEmail": "={{ $json.customer_email }}",
+        "subject": "=Tu comprobante de compra · AP Beauty (pedido {{ $json.order_id }})",
+        "emailFormat": "html",
+        "html": "=<div style=\"font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#242422\">\n<h2>Gracias por tu compra, {{ $json.customer_name }}</h2>\n<p>Recibimos tu pago. Este es el detalle de tu pedido <strong>{{ $json.order_id }}</strong>.</p>\n<table width=\"100%\" cellpadding=\"6\" style=\"border-collapse:collapse;font-size:14px\">\n<thead><tr style=\"border-bottom:2px solid #242422\"><th align=\"left\">Producto</th><th>Cant.</th><th align=\"right\">Precio</th><th align=\"right\">Subtotal</th></tr></thead>\n<tbody>{{ $json.items_rows_html }}</tbody>\n<tfoot><tr style=\"border-top:2px solid #242422\"><td colspan=\"3\" align=\"right\"><strong>Total</strong></td><td align=\"right\"><strong>{{ $json.total_fmt }}</strong></td></tr></tfoot>\n</table>\n<p style=\"font-size:13px;color:#666\">Pago procesado por Mercado Pago · ID {{ $json.payment_id }} · {{ $json.fecha_fmt }}</p>\n<p style=\"font-size:13px\">Dudas: [PLACEHOLDER: canal de contacto / WhatsApp]</p>\n</div>",
+        "options": {}
+      },
+      "id": "mail-cliente",
+      "name": "Email · cliente",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [680, 200],
+      "notes": "Credencial SMTP a configurar en n8n (Resend/SendGrid/Gmail/SMTP propio — [PLACEHOLDER pendiente Paul]). Opcion B: anteponer nodo HTML-to-PDF y adjuntar."
+    },
+    {
+      "parameters": {
+        "fromEmail": "[PLACEHOLDER: remitente de marca]",
+        "toEmail": "[PLACEHOLDER: correo interno AP Beauty para registro de ventas]",
+        "subject": "=🟢 Venta {{ $json.total_fmt }} · pedido {{ $json.order_id }}",
+        "emailFormat": "html",
+        "html": "=<div style=\"font-family:Arial,sans-serif;font-size:14px\">\n<h3>Nueva venta confirmada</h3>\n<p><strong>Pedido:</strong> {{ $json.order_id }}<br>\n<strong>Pago MP:</strong> {{ $json.payment_id }}<br>\n<strong>Fecha:</strong> {{ $json.fecha_fmt }}<br>\n<strong>Cliente:</strong> {{ $json.customer_name }} &lt;{{ $json.customer_email }}&gt;<br>\n<strong>Total:</strong> {{ $json.total_fmt }}</p>\n<table width=\"100%\" cellpadding=\"6\" style=\"border-collapse:collapse\"><tbody>{{ $json.items_rows_html }}</tbody></table>\n</div>",
+        "options": {}
+      },
+      "id": "mail-interno",
+      "name": "Email · interno",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [680, 380],
+      "notes": "Registro para contabilidad. Mismos datos que el del cliente."
+    },
+    {
+      "parameters": {
+        "content": "## Errores\nSi un `emailSend` falla:\n- El backend YA revierte su flag `comprobanteEnviado` y el webhook de MP reintentará el POST → este flujo se re-dispara y (por la idempotencia) solo reintenta si el correo no llegó a marcarse.\n- Para alertas activas: conectar la salida de error de los nodos email a un nodo de Telegram/Slack del ecosistema n8n de Paul.\n\n## Opción B (PDF)\nInsertar un nodo **HTML to PDF** (community o vía servicio) entre *Idempotencia + formato* y los *emailSend*, y en cada email añadir el binario como *attachment*.",
+        "height": 260,
+        "width": 360
+      },
+      "id": "nota-errores",
+      "name": "Nota · errores y PDF",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [680, 560]
+    }
+  ],
+  "connections": {
+    "Webhook · pago-confirmado": { "main": [[{ "node": "Idempotencia + formato", "type": "main", "index": 0 }]] },
+    "Idempotencia + formato": { "main": [[{ "node": "¿Pedido nuevo?", "type": "main", "index": 0 }]] },
+    "¿Pedido nuevo?": { "main": [
+      [{ "node": "Email · cliente", "type": "main", "index": 0 }, { "node": "Email · interno", "type": "main", "index": 0 }],
+      []
+    ] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false,
+  "pinData": {}
+}

@@ -2,3 +2,6 @@ node_modules/
 .env
 .env.local
 npm-debug.log*
+
+# Log de compras / reservas — datos personales de clientes, NUNCA versionar
+logs/

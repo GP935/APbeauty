@@ -4,17 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ===== DOMINIO SEO ===== -->
-  <!-- Rellena aquí: <title>, meta description, canonical, Open Graph, Twitter Card.
-       OG image placeholder en og/home-og.svg (sustituir por 1200x630 real).
-       El JSON-LD (Organization + WebSite/SearchAction) va antes de </body>.
-       Front no toca este bloque. -->
+  <!-- ===== DOMINIO SEO — Front no toca este bloque ===== -->
+  <title>Pestañas Postizas en Perú | AP Beauty</title>
+  <meta name="description" content="Pestañas postizas de AP Beauty: individuales y de tira, ligeras, reutilizables y de acabado natural. Creadas por una maquilladora profesional. Envíos a todo el Perú.">
+  <link rel="canonical" href="https://apbeauty-lima.com/">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#000000">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="AP Beauty">
+  <meta property="og:locale" content="es_PE">
+  <meta property="og:title" content="Pestañas Postizas en Perú | AP Beauty">
+  <meta property="og:description" content="Pestañas postizas individuales y de tira: ligeras, reutilizables y de acabado natural. Creadas por una maquilladora profesional. Envíos a todo el Perú.">
+  <meta property="og:url" content="https://apbeauty-lima.com/">
+  <!-- TODO OG real 1200x630 (og/og-home.jpg). Interino: retrato editorial de marca. -->
+  <meta property="og:image" content="https://apbeauty-lima.com/brand/modelo_maquilladora_16.9_ratio.jpg">
+  <meta property="og:image:alt" content="Maquilladora profesional de AP Beauty">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Pestañas Postizas en Perú | AP Beauty">
+  <meta name="twitter:description" content="Pestañas postizas individuales y de tira: ligeras, reutilizables y de acabado natural. Envíos a todo el Perú.">
+  <meta name="twitter:image" content="https://apbeauty-lima.com/brand/modelo_maquilladora_16.9_ratio.jpg">
   <!-- ===== FIN bloque SEO ===== -->
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260902">
+  <link rel="stylesheet" href="style.css?v=20260906">
   <link rel="icon" href="brand/ap_ico_wnb-removebg-preview.png">
 </head>
 <body>
@@ -99,7 +115,7 @@
   <!-- ===== CARRITO · DRAWER deslizante (disponible en todas las páginas) ===== -->
   <!-- Contrato JS: #btn-cart (abre, en header) · #cart-drawer · #cart-backdrop · #btn-cart-close (cierra)
        · #cart-empty (estado vacío) · #cart-items (JS renderiza líneas desde localStorage `ap_cart`)
-       · #cart-foot (pie con subtotal+CTA, JS lo muestra al haber items) · #cart-subtotal (JS escribe €)
+       · #cart-foot (pie con subtotal+CTA, JS lo muestra al haber items) · #cart-subtotal (JS escribe S/)
        · #cart-checkout (→ carrito.html). Mecánica = menú móvil (X / Esc / click fuera).
        Plantilla de línea reutilizable (drawer y carrito.html): #cart-line-tpl. -->
   <div class="cart-backdrop" id="cart-backdrop" hidden></div>
@@ -121,7 +137,7 @@
     <div class="cart-drawer__foot" id="cart-foot" hidden>
       <div class="cart-drawer__summary">
         <span>Subtotal</span>
-        <span id="cart-subtotal">0,00€</span>
+        <span id="cart-subtotal">S/ 0,00</span>
       </div>
       <p class="cart-drawer__note">Envío e impuestos calculados al finalizar.</p>
       <a href="carrito.html" class="btn-editorial btn-editorial--solid cart-drawer__checkout" id="cart-checkout">Ver carrito y pagar</a>
@@ -477,7 +493,7 @@
           <h2 class="footer-col__title">Legal</h2>
           <ul class="footer-col__links">
             <li><a href="politicas.html#terminos">Términos y Condiciones</a></li>
-            <li><a href="politicas.html#pagos">Pagos y Reembolsos</a></li>
+            <li><a href="politicas.html#devoluciones">Devoluciones y Cambios</a></li>
             <li><a href="politicas.html#privacidad">Privacidad</a></li>
             <li><a href="politicas.html#cookies">Cookies</a></li>
           </ul>
@@ -503,10 +519,59 @@
   </footer>
 
   <!-- ===== DOMINIO SEO: JSON-LD ===== -->
-  <!-- Inserta aquí los <script type="application/ld+json"> de Organization y
-       WebSite/SearchAction. Front no toca este bloque. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://apbeauty-lima.com/#organization",
+        "name": "AP Beauty",
+        "url": "https://apbeauty-lima.com/",
+        "logo": "https://apbeauty-lima.com/brand/ap_ico_bnw-removebg-preview.png",
+        "image": "https://apbeauty-lima.com/brand/ap_ico_bnw-removebg-preview.png",
+        "email": "apbeautyoficial@gmail.com",
+        "slogan": "Controlled Presence",
+        "description": "Marca de maquillaje y pestañas creada por una maquilladora y modelo profesional. Envíos en Perú.",
+        "areaServed": { "@type": "Country", "name": "Perú" },
+        "sameAs": [
+          "https://www.instagram.com/apbeauty.official/",
+          "https://tiktok.com/@apbeauty",
+          "https://youtube.com/@apbeauty"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://apbeauty-lima.com/#website",
+        "url": "https://apbeauty-lima.com/",
+        "name": "AP Beauty",
+        "inLanguage": "es-PE",
+        "publisher": { "@id": "https://apbeauty-lima.com/#organization" }
+      },
+      {
+        "@type": "ItemList",
+        "@id": "https://apbeauty-lima.com/#destacados",
+        "name": "Productos destacados",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Línea de Individuales",
+            "url": "https://apbeauty-lima.com/catalogo.html?cat=pestanas#individuales"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Línea de Tiras",
+            "url": "https://apbeauty-lima.com/catalogo.html?cat=pestanas#tiras"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
   <!-- ===== FIN JSON-LD SEO ===== -->
 
-  <script type="module" defer src="main.js?v=20260902"></script>
+  <script type="module" defer src="main.js?v=20260906"></script>
 </body>
 </html>

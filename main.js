@@ -415,10 +415,90 @@ function showMpError(el, msg) {
   el.hidden = false;
 }
 
+// Formulario de dirección de envío — va JUNTO al Brick (hermano, no dentro):
+// el Brick de MP no expone campos de envío y su `onSubmit` sólo trae datos de
+// tarjeta + email. Construido por JS (mismo criterio que el contenedor del
+// Brick y `#cart-line-tpl` — carrito.html no trae markup de checkout).
+// Campos de dirección estándar Perú; el email lo recoge el propio Brick, no
+// se duplica aquí. Contrato de clases para css: `.mp-shipping*`.
+function buildShippingForm() {
+  const form = document.createElement('form');
+  form.id = 'mp-shipping';
+  form.className = 'mp-shipping';
+  form.setAttribute('aria-label', 'Datos de envío');
+  form.autocomplete = 'on';
+  // El Brick es quien envía el pago; este <form> nunca hace submit propio
+  // (Enter en un campo no debe recargar la página).
+  form.addEventListener('submit', (e) => e.preventDefault());
+  form.innerHTML = [
+    '<h3 class="mp-shipping__title">Datos de envío</h3>',
+    '<div class="mp-shipping__grid">',
+    '  <label class="mp-shipping__field mp-shipping__field--wide">',
+    '    <span>Nombre y apellidos</span>',
+    '    <input name="nombre" type="text" autocomplete="name" required maxlength="120">',
+    '  </label>',
+    '  <label class="mp-shipping__field">',
+    '    <span>Teléfono / celular</span>',
+    '    <input name="telefono" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20">',
+    '  </label>',
+    '  <label class="mp-shipping__field">',
+    '    <span>Departamento</span>',
+    '    <input name="departamento" type="text" autocomplete="address-level1" required maxlength="60">',
+    '  </label>',
+    '  <label class="mp-shipping__field">',
+    '    <span>Provincia</span>',
+    '    <input name="provincia" type="text" autocomplete="address-level2" required maxlength="60">',
+    '  </label>',
+    '  <label class="mp-shipping__field">',
+    '    <span>Distrito</span>',
+    '    <input name="distrito" type="text" autocomplete="address-level3" required maxlength="60">',
+    '  </label>',
+    '  <label class="mp-shipping__field mp-shipping__field--wide">',
+    '    <span>Calle, avenida o jirón</span>',
+    '    <input name="calle" type="text" autocomplete="address-line1" required maxlength="140">',
+    '  </label>',
+    '  <label class="mp-shipping__field">',
+    '    <span>Número de casa / edificio</span>',
+    '    <input name="numero" type="text" autocomplete="address-line2" required maxlength="20">',
+    '  </label>',
+    '  <label class="mp-shipping__field mp-shipping__field--wide">',
+    '    <span>Referencia, dpto./interior <em>(opcional)</em></span>',
+    '    <input name="referencia" type="text" maxlength="160">',
+    '  </label>',
+    '  <label class="mp-shipping__field">',
+    '    <span>Código postal <em>(opcional)</em></span>',
+    '    <input name="codigoPostal" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="12">',
+    '  </label>',
+    '</div>',
+  ].join('\n');
+  return form;
+}
+
+// Lee el formulario a la forma que consume el backend (POST /api/mp/process-payment).
+// El backend valida/sanea de nuevo y decide qué reenvía a MP (`additional_info`)
+// y a n8n — aquí sólo se recogen y normalizan strings.
+function readShippingForm(form) {
+  const val = (n) => (form.elements[n]?.value || '').trim();
+  return {
+    name: val('nombre'),
+    phone: val('telefono'),
+    address: {
+      street: val('calle'),
+      number: val('numero'),
+      reference: val('referencia'),
+      district: val('distrito'),
+      province: val('provincia'),
+      department: val('departamento'),
+      zip: val('codigoPostal'),
+      country: 'PE',
+    },
+  };
+}
+
 // Monta el Card Payment Brick dentro de `container` (ya insertado en el DOM
 // por initPaymentGateway). `orderId`/`amount` vienen de POST /api/mp/create-order
 // — el Brick nunca decide el importe, solo lo muestra (initialization.amount).
-async function mountMercadoPagoBrick(container, errorEl, orderId, amount) {
+async function mountMercadoPagoBrick(container, errorEl, orderId, amount, shippingForm) {
   await loadMercadoPagoSdk();
   const mp = new window.MercadoPago(MP_PUBLIC_KEY, { locale: 'es-PE' });
   const bricksBuilder = mp.bricks();
@@ -448,11 +528,26 @@ async function mountMercadoPagoBrick(container, errorEl, orderId, amount) {
       // envuelven en `{ formData }`. Soporto ambas formas sin asumir cuál aplica.
       onSubmit: (brickData) => new Promise((resolve, reject) => {
         const formData = (brickData && brickData.formData) || brickData || {};
-        // Solo orderId + datos de tarjeta tokenizados: el importe SIEMPRE lo
-        // resuelve el servidor desde el pedido (AP-B5, invariante 1) — nunca
-        // se manda transaction_amount/installments del formData del Brick.
+
+        // Gate de envío: el Brick sólo valida SUS campos antes de disparar
+        // onSubmit; los de dirección los validamos aquí. `reportValidity()`
+        // muestra los mensajes nativos y enfoca el primer campo inválido.
+        // `reject()` mantiene el Brick activo para reintentar tras completar.
+        if (shippingForm && !shippingForm.reportValidity()) {
+          reject();
+          showMpError(errorEl, 'Completa los datos de envío antes de pagar.');
+          return;
+        }
+        if (errorEl) errorEl.hidden = true; // limpia el aviso del gate si venía de un intento anterior
+        const shipping = shippingForm ? readShippingForm(shippingForm) : null;
+
+        // Solo orderId + datos de tarjeta tokenizados + dirección: el importe
+        // SIEMPRE lo resuelve el servidor desde el pedido (AP-B5, invariante 1)
+        // — nunca se manda transaction_amount/installments del formData del Brick.
         // `payer.identification` (DNI) va incluido: Perú (MPE) suele rechazar el
         // pago sin él; el backend lo reenvía a MP si viene y lo ignora si no.
+        // `shipping` va aparte del `payer` de MP: el backend decide qué mapea a
+        // `additional_info`/`shipments` de MP y qué manda a n8n (su dominio).
         const payload = {
           orderId,
           token: formData.token,
@@ -462,6 +557,7 @@ async function mountMercadoPagoBrick(container, errorEl, orderId, amount) {
             email: formData.payer?.email,
             identification: formData.payer?.identification,
           },
+          ...(shipping ? { shipping } : {}),
         };
         fetch('/api/mp/process-payment', {
           method: 'POST',
@@ -551,10 +647,14 @@ async function initPaymentGateway() {
   // proveedor ("Pago seguro", AB-F20) → sirve igual para Stripe y Mercado Pago.
   btnCheckout.classList.add('is-hidden-mp');
 
+  // Orden en `.cart-summary`: [dirección de envío] → [Brick] → [aviso de error].
+  const shippingForm = buildShippingForm();
+  btnCheckout.insertAdjacentElement('afterend', shippingForm);
+
   const container = document.createElement('div');
   container.id = 'cardPaymentBrick_container';
   container.className = 'mp-brick-container';
-  btnCheckout.insertAdjacentElement('afterend', container);
+  shippingForm.insertAdjacentElement('afterend', container);
 
   const errorEl = document.createElement('p');
   errorEl.className = 'mp-brick-error';
@@ -574,7 +674,7 @@ async function initPaymentGateway() {
     // Sin await bloqueante: si el código del Brick está bloqueado, `create()`
     // puede colgarse sin resolver ni rechazar. Lanzamos el montaje y verificamos
     // aparte que el iframe aparece; si no, mensaje visible en vez de página en blanco.
-    mountMercadoPagoBrick(container, errorEl, order.orderId, order.amount)
+    mountMercadoPagoBrick(container, errorEl, order.orderId, order.amount, shippingForm)
       .catch((err) => console.error('Mercado Pago — el Brick no montó:', err));
 
     if (!(await brickRendered(container, 8000))) throw new Error('brick_no_render');
@@ -871,6 +971,267 @@ function initPoliciesAccordion() {
   }
 }
 
+// 7 · Consentimiento de cookies (AB-L4)
+// ---------------------------------------------------------------------------
+// Marco: Perú — Ley 29733 + Código de Protección al Consumidor (NO RGPD).
+// Categorías idénticas a politicas.html §cookies: `necessary` (técnicas, siempre
+// activas, no se piden), `analytics` (GA4) y `marketing` (Meta Pixel). Hoy el
+// sitio NO carga ningún script de tracking — esta pieza deja el consentimiento
+// listo para cuando Paul active alguno (AB-D8).
+//
+// Elección persistida en localStorage `ap_cookie_consent` (convención `ap_` del
+// proyecto, igual que `ap_cart`) — NO es una cookie pese al nombre del apartado
+// legal. Aviso cruzado a seo para alinear la tabla de politicas.html.
+//   Forma: { v: 1, analytics: bool, marketing: bool, ts: ISOString }
+//
+// NOMBRES DOM neutros a propósito (`ap-privacy-*`, no `cookie-*`/`consent-*`):
+// verificado con clic real que una extensión bloqueadora de banners en el Chrome
+// de pruebas ocultaba `.cookie-consent` vía filtro cosmético (`display:none` que
+// gana a cualquier CSS del sitio). Los usuarios con ese tipo de extensión no
+// verán el aviso — el fallo es seguro (por defecto todo denegado, sin tracking).
+//
+// GATE de UI: el banner solo se pinta cuando css publique AB-L3 y añada el
+// centinela `:root { --ap-privacy-ui: ready }`. Sin ese CSS un banner sin
+// estilar sobre producción es peor que no mostrarlo. La API pública y el gating
+// de scripts funcionan siempre; el disparador "Configurar cookies" también
+// (construye la UI on-demand al primer clic aunque falte el centinela).
+const CONSENT_KEY = 'ap_cookie_consent';
+const CONSENT_VERSION = 1;
+const CONSENT_CATEGORIES = ['analytics', 'marketing'];
+
+function readConsent() {
+  try {
+    const data = JSON.parse(localStorage.getItem(CONSENT_KEY));
+    if (data && data.v === CONSENT_VERSION) {
+      return { analytics: !!data.analytics, marketing: !!data.marketing };
+    }
+  } catch (_) { /* corrupto / no disponible → sin decidir */ }
+  return null;
+}
+
+function writeConsent(choice) {
+  const record = {
+    v: CONSENT_VERSION,
+    analytics: !!choice.analytics,
+    marketing: !!choice.marketing,
+    ts: new Date().toISOString(),
+  };
+  try {
+    localStorage.setItem(CONSENT_KEY, JSON.stringify(record));
+  } catch (_) { /* almacenamiento no disponible: la elección solo vale esta carga */ }
+  applyConsent(record);
+}
+
+// Activa un <script type="text/plain" data-ap-cat="..."> convirtiéndolo en un
+// <script> real (inline o por `data-src`). Así GA4/Pixel entran más adelante
+// como bloques inertes en el HTML, sin tocar este archivo.
+function activateGatedScript(placeholder) {
+  if (placeholder.dataset.apActivated) return;
+  const real = document.createElement('script');
+  for (const attr of Array.from(placeholder.attributes)) {
+    if (attr.name === 'type' || attr.name === 'data-ap-cat' || attr.name === 'data-src') continue;
+    real.setAttribute(attr.name, attr.value);
+  }
+  if (placeholder.dataset.src) real.src = placeholder.dataset.src;
+  real.textContent = placeholder.textContent;
+  placeholder.dataset.apActivated = 'true';
+  placeholder.replaceWith(real);
+}
+
+// Propaga la elección: activa los scripts de cada categoría concedida, avisa a
+// Google Consent Mode si `gtag` está presente, y emite `ap:privacy-change` en
+// document para cualquier integración futura.
+function applyConsent(choice) {
+  CONSENT_CATEGORIES.forEach((cat) => {
+    if (!choice[cat]) return;
+    document.querySelectorAll(
+      'script[type="text/plain"][data-ap-cat="' + cat + '"]'
+    ).forEach(activateGatedScript);
+  });
+
+  if (typeof window.gtag === 'function') {
+    window.gtag('consent', 'update', {
+      analytics_storage: choice.analytics ? 'granted' : 'denied',
+      ad_storage: choice.marketing ? 'granted' : 'denied',
+      ad_user_data: choice.marketing ? 'granted' : 'denied',
+      ad_personalization: choice.marketing ? 'granted' : 'denied',
+    });
+  }
+
+  document.dispatchEvent(new CustomEvent('ap:privacy-change', {
+    detail: { analytics: !!choice.analytics, marketing: !!choice.marketing },
+  }));
+}
+
+const apPrivacy = {
+  get: () => readConsent(),
+  allowed: (cat) => cat === 'necessary' || !!(readConsent() || {})[cat],
+  openPreferences: () => {}, // la reasigna initCookieConsent cuando la UI existe
+  reset: () => { try { localStorage.removeItem(CONSENT_KEY); } catch (_) { /* noop */ } },
+};
+window.apPrivacy = apPrivacy;
+
+// Contrato DOM para css (AB-L3) / front. Clases: `.ap-privacy-bar*` (aviso) y
+// `.ap-privacy-panel*` (modal de preferencias), botones `.ap-privacy-btn`.
+// Estados: `[hidden]` en `#ap-privacy-bar` y `#ap-privacy-panel`; `.is-open` en
+// el modal para la transición. Si css define `display` propio en esas clases
+// debe reponer `[hidden]{display:none}` (gotcha `.cat-item[hidden]` ya conocido).
+function buildConsentUI() {
+  const wrap = document.createElement('div');
+  wrap.id = 'ap-privacy-root';
+  wrap.innerHTML = [
+    '<section id="ap-privacy-bar" class="ap-privacy-bar" role="dialog" aria-modal="false"',
+    '  aria-labelledby="ap-privacy-bar-title" aria-describedby="ap-privacy-bar-text" hidden>',
+    '  <div class="ap-privacy-bar__inner">',
+    '    <h2 id="ap-privacy-bar-title" class="ap-privacy-bar__title">Cookies en AP Beauty</h2>',
+    '    <p id="ap-privacy-bar-text" class="ap-privacy-bar__text">',
+    '      Usamos cookies técnicas necesarias para que la tienda funcione. Con tu permiso,',
+    '      también usaríamos cookies de analítica y de marketing. Consulta la',
+    '      <a href="politicas.html#cookies">Política de Cookies</a>.',
+    '    </p>',
+    '    <div class="ap-privacy-bar__actions">',
+    '      <button type="button" class="ap-privacy-btn ap-privacy-btn--accept" data-ap-privacy-act="accept">Aceptar todas</button>',
+    '      <button type="button" class="ap-privacy-btn ap-privacy-btn--reject" data-ap-privacy-act="reject">Rechazar no esenciales</button>',
+    '      <button type="button" class="ap-privacy-btn ap-privacy-btn--config" data-ap-privacy>Configurar</button>',
+    '    </div>',
+    '  </div>',
+    '</section>',
+    '<div id="ap-privacy-panel" class="ap-privacy-panel" hidden>',
+    '  <div class="ap-privacy-panel__backdrop" data-ap-privacy-act="close"></div>',
+    '  <div class="ap-privacy-panel__dialog" role="dialog" aria-modal="true" aria-labelledby="ap-privacy-panel-title">',
+    '    <button type="button" class="ap-privacy-panel__close" data-ap-privacy-act="close" aria-label="Cerrar">×</button>',
+    '    <h2 id="ap-privacy-panel-title" class="ap-privacy-panel__title">Preferencias de cookies</h2>',
+    '    <p class="ap-privacy-panel__intro">Elige qué categorías permites. Puedes cambiarlo cuando quieras desde el pie de página.</p>',
+    '    <ul class="ap-privacy-panel__list">',
+    '      <li class="ap-privacy-panel__row">',
+    '        <label class="ap-privacy-panel__label"><input type="checkbox" class="ap-privacy-panel__toggle" checked disabled>',
+    '          <span class="ap-privacy-panel__name">Técnicas (necesarias)</span></label>',
+    '        <p class="ap-privacy-panel__desc">Imprescindibles para navegar y usar el carrito. Siempre activas.</p>',
+    '      </li>',
+    '      <li class="ap-privacy-panel__row">',
+    '        <label class="ap-privacy-panel__label"><input type="checkbox" class="ap-privacy-panel__toggle" data-ap-privacy-cat="analytics">',
+    '          <span class="ap-privacy-panel__name">Analíticas</span></label>',
+    '        <p class="ap-privacy-panel__desc">Medición agregada del uso del sitio para mejorarlo (Google Analytics).</p>',
+    '      </li>',
+    '      <li class="ap-privacy-panel__row">',
+    '        <label class="ap-privacy-panel__label"><input type="checkbox" class="ap-privacy-panel__toggle" data-ap-privacy-cat="marketing">',
+    '          <span class="ap-privacy-panel__name">Marketing</span></label>',
+    '        <p class="ap-privacy-panel__desc">Publicidad y medición de campañas en Meta (Instagram/Facebook).</p>',
+    '      </li>',
+    '    </ul>',
+    '    <div class="ap-privacy-panel__actions">',
+    '      <button type="button" class="ap-privacy-btn ap-privacy-btn--save" data-ap-privacy-act="save">Guardar preferencias</button>',
+    '      <button type="button" class="ap-privacy-btn ap-privacy-btn--accept" data-ap-privacy-act="accept">Aceptar todas</button>',
+    '      <button type="button" class="ap-privacy-btn ap-privacy-btn--reject" data-ap-privacy-act="reject">Rechazar todas</button>',
+    '    </div>',
+    '  </div>',
+    '</div>',
+  ].join('\n');
+  document.body.appendChild(wrap);
+  return wrap;
+}
+
+function initCookieConsent() {
+  const decided = readConsent();
+  if (decided) applyConsent(decided);
+
+  const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  let built = false;
+  let lastFocus = null;
+
+  const bar = () => document.getElementById('ap-privacy-bar');
+  const panel = () => document.getElementById('ap-privacy-panel');
+
+  function hideBar() { const el = bar(); if (el) el.hidden = true; }
+  function showBar() { const el = bar(); if (el) el.hidden = false; }
+
+  function syncToggles() {
+    const current = readConsent() || {};
+    document.querySelectorAll('#ap-privacy-panel .ap-privacy-panel__toggle[data-ap-privacy-cat]').forEach((cb) => {
+      cb.checked = !!current[cb.dataset.apPrivacyCat];
+    });
+  }
+
+  function openPreferences() {
+    build();
+    const p = panel();
+    if (!p) return;
+    lastFocus = document.activeElement;
+    syncToggles();
+    p.hidden = false;
+    requestAnimationFrame(() => p.classList.add('is-open'));
+    const first = p.querySelector('.ap-privacy-panel__dialog ' + FOCUSABLE);
+    if (first) first.focus();
+  }
+
+  function closePreferences() {
+    const p = panel();
+    if (!p || p.hidden) return;
+    p.classList.remove('is-open');
+    p.hidden = true;
+    if (lastFocus && document.contains(lastFocus)) lastFocus.focus();
+  }
+
+  function save(choice) {
+    writeConsent(choice);
+    hideBar();
+    closePreferences();
+  }
+
+  function build() {
+    if (built) return;
+    if (!bar()) buildConsentUI();
+    built = true;
+
+    document.addEventListener('keydown', (e) => {
+      const p = panel();
+      if (!p || p.hidden) return;
+      if (e.key === 'Escape') { closePreferences(); return; }
+      // Trampa de foco dentro del modal (el aviso NO atrapa foco a propósito)
+      if (e.key !== 'Tab') return;
+      const f = Array.from(p.querySelectorAll('.ap-privacy-panel__dialog ' + FOCUSABLE));
+      if (!f.length) return;
+      const first = f[0];
+      const last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
+  }
+
+  apPrivacy.openPreferences = openPreferences;
+
+  // Delegación única para todos los disparadores (aviso, modal, pie de página,
+  // enlace de politicas.html). Funciona aunque el centinela de css no esté.
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-ap-privacy]')) {
+      e.preventDefault();
+      openPreferences();
+      return;
+    }
+    const act = e.target.closest('[data-ap-privacy-act]');
+    if (!act) return;
+    const kind = act.dataset.apPrivacyAct;
+    if (kind === 'accept') save({ analytics: true, marketing: true });
+    else if (kind === 'reject') save({ analytics: false, marketing: false });
+    else if (kind === 'close') closePreferences();
+    else if (kind === 'save') {
+      const choice = {};
+      document.querySelectorAll('#ap-privacy-panel .ap-privacy-panel__toggle[data-ap-privacy-cat]').forEach((cb) => {
+        choice[cb.dataset.apPrivacyCat] = cb.checked;
+      });
+      save(choice);
+    }
+  });
+
+  // Pinta el aviso solo si css ya publicó AB-L3.
+  const cssReady = getComputedStyle(document.documentElement)
+    .getPropertyValue('--ap-privacy-ui').trim() === 'ready';
+  if (cssReady) {
+    build();
+    if (!decided) showBar();
+  }
+}
+
 initMobileMenu();
 initSearch();
 bindRail('cat-track', 'cat-prev', 'cat-next', '.category-card', 2);
@@ -881,3 +1242,4 @@ initCatalog();
 initLashPicker();
 initPoliciesAccordion();
 initConfirmationState();
+initCookieConsent();

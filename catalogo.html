@@ -4,21 +4,34 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ===== DOMINIO SEO ===== -->
-  <!-- Rellena aquí: <title>, meta description, canonical, Open Graph, Twitter Card.
-       Página = subpágina CATÁLOGO (listado de producto). Títulos/desc únicos para esta página
-       y, a poder ser, por categoría (?cat=labios|ojos|rostro|sets|brochas).
-       Canonical: decidir trato de ?cat= (a la base catalogo.html o por categoría) para no duplicar.
-       OG image placeholder en og/home-og.svg (sustituir por 1200x630 real).
-       JSON-LD: Product structured data SOLO en los SKUs activos (data-category sin cat-item--soon).
-       NUNCA schema Product en los "Próximamente" (Sets/Brochas). Va antes de </body>.
-       Front no toca este bloque. -->
+  <!-- ===== DOMINIO SEO — Front no toca este bloque ===== -->
+  <!-- Canonical: las vistas ?cat= (filtro cliente, mismo HTML) canonizan a la base catalogo.html. -->
+  <title>Catálogo de Pestañas Postizas y Maquillaje | AP Beauty</title>
+  <meta name="description" content="Catálogo de AP Beauty: pestañas postizas individuales (5 diseños) y de tira (4 diseños), delineador, labial y paleta de rostro. Envíos a todo el Perú.">
+  <link rel="canonical" href="https://apbeauty-lima.com/catalogo.html">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#000000">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="AP Beauty">
+  <meta property="og:locale" content="es_PE">
+  <meta property="og:title" content="Catálogo de Pestañas Postizas y Maquillaje | AP Beauty">
+  <meta property="og:description" content="Pestañas postizas individuales y de tira, delineador, labial y paleta de rostro. Envíos a todo el Perú.">
+  <meta property="og:url" content="https://apbeauty-lima.com/catalogo.html">
+  <!-- TODO OG real 1200x630 (og/og-catalogo.jpg). Interino: foto de producto. -->
+  <meta property="og:image" content="https://apbeauty-lima.com/pestanas-catalogo/iconica.jpg">
+  <meta property="og:image:alt" content="Pestañas individuales de AP Beauty en su estuche">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Catálogo de Pestañas Postizas y Maquillaje | AP Beauty">
+  <meta name="twitter:description" content="Pestañas postizas individuales y de tira, delineador, labial y paleta de rostro. Envíos a todo el Perú.">
+  <meta name="twitter:image" content="https://apbeauty-lima.com/pestanas-catalogo/iconica.jpg">
   <!-- ===== FIN bloque SEO ===== -->
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260902">
+  <link rel="stylesheet" href="style.css?v=20260906">
   <link rel="icon" href="brand/ap_ico_wnb-removebg-preview.png">
 </head>
 <body>
@@ -101,7 +114,7 @@
   <!-- ===== CARRITO · DRAWER deslizante (disponible en todas las páginas) ===== -->
   <!-- Contrato JS: #btn-cart (abre, en header) · #cart-drawer · #cart-backdrop · #btn-cart-close (cierra)
        · #cart-empty (estado vacío) · #cart-items (JS renderiza líneas desde localStorage `ap_cart`)
-       · #cart-foot (pie con subtotal+CTA, JS lo muestra al haber items) · #cart-subtotal (JS escribe €)
+       · #cart-foot (pie con subtotal+CTA, JS lo muestra al haber items) · #cart-subtotal (JS escribe S/)
        · #cart-checkout (→ carrito.html). Mecánica = menú móvil (X / Esc / click fuera).
        Plantilla de línea reutilizable (drawer y carrito.html): #cart-line-tpl. -->
   <div class="cart-backdrop" id="cart-backdrop" hidden></div>
@@ -123,7 +136,7 @@
     <div class="cart-drawer__foot" id="cart-foot" hidden>
       <div class="cart-drawer__summary">
         <span>Subtotal</span>
-        <span id="cart-subtotal">0,00€</span>
+        <span id="cart-subtotal">S/ 0,00</span>
       </div>
       <p class="cart-drawer__note">Envío e impuestos calculados al finalizar.</p>
       <a href="carrito.html" class="btn-editorial btn-editorial--solid cart-drawer__checkout" id="cart-checkout">Ver carrito y pagar</a>
@@ -575,7 +588,7 @@
           <h2 class="footer-col__title">Legal</h2>
           <ul class="footer-col__links">
             <li><a href="politicas.html#terminos">Términos y Condiciones</a></li>
-            <li><a href="politicas.html#pagos">Pagos y Reembolsos</a></li>
+            <li><a href="politicas.html#devoluciones">Devoluciones y Cambios</a></li>
             <li><a href="politicas.html#privacidad">Privacidad</a></li>
             <li><a href="politicas.html#cookies">Cookies</a></li>
           </ul>
@@ -601,11 +614,129 @@
   </footer>
 
   <!-- ===== DOMINIO SEO: JSON-LD ===== -->
-  <!-- Inserta aquí los <script type="application/ld+json">. Product structured data SOLO en los
-       SKUs activos (Lip Eclipse, Power Matte, Sculpt Liner, Power Lash). NUNCA en Sets/Brochas
-       (cat-item--soon). Opcional: BreadcrumbList / CollectionPage. Front no toca este bloque. -->
+  <!-- SKUs comprables: Individuales (5 diseños) y Tiras (4 diseños) → InStock.
+       Sculpt Liner / Lip Eclipse / Power Matte → OutOfStock (conservan precio).
+       Sets / Brochas / Paquete inicial (cat-item--soon) → sin schema. Front no toca este bloque. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://apbeauty-lima.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Catálogo", "item": "https://apbeauty-lima.com/catalogo.html" }
+        ]
+      },
+      {
+        "@type": "Product",
+        "@id": "https://apbeauty-lima.com/catalogo.html#individuales",
+        "name": "Línea de Individuales — Pestañas AP Beauty",
+        "description": "Pestañas postizas individuales de AP Beauty. Cinco diseños —Esencial, Icónica, Despierta, Suspiro y Anhelada— para construir una mirada a medida.",
+        "category": "Pestañas postizas",
+        "brand": { "@type": "Brand", "name": "AP Beauty" },
+        "url": "https://apbeauty-lima.com/catalogo.html?cat=pestanas#individuales",
+        "image": [
+          "https://apbeauty-lima.com/pestanas-catalogo/esencial.jpg",
+          "https://apbeauty-lima.com/pestanas-catalogo/iconica.jpg",
+          "https://apbeauty-lima.com/pestanas-catalogo/despierta.jpg",
+          "https://apbeauty-lima.com/pestanas-catalogo/suspiro.jpg",
+          "https://apbeauty-lima.com/pestanas-catalogo/anhelada.jpg"
+        ],
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "PEN",
+          "lowPrice": "25.00",
+          "highPrice": "40.00",
+          "offerCount": 5,
+          "availability": "https://schema.org/InStock",
+          "seller": { "@id": "https://apbeauty-lima.com/#organization" },
+          "offers": [
+            { "@type": "Offer", "name": "Esencial", "price": "25.00", "priceCurrency": "PEN", "availability": "https://schema.org/InStock" },
+            { "@type": "Offer", "name": "Icónica", "price": "35.00", "priceCurrency": "PEN", "availability": "https://schema.org/InStock" },
+            { "@type": "Offer", "name": "Despierta", "price": "30.00", "priceCurrency": "PEN", "availability": "https://schema.org/InStock" },
+            { "@type": "Offer", "name": "Suspiro", "price": "25.00", "priceCurrency": "PEN", "availability": "https://schema.org/InStock" },
+            { "@type": "Offer", "name": "Anhelada", "price": "40.00", "priceCurrency": "PEN", "availability": "https://schema.org/InStock" }
+          ]
+        }
+      },
+      {
+        "@type": "Product",
+        "@id": "https://apbeauty-lima.com/catalogo.html#tiras",
+        "name": "Línea de Tiras — Pestañas AP Beauty",
+        "description": "Pestañas postizas de tira de AP Beauty. Cuatro diseños —Destellos, Hechizo, Velada y Vértigo—, todos en talla única.",
+        "category": "Pestañas postizas",
+        "brand": { "@type": "Brand", "name": "AP Beauty" },
+        "url": "https://apbeauty-lima.com/catalogo.html?cat=pestanas#tiras",
+        "image": [
+          "https://apbeauty-lima.com/pestanas-tiras-catalogo/destellos.jpg",
+          "https://apbeauty-lima.com/pestanas-tiras-catalogo/hechizo.jpg",
+          "https://apbeauty-lima.com/pestanas-tiras-catalogo/velada.jpg",
+          "https://apbeauty-lima.com/pestanas-tiras-catalogo/vertigo.jpg"
+        ],
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "PEN",
+          "lowPrice": "10.00",
+          "highPrice": "10.00",
+          "offerCount": 4,
+          "availability": "https://schema.org/InStock",
+          "seller": { "@id": "https://apbeauty-lima.com/#organization" }
+        }
+      },
+      {
+        "@type": "Product",
+        "@id": "https://apbeauty-lima.com/catalogo.html#sculpt-liner",
+        "name": "Sculpt Liner",
+        "description": "Delineador de precisión de AP Beauty. Punta firme para un trazo limpio, de la línea más fina al alado más marcado.",
+        "category": "Ojos",
+        "brand": { "@type": "Brand", "name": "AP Beauty" },
+        "image": "https://apbeauty-lima.com/products/sculpt-liner-destacado.webp",
+        "offers": {
+          "@type": "Offer",
+          "priceCurrency": "PEN",
+          "price": "39.99",
+          "availability": "https://schema.org/OutOfStock",
+          "seller": { "@id": "https://apbeauty-lima.com/#organization" }
+        }
+      },
+      {
+        "@type": "Product",
+        "@id": "https://apbeauty-lima.com/catalogo.html#labial-lip-eclipse",
+        "name": "Lip Eclipse",
+        "description": "Labial mate de larga duración de AP Beauty. Color pleno, acabado seco y un trazo que no se mueve en todo el día.",
+        "category": "Labios",
+        "brand": { "@type": "Brand", "name": "AP Beauty" },
+        "image": "https://apbeauty-lima.com/products/labial-destacado.webp",
+        "offers": {
+          "@type": "Offer",
+          "priceCurrency": "PEN",
+          "price": "55.99",
+          "availability": "https://schema.org/OutOfStock",
+          "seller": { "@id": "https://apbeauty-lima.com/#organization" }
+        }
+      },
+      {
+        "@type": "Product",
+        "@id": "https://apbeauty-lima.com/catalogo.html#power-matte",
+        "name": "Power Matte",
+        "description": "Paleta de rubor y contorno en acabado mate de AP Beauty. Estructura el rostro y define los volúmenes con precisión de estudio.",
+        "category": "Rostro",
+        "brand": { "@type": "Brand", "name": "AP Beauty" },
+        "image": "https://apbeauty-lima.com/products/power-matte-destacado.webp",
+        "offers": {
+          "@type": "Offer",
+          "priceCurrency": "PEN",
+          "price": "79.99",
+          "availability": "https://schema.org/OutOfStock",
+          "seller": { "@id": "https://apbeauty-lima.com/#organization" }
+        }
+      }
+    ]
+  }
+  </script>
   <!-- ===== FIN JSON-LD SEO ===== -->
 
-  <script type="module" defer src="main.js?v=20260902"></script>
+  <script type="module" defer src="main.js?v=20260906"></script>
 </body>
 </html>

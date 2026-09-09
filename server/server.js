@@ -1,5 +1,6 @@
 import express from 'express';
 import crypto from 'crypto';
+import { appendFile, mkdir } from 'node:fs/promises';
 import Stripe from 'stripe';
 
 const {
@@ -7,8 +8,27 @@ const {
   STRIPE_WEBHOOK_SECRET,
   MP_ACCESS_TOKEN,
   MP_WEBHOOK_SECRET,
-  PUBLIC_BASE_URL = 'https://apbeauty.com',
+  PUBLIC_BASE_URL = 'https://apbeauty-lima.com',
   PORT = 3000,
+  // ── Comprobante de pago por correo (Resend) ──
+  // Al confirmarse un pago `approved` el backend manda 2 correos vía la API de
+  // Resend: uno al cliente (comprobante) y otro interno (registro de venta).
+  // El dominio remitente ya está verificado en Resend; el .env del VPS trae
+  // RESEND_API_KEY. Vacío cualquiera de los 3 → no se envía ese correo (warn).
+  RESEND_API_KEY,
+  // Remitente de marca, formato `Nombre <buzon@dominio-verificado>`. [PENDIENTE-PAUL]
+  RESEND_FROM,
+  // Buzón interno donde cae el registro de cada venta. [PENDIENTE-PAUL]
+  VENTAS_EMAIL_INTERNO,
+  // WhatsApp de soporte que se muestra en el correo al cliente. [PENDIENTE-PAUL]
+  SOPORTE_WHATSAPP,
+  // n8n — LEGACY (superseded por Resend, 2026-09-09). Solo se usa como fallback
+  // si NO hay RESEND_API_KEY y sí hay N8N_WEBHOOK_URL. n8n NO valida firma de MP,
+  // eso vive aquí. Ver BLOQUE 2 del briefing 2026-09-06.
+  N8N_WEBHOOK_URL,
+  // Secreto compartido opcional: se manda como `Authorization: Bearer ...`
+  // para que el webhook de n8n (Header Auth) rechace llamadas ajenas.
+  N8N_WEBHOOK_TOKEN,
   // Interruptor único de pasarela (Paul, 2026-09-05). Valores:
   //   'none'        → no hay pago vivo; /api/create-checkout-session responde 503.
   //   'stripe'      → Stripe Checkout hosted (requiere Price IDs REALES en PEN).
@@ -41,6 +61,15 @@ if (!MP_ACCESS_TOKEN) {
 }
 if (!MP_WEBHOOK_SECRET) {
   console.warn('AVISO: MP_WEBHOOK_SECRET no configurado — el webhook de Mercado Pago rechazará notificaciones.');
+}
+const RESEND_LISTO = Boolean(RESEND_API_KEY && RESEND_FROM);
+if (!RESEND_LISTO) {
+  console.warn('AVISO: Resend incompleto (falta RESEND_API_KEY o RESEND_FROM) — no se enviarán comprobantes por correo.');
+} else if (!VENTAS_EMAIL_INTERNO) {
+  console.warn('AVISO: VENTAS_EMAIL_INTERNO no configurado — no se enviará el correo interno de registro de venta.');
+}
+if (!RESEND_LISTO && N8N_WEBHOOK_URL) {
+  console.warn('AVISO: usando n8n (legacy) como fallback de comprobante — configura Resend para retirarlo.');
 }
 
 // `null` si Stripe está dormido y sin clave — las rutas Stripe lo comprueban.
@@ -100,8 +129,32 @@ const eventosProcesados = new Set(); // event.id ya procesados
 
 // Mismo patrón que `pedidos`/`eventosProcesados` para el flujo Mercado Pago.
 // Misma deuda conocida (memoria por proceso, instances:1 hasta DB/KV).
-const pedidosMP = new Map();          // orderId → { amountExpected, estado, items, paymentId }
+const pedidosMP = new Map();          // orderId → { amountExpected, estado, items:[{id,cantidad,title,price}], paymentId, payerEmail, shipping }
 const notificacionesMP = new Set();   // notification.id (webhook) ya procesadas
+
+// Idempotencia del post-pago por `payment_id` (no por orderId ni por notif):
+// process-payment y el webhook pueden ambos ver el mismo pago `approved`. Cada
+// `payment_id` reserva stock + escribe en el log UNA vez; el correo se reintenta
+// mientras no haya salido. Deuda conocida: en memoria (instances:1 hasta DB/KV).
+const postPago = new Map();           // payment_id → { logged: bool, mailed: bool }
+
+// Log de compras confirmadas — una línea JSON por pago aprobado.
+// Ruta git-ignored (datos personales de clientes): server/logs/purchases.jsonl.
+const LOG_DIR = new URL('./logs/', import.meta.url);
+const PURCHASE_LOG = new URL('purchases.jsonl', LOG_DIR);
+await mkdir(LOG_DIR, { recursive: true });
+
+// Append de una línea JSON; recrea el directorio si alguien lo movió/borró.
+async function appendJsonl(dest, obj) {
+  const linea = `${JSON.stringify(obj)}\n`;
+  try {
+    await appendFile(dest, linea);
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+    await mkdir(LOG_DIR, { recursive: true });
+    await appendFile(dest, linea);
+  }
+}
 
 const app = express();
 app.disable('x-powered-by');
@@ -111,9 +164,12 @@ app.disable('x-powered-by');
 app.set('trust proxy', 1);
 
 // Cabeceras mínimas de API. Nginx/Cloudflare añaden el resto en el borde.
+// `X-Robots-Tag: noindex` — el API nunca debe indexarse (refuerza el
+// `Disallow: /api/` de robots.txt; BLOQUE 3 del briefing 2026-09-06).
 app.use((_req, res, next) => {
   res.set('X-Content-Type-Options', 'nosniff');
   res.set('Referrer-Policy', 'no-referrer');
+  res.set('X-Robots-Tag', 'noindex, nofollow');
   next();
 });
 
@@ -278,6 +334,300 @@ app.get('/api/market', (req, res) => {
 
 const mpLimiter = rateLimit({ windowMs: 60_000, max: 20 });
 
+// ═════════════════════════════════════════════════════════════
+// POST-PAGO — al confirmarse un pago `approved` (por process-payment o por el
+// webhook): (1) reservar stock, (2) escribir la compra en el log, (3) mandar
+// el comprobante por correo (Resend). Idempotente por `payment_id` (ver
+// `postPago`): reserva + log ocurren UNA vez; el correo se reintenta hasta
+// que sale. Nada aquí bloquea ni tumba la respuesta del pago (fire-and-forget).
+// ═════════════════════════════════════════════════════════════
+
+const cap = (v, n) => String(v ?? '').trim().slice(0, n);
+
+// Valida/sanea la dirección que manda el frontend (readShippingForm de main.js):
+// { name, phone, address: { line, reference, district, province, department, zip, country } }
+// Devuelve la forma normalizada o `null` si no hay datos mínimos utilizables.
+function sanearShipping(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const a = raw.address && typeof raw.address === 'object' ? raw.address : {};
+  const envio = {
+    name: cap(raw.name, 120),
+    phone: cap(raw.phone, 20),
+    line: cap(a.line, 160),
+    reference: cap(a.reference, 160),
+    district: cap(a.district, 60),
+    province: cap(a.province, 60),
+    department: cap(a.department, 60),
+    zip: cap(a.zip, 12),
+    country: /^[A-Za-z]{2}$/.test(String(a.country || '')) ? String(a.country).toUpperCase() : 'PE',
+  };
+  // Mínimo para poder enviar un paquete: destinatario + calle + distrito.
+  if (!envio.name || !envio.line || !envio.district) return null;
+  return envio;
+}
+
+// La dirección viaja a MP como `metadata` (claves planas) en el propio pago →
+// se lee de vuelta desde el pago CONFIRMADO. MP baja las claves a minúsculas.
+function shippingParaMetadata(envio) {
+  if (!envio) return undefined;
+  return {
+    ship_name: envio.name,
+    ship_phone: envio.phone,
+    ship_line: envio.line,
+    ship_reference: envio.reference,
+    ship_district: envio.district,
+    ship_province: envio.province,
+    ship_department: envio.department,
+    ship_zip: envio.zip,
+    ship_country: envio.country,
+  };
+}
+
+// Tarea 1: leer la dirección desde la metadata del pago confirmado (fuente de
+// verdad tras la confirmación). Fallback al pedido en memoria si MP no la
+// devolviera (p. ej. reconciliación de un pago viejo).
+function leerDireccionDelPago(payment, pedido) {
+  const m = payment?.metadata;
+  if (m && (m.ship_name || m.ship_line)) {
+    return {
+      name: m.ship_name || '',
+      phone: m.ship_phone || '',
+      line: m.ship_line || '',
+      reference: m.ship_reference || '',
+      district: m.ship_district || '',
+      province: m.ship_province || '',
+      department: m.ship_department || '',
+      zip: m.ship_zip || '',
+      country: (m.ship_country || 'PE').toUpperCase(),
+    };
+  }
+  return pedido?.shipping || null;
+}
+
+// Tarea 5: reserva de stock. PENDIENTE-PAUL: aún no hay fuente de verdad de
+// inventario (números por SKU, ni "agotado" real). Por defecto — como pidió
+// Paul — se hace una "reserva simple": se deja constancia de las unidades a
+// descontar en logs/reservations.jsonl para que él las aplique/confirme.
+// Cuando exista el modelo real (stock por SKU en DB/JSON) este es el único
+// punto a tocar: descontar de verdad y rechazar en create-order si no alcanza.
+const RESERVATION_LOG = new URL('reservations.jsonl', LOG_DIR);
+async function reservarStock(orderId, items, paymentId) {
+  const linea = {
+    ts: new Date().toISOString(),
+    order_id: orderId,
+    payment_id: String(paymentId || ''),
+    estado: 'reserva_simple_pendiente_confirmacion_paul',
+    unidades: items.map((i) => ({ sku: skuBase(i.id), variante: i.id, cantidad: i.cantidad })),
+  };
+  try {
+    await appendJsonl(RESERVATION_LOG, linea);
+  } catch (err) {
+    console.error(`reservarStock ${orderId}: ${err.message}`);
+  }
+}
+
+// Tarea 2: log de compras confirmadas — una línea JSON por pago aprobado.
+async function registrarCompra(record) {
+  await appendJsonl(PURCHASE_LOG, record);
+}
+
+const fmtPEN = (soles) => `S/ ${Number(soles).toFixed(2)}`;
+
+// Tarea 3: comprobante por correo vía Resend. Envía solo los correos pedidos
+// (`wantCliente` / `wantInterno`) y devuelve `{ cliente, interno }` indicando
+// cuáles quedan cubiertos (salieron OK o no hacían falta). Nunca lanza. Así el
+// orquestador reintenta cada correo por separado sin duplicar el que ya salió.
+async function enviarComprobanteResend({ orderId, email, nombre, items, totalPEN, direccion, paymentId, fecha, wantCliente = true, wantInterno = true }) {
+  if (!RESEND_LISTO) {
+    // Fallback legacy: n8n, solo si está configurado y Resend no.
+    if (N8N_WEBHOOK_URL) {
+      const ok = await notificarN8N({ orderId, email, nombre, items, totalPEN, paymentId, fecha });
+      return { cliente: ok, interno: ok };
+    }
+    console.warn(`comprobante ${orderId}: sin Resend ni n8n configurados — no se envía.`);
+    return { cliente: false, interno: false };
+  }
+
+  const filas = items
+    .map((i) => `  · ${i.cantidad}× ${i.title || i.id} — ${fmtPEN((i.price / 100) * i.cantidad)}`)
+    .join('\n');
+  const dir = direccion
+    ? [
+        direccion.name,
+        direccion.line + (direccion.reference ? ` (${direccion.reference})` : ''),
+        [direccion.district, direccion.province, direccion.department].filter(Boolean).join(', '),
+        [direccion.zip, direccion.country].filter(Boolean).join(' '),
+        direccion.phone ? `Tel. ${direccion.phone}` : '',
+      ].filter(Boolean).join('\n')
+    : '(no facilitada)';
+  const wsp = SOPORTE_WHATSAPP
+    ? `Cualquier duda escríbenos por WhatsApp: ${SOPORTE_WHATSAPP}`
+    : ''; // [PENDIENTE-PAUL] — sin número no se incluye la línea
+
+  const textoCliente = [
+    `Hola${nombre ? ` ${nombre}` : ''},`,
+    '',
+    'Gracias por tu compra en AP Beauty. Hemos recibido tu pago y ya estamos preparando tu pedido.',
+    '',
+    `Pedido: ${orderId}`,
+    `Fecha: ${fecha}`,
+    '',
+    'Detalle:',
+    filas,
+    '',
+    `Total pagado: ${fmtPEN(totalPEN)} (IGV incluido)`,
+    '',
+    'Envío a:',
+    dir,
+    '',
+    wsp,
+  ].filter((l) => l !== '').join('\n');
+
+  const enviar = (payload) => fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(8000),
+  });
+
+  let okCliente = !wantCliente;
+  if (wantCliente) {
+    try {
+      if (email) {
+        const r = await enviar({
+          from: RESEND_FROM,
+          to: [email],
+          subject: `Tu compra en AP Beauty — pedido ${orderId}`,
+          text: textoCliente,
+        });
+        okCliente = r.ok;
+        if (!r.ok) console.error(`Resend cliente ${orderId}: HTTP ${r.status}`);
+      } else {
+        console.warn(`comprobante ${orderId}: el pago no trae email de cliente.`);
+        okCliente = true; // sin email no hay nada que reintentar
+      }
+    } catch (err) {
+      console.error(`Resend cliente ${orderId}: ${err.message}`);
+    }
+  }
+
+  let okInterno = !wantInterno || !VENTAS_EMAIL_INTERNO;
+  if (wantInterno && VENTAS_EMAIL_INTERNO) {
+    try {
+      const r = await enviar({
+        from: RESEND_FROM,
+        to: [VENTAS_EMAIL_INTERNO],
+        subject: `Nueva venta ${fmtPEN(totalPEN)} — pedido ${orderId}`,
+        text: [
+          `Pedido: ${orderId}`,
+          `Pago MP: ${paymentId}`,
+          `Fecha: ${fecha}`,
+          `Cliente: ${nombre || '(sin nombre)'} <${email || 'sin-email'}>`,
+          '',
+          'Detalle:',
+          filas,
+          `Total: ${fmtPEN(totalPEN)} (IGV incluido)`,
+          '',
+          'Envío a:',
+          dir,
+        ].join('\n'),
+      });
+      okInterno = r.ok;
+      if (!r.ok) console.error(`Resend interno ${orderId}: HTTP ${r.status}`);
+    } catch (err) {
+      console.error(`Resend interno ${orderId}: ${err.message}`);
+    }
+  }
+
+  return { cliente: okCliente, interno: okInterno };
+}
+
+// LEGACY — n8n. Solo como fallback si no hay Resend. Ver briefing 2026-09-06.
+async function notificarN8N({ orderId, email, nombre, items, totalPEN, paymentId, fecha }) {
+  try {
+    const r = await fetch(N8N_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(N8N_WEBHOOK_TOKEN ? { Authorization: `Bearer ${N8N_WEBHOOK_TOKEN}` } : {}),
+      },
+      body: JSON.stringify({
+        order_id: orderId,
+        customer_name: nombre,
+        customer_email: email,
+        items: items.map((i) => ({ name: i.title || i.id, quantity: i.cantidad, price_pen: Math.round((i.price / 100) * 100) / 100 })),
+        total_pen: totalPEN,
+        payment_id: String(paymentId || ''),
+        payment_date: fecha,
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) { console.error(`n8n comprobante ${orderId}: HTTP ${r.status}`); return false; }
+    console.log(`n8n comprobante enviado: ${orderId}`);
+    return true;
+  } catch (err) {
+    console.error(`n8n comprobante ${orderId}: ${err.message}`);
+    return false;
+  }
+}
+
+// Orquestador del post-pago. Idempotente por `payment_id`.
+async function procesarPagoAprobado(orderId, pedido, payment) {
+  if (!pedido) return;
+  const pid = String(payment?.id ?? pedido.paymentId ?? '');
+  if (!pid) { console.error(`procesarPagoAprobado ${orderId}: pago sin id.`); return; }
+
+  let st = postPago.get(pid);
+  if (st?.logged && st?.mailCliente && st?.mailInterno) return;
+  if (!st) { st = { logged: false, mailCliente: false, mailInterno: false }; postPago.set(pid, st); }
+
+  const direccion = leerDireccionDelPago(payment, pedido);
+  const nombre = payment?.card?.cardholder?.name
+    || direccion?.name
+    || [payment?.payer?.first_name, payment?.payer?.last_name].filter(Boolean).join(' ')
+    || '';
+  const email = payment?.payer?.email || pedido.payerEmail || '';
+  const fecha = payment?.date_approved || payment?.date_created || new Date().toISOString();
+
+  if (!st.logged) {
+    await reservarStock(orderId, pedido.items, pid); // tarea 5
+    try {
+      await registrarCompra({ // tarea 2
+        ts: new Date().toISOString(),
+        order_id: orderId,
+        payment_id: pid,
+        gateway: 'mercadopago',
+        status: payment?.status || 'approved',
+        currency: MONEDA,
+        total_pen: pedido.amountExpected,
+        items: pedido.items.map((i) => ({
+          sku: skuBase(i.id), variante: i.id, title: i.title || i.id,
+          quantity: i.cantidad, unit_price_pen: Math.round((i.price / 100) * 100) / 100,
+        })),
+        customer: { name: nombre, email },
+        shipping: direccion, // tarea 1
+        payment_date: fecha,
+      });
+      st.logged = true;
+    } catch (err) {
+      console.error(`registrarCompra ${orderId}: ${err.message}`); // el webhook reintenta
+    }
+  }
+
+  if (!st.mailCliente || !st.mailInterno) {
+    const r = await enviarComprobanteResend({
+      orderId, email, nombre, items: pedido.items,
+      totalPEN: pedido.amountExpected, direccion, paymentId: pid, fecha,
+      wantCliente: !st.mailCliente, wantInterno: !st.mailInterno,
+    });
+    if (r.cliente) st.mailCliente = true;
+    if (r.interno) st.mailInterno = true;
+  }
+}
+
 // ─────────────────────────────────────────────────────────────
 // POST /api/mp/create-order
 // Body: { items: [{ id, quantity }] }   (id = id de carrito, con talla al final)
@@ -311,7 +661,7 @@ app.post('/api/mp/create-order', mpLimiter, (req, res) => {
     }
 
     amountExpected += (producto.price / 100) * cantidad;
-    resumen.push({ id: item.id, cantidad });
+    resumen.push({ id: item.id, cantidad, title: producto.title, price: producto.price });
   }
 
   amountExpected = Math.round(amountExpected * 100) / 100; // 2 decimales, sin artefactos float
@@ -343,7 +693,7 @@ app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
   }
 
   try {
-    const { orderId, token, issuer_id, payment_method_id, payer } = req.body || {};
+    const { orderId, token, issuer_id, payment_method_id, payer, shipping } = req.body || {};
     const pedido = pedidosMP.get(orderId);
     if (!pedido) {
       return res.status(400).json({ error: 'pedido no encontrado o expirado' });
@@ -351,6 +701,13 @@ app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
     if (pedido.estado !== 'pendiente') {
       return res.status(409).json({ error: 'pedido ya procesado' });
     }
+    if (payer?.email) pedido.payerEmail = payer.email; // fallback para el comprobante
+
+    // Tarea 1 — dirección de envío (form del frontend, hermano del Brick).
+    // Se guarda en el pedido y viaja a MP como `metadata` para poder leerla
+    // de vuelta desde el pago confirmado (webhook / reconciliación).
+    const envio = sanearShipping(shipping);
+    if (envio) pedido.shipping = envio;
 
     const response = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
@@ -369,6 +726,7 @@ app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
         transaction_amount: pedido.amountExpected,
         description: pedido.items.map((i) => `${i.id}x${i.cantidad}`).join(', '),
         external_reference: orderId, // correlación con el webhook
+        ...(envio ? { metadata: shippingParaMetadata(envio) } : {}),
         payer: {
           email: payer?.email,
           // Perú (MPE): MP suele exigir identificación (DNI) para aprobar.
@@ -390,8 +748,9 @@ app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
     if (payment.status === 'approved') {
       pedido.estado = 'pagado';
       pedido.paidAt = new Date().toISOString();
+      procesarPagoAprobado(orderId, pedido, payment); // fire-and-forget: stock + log + correo
     } else if (payment.status === 'in_process' || payment.status === 'pending') {
-      pedido.estado = 'pendiente_confirmacion'; // el webhook resolverá
+      pedido.estado = 'pendiente_confirmacion'; // el webhook resolverá (y notificará)
     } else {
       pedido.estado = 'rechazado';
     }
@@ -475,6 +834,9 @@ app.post('/api/mp/webhook', async (req, res) => {
       if (payment.status === 'approved') {
         pedido.estado = 'pagado';
         pedido.paidAt = new Date().toISOString();
+        // Idempotente por payment_id: si process-payment ya lo procesó, no repite
+        // stock/log; solo reintenta el correo si aún no había salido.
+        procesarPagoAprobado(orderId, pedido, payment);
       } else if (payment.status === 'rejected' || payment.status === 'cancelled') {
         pedido.estado = 'rechazado';
       }

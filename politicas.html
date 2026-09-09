@@ -4,20 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ===== DOMINIO SEO ===== -->
-  <!-- Rellena aquí: <title>, meta description, canonical, Open Graph, Twitter Card.
-       Página = subpágina POLÍTICAS (legal, indexable). NO usar noindex (son legales estándar).
-       Brief punto 7:
-         <title> sugerido: "Políticas de AP Beauty | Términos, Pagos, Privacidad y Cookies"
-         meta description: breve, orientada a confianza de compra (no keyword-stuffing).
-       Un único <h1> ("Políticas"); los 4 triggers son <h2> (ya reflejado en el markup).
-       Front no toca este bloque. -->
+  <!-- ===== DOMINIO SEO — Front no toca este bloque ===== -->
+  <title>Políticas de AP Beauty | Términos, Pagos, Privacidad y Cookies</title>
+  <meta name="description" content="Términos y condiciones, política de pagos y reembolsos, privacidad y cookies de AP Beauty. Compra de pestañas y maquillaje en Perú con condiciones claras.">
+  <link rel="canonical" href="https://apbeauty-lima.com/politicas.html">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#000000">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="AP Beauty">
+  <meta property="og:locale" content="es_PE">
+  <meta property="og:title" content="Políticas de AP Beauty">
+  <meta property="og:description" content="Términos y condiciones, pagos y reembolsos, privacidad y cookies de AP Beauty.">
+  <meta property="og:url" content="https://apbeauty-lima.com/politicas.html">
+  <!-- TODO OG real 1200x630 (og/og-home.jpg). Interino: retrato editorial de marca. -->
+  <meta property="og:image" content="https://apbeauty-lima.com/brand/modelo_maquilladora_16.9_ratio.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Políticas de AP Beauty">
+  <meta name="twitter:description" content="Términos y condiciones, pagos y reembolsos, privacidad y cookies de AP Beauty.">
+  <meta name="twitter:image" content="https://apbeauty-lima.com/brand/modelo_maquilladora_16.9_ratio.jpg">
   <!-- ===== FIN bloque SEO ===== -->
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260902">
+  <link rel="stylesheet" href="style.css?v=20260906">
   <link rel="icon" href="brand/ap_ico_wnb-removebg-preview.png">
 </head>
 <body>
@@ -114,7 +125,7 @@
     <div class="cart-drawer__foot" id="cart-foot" hidden>
       <div class="cart-drawer__summary">
         <span>Subtotal</span>
-        <span id="cart-subtotal">0,00€</span>
+        <span id="cart-subtotal">S/ 0,00</span>
       </div>
       <p class="cart-drawer__note">Envío e impuestos calculados al finalizar.</p>
       <a href="carrito.html" class="btn-editorial btn-editorial--solid cart-drawer__checkout" id="cart-checkout">Ver carrito y pagar</a>
@@ -145,16 +156,26 @@
          Contrato JS (initPoliciesAccordion): raíz = [data-accordion]; triggers = .accordion-trigger;
          cada trigger tiene aria-controls → id del .accordion-panel; abrir = panel.hidden=false + .is-open,
          cerrar = quitar .is-open y (tras transitionend) panel.hidden=true; sincronizar aria-expanded.
-         Anclas de footer: cada .accordion-item lleva id=<slug> (terminos|pagos|privacidad|cookies).
+         Anclas de footer: cada .accordion-item lleva id=<slug> (terminos|devoluciones|privacidad|cookies).
          Al cargar con hash (p. ej. politicas.html#privacidad), JS abre el panel de ese slug
          (trigger = #acc-trigger-<slug>) y hace scroll hasta él.
-         Placeholders sin dato real del negocio: <mark class="policy-tbd">[...]</mark> (bloqueante de publicación). -->
+
+         AB-L2 (2026-09-09, front): contenido redactado para PERÚ (Ley 29733 protección de
+         datos / ANPD · Ley 29571 Código del Consumidor / INDECOPI · Libro de Reclamaciones
+         · comprobante SUNAT · IGV incluido). BORRADOR pendiente de revisión de un abogado.
+         El 2º panel cambió de slug #pagos → #devoluciones y de título "Pagos y Reembolsos"
+         → "Devoluciones y Cambios" (los medios de pago pasaron al panel de Términos).
+         Placeholders bloqueantes de publicación:
+           <mark class="policy-tbd">[PENDIENTE-PAUL: ...]</mark> — dato societario real que falta.
+           <mark class="policy-tbd">[REVISIÓN LEGAL: ...]</mark> — punto que necesita criterio jurídico.
+         Fuente del borrador: web/negocios/apbeauty_legal_borradores.md -->
     <section class="policies-page">
       <div class="container">
 
         <header class="policies-header">
           <h1>Políticas</h1>
-          <p class="policies-intro">Aquí encontrarás toda la información legal sobre cómo compramos, pagamos, devolvemos y protegemos tus datos en AP Beauty.</p>
+          <p class="policies-intro">Aquí encontrarás toda la información legal sobre cómo compras, pagas, recibes tus pedidos, los devuelves y cómo protegemos tus datos en AP Beauty.</p>
+          <p class="policies-intro"><mark class="policy-tbd">[REVISIÓN LEGAL: este contenido es un borrador redactado para el marco legal peruano y está pendiente de revisión por un abogado antes de su publicación.]</mark></p>
         </header>
 
         <div class="accordion" data-accordion>
@@ -179,192 +200,188 @@
               aria-labelledby="acc-trigger-terminos"
               hidden>
               <div class="accordion-panel-inner">
-                <p class="policy-updated">Última actualización: <mark class="policy-tbd">[FECHA]</mark></p>
+                <p class="policy-updated">Última actualización: <mark class="policy-tbd">[PENDIENTE-PAUL: fecha]</mark></p>
 
-                <h3>1. Información general</h3>
-                <p>En cumplimiento del artículo 10 de la Ley 34/2002, de Servicios de la Sociedad de la Información y Comercio Electrónico (LSSI-CE), se informa de los siguientes datos:</p>
+                <h3>1. Identificación del proveedor</h3>
                 <ul>
-                  <li><strong>Titular:</strong> <mark class="policy-tbd">[RAZÓN SOCIAL O NOMBRE COMERCIAL COMPLETO — ej. "AP Beauty S.L." o autónomo con nombre y apellidos]</mark></li>
-                  <li><strong>NIF/CIF:</strong> <mark class="policy-tbd">[NIF/CIF]</mark></li>
-                  <li><strong>Domicilio social:</strong> <mark class="policy-tbd">[DIRECCIÓN COMPLETA, CIUDAD, PROVINCIA, PAÍS]</mark></li>
-                  <li><strong>Correo electrónico de contacto:</strong> <mark class="policy-tbd">[EMAIL]</mark></li>
-                  <li><strong>Teléfono:</strong> <mark class="policy-tbd">[TELÉFONO]</mark> (opcional)</li>
+                  <li><strong>Titular:</strong> <mark class="policy-tbd">[PENDIENTE-PAUL: razón social o nombre completo del titular]</mark></li>
+                  <li><strong>RUC:</strong> <mark class="policy-tbd">[PENDIENTE-PAUL: RUC]</mark></li>
+                  <li><strong>Domicilio:</strong> <mark class="policy-tbd">[PENDIENTE-PAUL: dirección fiscal completa — distrito, provincia, departamento, Perú]</mark></li>
+                  <li><strong>Representante legal:</strong> <mark class="policy-tbd">[PENDIENTE-PAUL: nombre — solo si el titular es persona jurídica]</mark></li>
+                  <li><strong>Correo de contacto:</strong> <a href="mailto:apbeautyoficial@gmail.com">apbeautyoficial@gmail.com</a></li>
+                  <li><strong>WhatsApp de atención:</strong> <mark class="policy-tbd">[PENDIENTE-PAUL: número]</mark></li>
                   <li><strong>Nombre comercial:</strong> AP Beauty</li>
-                  <li><strong>Sitio web:</strong> apbeauty.com</li>
-                  <li><strong>Actividad:</strong> venta online de cosméticos y productos de belleza (pestañas, labiales, delineadores, kits y sets) bajo la marca AP Beauty.</li>
+                  <li><strong>Sitio web:</strong> apbeauty-lima.com</li>
+                  <li><strong>Actividad:</strong> venta en línea de cosméticos y productos de belleza (pestañas postizas, labiales, delineadores, kits y sets) con envío dentro del Perú.</li>
                 </ul>
 
-                <h3>2. Objeto</h3>
-                <p>Las presentes condiciones regulan el acceso, navegación y uso del sitio web <strong>apbeauty.com</strong> (en adelante, "el Sitio"), así como las condiciones de compra de los productos ofrecidos en él. El uso del Sitio atribuye la condición de usuario e implica la aceptación plena de estos términos.</p>
-                <p>Si el usuario no está de acuerdo con alguna de estas condiciones, debe abstenerse de utilizar el Sitio y de realizar compras en él.</p>
+                <h3>2. Objeto y aceptación</h3>
+                <p>Estos Términos regulan el acceso y uso del sitio <strong>apbeauty-lima.com</strong> ("el Sitio") y la compra de los productos ofrecidos en él. Al navegar por el Sitio y, en especial, al realizar un pedido, declaras que has leído y aceptas estos Términos, la Política de Privacidad, la Política de Cookies y la Política de Devoluciones y Cambios, que forman un único cuerpo.</p>
+                <p>Si no estás de acuerdo con alguna parte, no uses el Sitio ni realices compras en él.</p>
 
-                <h3>3. Usuarios</h3>
-                <p>Para realizar una compra en el Sitio, el usuario declara:</p>
+                <h3>3. Quién puede comprar</h3>
+                <p>Para comprar en el Sitio declaras que:</p>
                 <ul>
-                  <li>Ser mayor de edad (18 años) o, en su defecto, actuar con el consentimiento de sus padres o tutores legales.</li>
-                  <li>Que los datos facilitados en el proceso de compra son veraces, exactos y completos.</li>
-                  <li>Que asume la responsabilidad de mantener la confidencialidad de cualquier cuenta o credencial asociada a su pedido.</li>
+                  <li>Eres mayor de edad y tienes capacidad legal para contratar.</li>
+                  <li>Los datos que proporcionas para el pedido, el envío y el comprobante de pago son veraces, exactos y están actualizados.</li>
+                  <li>Usarás el Sitio conforme a la ley, la buena fe y estos Términos.</li>
                 </ul>
 
-                <h3>4. Productos y disponibilidad</h3>
+                <h3>4. Productos, información y precios</h3>
                 <ul>
-                  <li>Los productos se muestran con fotografías, descripciones y precios lo más fieles posible a la realidad, si bien pueden existir variaciones de tono o acabado propias de la fotografía digital y de la naturaleza artesanal/cosmética del producto.</li>
-                  <li>La disponibilidad de stock se actualiza de forma continua. Si tras confirmar un pedido un producto no estuviera disponible, se informará al cliente y se ofrecerá alternativa, reembolso total o parcial, según corresponda.</li>
-                  <li>Los precios mostrados incluyen los impuestos aplicables según el país de destino, salvo que se indique expresamente lo contrario en el checkout. Los gastos de envío se muestran de forma diferenciada antes de confirmar el pago.</li>
-                  <li>El proceso de compra, medios de pago aceptados y condiciones de devolución/reembolso se describen en detalle en la <strong>Política de Pagos y Reembolsos</strong>, documento que forma parte integrante de estas condiciones.</li>
+                  <li>Los productos se muestran con fotografías y descripciones lo más fieles posible. Pueden existir ligeras variaciones de tono o acabado propias de la fotografía digital y de la naturaleza cosmética del producto.</li>
+                  <li>Todos los precios están expresados en <strong>soles (PEN)</strong> e <strong>incluyen el IGV</strong>. El precio de cada producto es el que figure en su ficha en el momento de la compra.</li>
+                  <li>Los gastos de envío <strong>no</strong> están incluidos en el precio del producto y se muestran de forma separada antes de que confirmes el pago. <mark class="policy-tbd">[PENDIENTE-PAUL: política de envío — costo y umbral de envío gratis, en soles.]</mark></li>
+                  <li>Nos reservamos el derecho de corregir errores manifiestos de precio o de descripción. Si un error afecta a tu pedido, te lo comunicaremos y podrás confirmarlo al precio correcto o cancelarlo con reembolso total de lo que hayas pagado.</li>
+                  <li>La disponibilidad de stock se actualiza de forma continua. Si tras tu pago un producto no estuviera disponible, te lo informaremos y podrás elegir entre esperar a la reposición, cambiarlo por otro o recibir el reembolso de la parte no disponible.</li>
                 </ul>
 
-                <h3>5. Proceso de pedido</h3>
+                <h3>5. Proceso de compra</h3>
                 <ol>
-                  <li>El usuario selecciona los productos y los añade al carrito.</li>
-                  <li>Se procede al checkout, donde se solicitan los datos de envío y facturación.</li>
-                  <li>El pago se procesa a través de la pasarela correspondiente (ver Política de Pagos y Reembolsos).</li>
-                  <li>Tras la confirmación del pago, el usuario recibe un correo electrónico de confirmación de pedido con el número de referencia.</li>
-                  <li>AP Beauty se reserva el derecho de rechazar o cancelar un pedido en caso de sospecha de fraude, error manifiesto en el precio/descripción, o falta de stock, notificándolo al cliente y reembolsando cualquier cargo ya realizado.</li>
+                  <li>Agregas los productos al carrito.</li>
+                  <li>En el checkout ingresas tus datos de contacto, de entrega y de facturación.</li>
+                  <li>El pago se procesa a través de <strong>Mercado Pago</strong>. Ingresas los datos de tu medio de pago directamente en el entorno de Mercado Pago; AP Beauty no ve ni guarda esos datos.</li>
+                  <li>El pedido queda en firme <strong>solo cuando Mercado Pago confirma el pago como aprobado</strong> mediante su notificación al servidor (webhook), no por la simple vuelta del navegador a la página de gracias.</li>
+                  <li>Recibes un correo de confirmación con el número de pedido y el detalle. El comprobante de pago electrónico (boleta o factura) se emite conforme a la normativa de SUNAT. <mark class="policy-tbd">[PENDIENTE-PAUL: describir cómo y cuándo se envía el comprobante.]</mark></li>
                 </ol>
+                <p>Si el pago es rechazado o queda pendiente, no se genera pedido ni se realiza cargo alguno por parte de AP Beauty.</p>
 
-                <h3>6. Propiedad intelectual e industrial</h3>
-                <p>Todos los contenidos del Sitio (textos, imágenes, logotipos, diseño, código, marca "AP Beauty" y sus signos distintivos) son titularidad de <mark class="policy-tbd">[RAZÓN SOCIAL]</mark> o de terceros que han autorizado su uso, y están protegidos por la normativa de propiedad intelectual e industrial. Queda prohibida su reproducción, distribución o transformación sin autorización expresa.</p>
-
-                <h3>7. Enlaces a redes sociales y terceros</h3>
-                <p>El Sitio enlaza a los perfiles oficiales de AP Beauty en Instagram, TikTok y YouTube (<strong>@apbeauty</strong>). AP Beauty no se hace responsable del contenido, políticas de privacidad o prácticas de dichas plataformas de terceros, que se rigen por sus propios términos.</p>
-
-                <h3>8. Exclusión de responsabilidad</h3>
-                <p>AP Beauty no garantiza la disponibilidad continua e ininterrumpida del Sitio y no será responsable de daños derivados de:</p>
+                <h3>6. Medios de pago y seguridad</h3>
                 <ul>
-                  <li>Interrupciones, errores o fallos técnicos del Sitio o de terceros proveedores (hosting, pasarelas de pago).</li>
-                  <li>Uso indebido o negligente del Sitio por parte del usuario.</li>
-                  <li>Contenidos, virus o elementos lesivos introducidos por terceros ajenos a AP Beauty.</li>
-                </ul>
-                <p>Esta limitación no afecta a los derechos irrenunciables reconocidos al consumidor por la legislación aplicable.</p>
-
-                <h3>9. Modificación de estas condiciones</h3>
-                <p>AP Beauty podrá modificar estos términos en cualquier momento. Los cambios se publicarán en esta misma página con la fecha de "última actualización". Las condiciones vigentes en el momento de realizar un pedido serán las aplicables a dicho pedido.</p>
-
-                <h3>10. Legislación aplicable y jurisdicción</h3>
-                <ul>
-                  <li>Para clientes con residencia en España o la Unión Europea, estas condiciones se rigen por la legislación española, en particular el Real Decreto Legislativo 1/2007 (Texto Refundido de la Ley General para la Defensa de los Consumidores y Usuarios), sin perjuicio de los derechos que correspondan al consumidor conforme a la normativa de su país de residencia. Para cualquier controversia, las partes se someten a los juzgados y tribunales del domicilio del consumidor, cuando este tenga la condición de consumidor.</li>
-                  <li>Para clientes que compren desde fuera de la Unión Europea (por ejemplo, Perú u otros países de Latinoamérica), podrán resultar de aplicación además las normas de protección al consumidor de su país de residencia. <mark class="policy-tbd">[Pendiente de revisión legal específica para Perú antes de publicar.]</mark></li>
+                  <li>El único medio de pago habilitado es <strong>Mercado Pago</strong>, que permite pagar con tarjeta de crédito o débito y con los demás medios que Mercado Pago Perú tenga activos (billeteras digitales, PagoEfectivo u otros).</li>
+                  <li>AP Beauty no accede ni almacena en ningún momento los datos completos de tu tarjeta. Esa información viaja directamente al entorno certificado de Mercado Pago.</li>
+                  <li>Los importes que se cobran se calculan y validan en el servidor de AP Beauty a partir del catálogo oficial, no a partir de lo que envíe el navegador del cliente, como medida adicional frente a manipulación.</li>
                 </ul>
 
-                <h3>11. Contacto</h3>
-                <p>Para cualquier duda relacionada con estas condiciones, el usuario puede escribir a <mark class="policy-tbd">[EMAIL]</mark> o contactar a través de los canales oficiales de AP Beauty (Instagram/TikTok/WhatsApp @apbeauty).</p>
+                <h3>7. Envío y entrega</h3>
+                <ul>
+                  <li><strong>Ámbito de envío:</strong> todo el Perú. <mark class="policy-tbd">[PENDIENTE-PAUL: confirmar si hay zonas excluidas.]</mark></li>
+                  <li><strong>Plazo estimado de entrega:</strong> <mark class="policy-tbd">[PENDIENTE-PAUL: plazo Lima / plazo provincias]</mark>. Es un plazo estimado y puede variar por causas ajenas a AP Beauty (clima, disponibilidad del courier, direcciones incompletas, caso fortuito o fuerza mayor).</li>
+                  <li><strong>Empresa de envío:</strong> <mark class="policy-tbd">[PENDIENTE-PAUL: courier]</mark>.</li>
+                  <li><strong>Seguimiento:</strong> cuando el pedido se despacha, te enviamos el número de seguimiento si el courier lo proporciona.</li>
+                  <li>Es tu responsabilidad indicar una dirección de entrega correcta y completa y estar disponible para recibir el pedido. <mark class="policy-tbd">[REVISIÓN LEGAL: definir cómo redactar el traslado del costo de un segundo envío por dirección errónea o ausencia reiterada, sin que resulte una cláusula abusiva bajo la Ley 29571.]</mark></li>
+                </ul>
+
+                <h3>8. Derecho del consumidor, idoneidad y garantía</h3>
+                <ul>
+                  <li>Como consumidor tienes los derechos que te reconoce el <strong>Código de Protección y Defensa del Consumidor (Ley N.º 29571)</strong>, que estos Términos no limitan ni sustituyen.</li>
+                  <li><strong>Garantía legal de idoneidad:</strong> los productos deben servir para la finalidad para la que fueron fabricados y corresponder a lo ofrecido. Si un producto llega defectuoso, vencido, dañado o distinto al pedido, tienes derecho a su reposición o al reembolso conforme a la Política de Devoluciones y Cambios.</li>
+                  <li><strong>Devoluciones y cambios:</strong> el plazo, las condiciones (incluida la excepción por higiene en productos cosméticos abiertos), el procedimiento y los plazos de reembolso están detallados en la <strong>Política de Devoluciones y Cambios</strong>.</li>
+                </ul>
+
+                <h3>9. Libro de Reclamaciones</h3>
+                <p>Conforme al Código de Protección y Defensa del Consumidor, AP Beauty pone a tu disposición un <strong>Libro de Reclamaciones virtual</strong>, accesible desde el Sitio. <mark class="policy-tbd">[PENDIENTE-PAUL: enlace al Libro de Reclamaciones una vez implementado.]</mark> La presentación de una queja o reclamo en el Libro no impide acudir a INDECOPI ni a la vía que corresponda.</p>
+
+                <h3>10. Propiedad intelectual</h3>
+                <p>Los contenidos del Sitio (textos, fotografías, diseño, logotipos, la marca "AP Beauty" y sus signos distintivos) pertenecen a <mark class="policy-tbd">[PENDIENTE-PAUL: titular]</mark> o a terceros que autorizaron su uso, y están protegidos por la normativa de propiedad intelectual e industrial. No puedes reproducirlos, distribuirlos ni transformarlos sin autorización expresa.</p>
+
+                <h3>11. Enlaces a redes sociales y a terceros</h3>
+                <p>El Sitio enlaza a los perfiles oficiales de AP Beauty en Instagram (<strong>@apbeauty.official</strong>), TikTok y YouTube (<strong>@apbeauty</strong>). No respondemos por el contenido ni por las prácticas de privacidad de esas plataformas, que se rigen por sus propios términos.</p>
+
+                <h3>12. Responsabilidad</h3>
+                <ul>
+                  <li>AP Beauty responde por los daños que sean consecuencia directa del incumplimiento de sus obligaciones conforme a la Ley 29571.</li>
+                  <li>AP Beauty no garantiza que el Sitio esté disponible de forma ininterrumpida y no responde por fallas técnicas del Sitio, de la pasarela de pago o del courier que estén fuera de su control, ni por el uso indebido del Sitio por parte del usuario o de terceros.</li>
+                  <li>Nada en esta sección limita los derechos irrenunciables que la ley reconoce al consumidor. <mark class="policy-tbd">[REVISIÓN LEGAL.]</mark></li>
+                </ul>
+
+                <h3>13. Modificación de estos Términos</h3>
+                <p>Podemos modificar estos Términos en cualquier momento. Los cambios se publican en esta misma página con su fecha de "última actualización". A tu pedido se le aplican los Términos vigentes en el momento en que lo realizaste.</p>
+
+                <h3>14. Ley aplicable y solución de controversias</h3>
+                <p>Estos Términos se rigen por las leyes de la <strong>República del Perú</strong>. Ante cualquier controversia, el consumidor puede acudir al <strong>Libro de Reclamaciones</strong>, a <strong>INDECOPI</strong> o a los juzgados y tribunales que la ley determine como competentes. <mark class="policy-tbd">[REVISIÓN LEGAL: pactar sede o arbitraje frente a un consumidor tiene límites bajo la Ley 29571 — que el abogado defina la redacción final de esta cláusula.]</mark></p>
+
+                <h3>15. Contacto</h3>
+                <ul>
+                  <li>Correo: <a href="mailto:apbeautyoficial@gmail.com">apbeautyoficial@gmail.com</a></li>
+                  <li>WhatsApp: <mark class="policy-tbd">[PENDIENTE-PAUL: número]</mark></li>
+                  <li>Horario de atención: <mark class="policy-tbd">[PENDIENTE-PAUL: horario en hora de Perú]</mark></li>
+                </ul>
               </div>
             </div>
           </div>
 
-          <!-- ========== 2 · PAGOS Y REEMBOLSOS ========== -->
-          <div class="accordion-item" id="pagos">
+          <!-- ========== 2 · DEVOLUCIONES Y CAMBIOS ========== -->
+          <div class="accordion-item" id="devoluciones">
             <h2 class="accordion-heading">
               <button
                 type="button"
                 class="accordion-trigger"
-                id="acc-trigger-pagos"
+                id="acc-trigger-devoluciones"
                 aria-expanded="false"
-                aria-controls="acc-panel-pagos">
-                Pagos y Reembolsos
+                aria-controls="acc-panel-devoluciones">
+                Devoluciones y Cambios
                 <span class="accordion-icon" aria-hidden="true"></span>
               </button>
             </h2>
             <div
-              id="acc-panel-pagos"
+              id="acc-panel-devoluciones"
               class="accordion-panel"
               role="region"
-              aria-labelledby="acc-trigger-pagos"
+              aria-labelledby="acc-trigger-devoluciones"
               hidden>
               <div class="accordion-panel-inner">
-                <p class="policy-updated">Última actualización: <mark class="policy-tbd">[FECHA]</mark></p>
+                <p class="policy-updated">Última actualización: <mark class="policy-tbd">[PENDIENTE-PAUL: fecha]</mark></p>
 
-                <h3>1. Medios de pago aceptados</h3>
-                <p>AP Beauty utiliza dos pasarelas de pago según la ubicación del cliente, ambas mediante <strong>checkout alojado</strong> (hosted checkout): los datos de la tarjeta se introducen directamente en la plataforma del procesador y <strong>nunca se almacenan ni pasan por los servidores de AP Beauty</strong>.</p>
-                <div class="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Región del cliente</th>
-                        <th>Pasarela</th>
-                        <th>Moneda</th>
-                        <th>Métodos disponibles</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>España / Unión Europea</td>
-                        <td>Stripe</td>
-                        <td>EUR (€)</td>
-                        <td>Tarjeta de crédito/débito (Visa, Mastercard, etc.) y los métodos locales que Stripe habilite</td>
-                      </tr>
-                      <tr>
-                        <td>Perú / Latinoamérica</td>
-                        <td>Mercado Pago</td>
-                        <td>PEN (S/)</td>
-                        <td>Tarjeta, y los medios locales que Mercado Pago Perú habilite (billeteras, PagoEfectivo, etc.)</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p>El precio final, la moneda y los impuestos o gastos de envío aplicables se muestran siempre antes de confirmar el pago, en el paso de checkout.</p>
+                <h3>1. Antes de comprar: productos de higiene personal</h3>
+                <p>AP Beauty vende cosméticos y pestañas postizas, que son <strong>productos de uso personal e higiénico</strong>. Por salubridad, <strong>un producto abierto, usado o sin su precinto/sello de higiene intacto no puede devolverse ni cambiarse por decisión del cliente</strong>, salvo los casos de producto defectuoso, vencido, dañado o distinto al pedido (punto 4).</p>
+                <p>Te recomendamos revisar bien la ficha del producto (tono, medidas, tipo de pestaña) antes de comprar y escribirnos si tienes dudas: <mark class="policy-tbd">[PENDIENTE-PAUL: WhatsApp]</mark> / <a href="mailto:apbeautyoficial@gmail.com">apbeautyoficial@gmail.com</a>.</p>
 
-                <h3>2. Seguridad del pago</h3>
+                <h3>2. Devolución por cambio de opinión (producto sin abrir)</h3>
+                <p><mark class="policy-tbd">[REVISIÓN LEGAL: en Perú no existe un derecho general de arrepentimiento equivalente al de la UE para toda compra online. AP Beauty puede ofrecer voluntariamente una ventana de devolución como política comercial. El abogado debe confirmar el marco y el plazo antes de publicar este punto.]</mark></p>
+                <p>Como política comercial, AP Beauty acepta la devolución de un producto <strong>cerrado, sin abrir y con su sello de higiene intacto</strong> dentro de <mark class="policy-tbd">[PENDIENTE-PAUL: plazo que AP Beauty quiere ofrecer — p. ej. 7 días calendario]</mark> desde que recibiste el pedido, siempre que:</p>
                 <ul>
-                  <li>AP Beauty no accede ni almacena en ningún momento los datos completos de la tarjeta de pago. Esa información viaja cifrada directamente al procesador (Stripe o Mercado Pago), ambos certificados PCI-DSS.</li>
-                  <li>Los precios que se cobran se calculan y validan en el servidor de AP Beauty a partir del catálogo oficial, no a partir de lo que envíe el navegador del cliente, como medida adicional de seguridad frente a manipulación.</li>
-                  <li>La confirmación de un pago se produce únicamente cuando el procesador notifica el estado "aprobado" mediante su sistema de confirmación (webhook), no por la simple redirección del navegador.</li>
+                  <li>El producto esté en perfecto estado, sin señales de uso, con su empaque y etiquetas originales.</li>
+                  <li>Puedas acreditar la compra (número de pedido o comprobante).</li>
+                </ul>
+                <p><strong>Costo del envío de la devolución:</strong> <mark class="policy-tbd">[PENDIENTE-PAUL: lo asume el cliente / lo asume AP Beauty]</mark>. El costo del envío original no se reembolsa en las devoluciones por cambio de opinión.</p>
+                <p>Los <strong>kits y sets</strong> solo se aceptan completos y sin abrir; no se aceptan devoluciones parciales de sus componentes.</p>
+
+                <h3>3. Cambios (por otro tono o modelo)</h3>
+                <p>Si quieres cambiar un producto <strong>sin abrir</strong> por otro tono o modelo, escríbenos dentro del mismo plazo del punto 2. El cambio queda sujeto a disponibilidad de stock; si hay diferencia de precio se cobra o se reembolsa según corresponda. <mark class="policy-tbd">[PENDIENTE-PAUL: quién asume el flete del cambio.]</mark></p>
+
+                <h3>4. Producto defectuoso, vencido, dañado o distinto al pedido</h3>
+                <p>Si el producto llega <strong>defectuoso, vencido, dañado en el transporte o no corresponde con lo que pediste</strong>, tienes derecho a su <strong>reposición o al reembolso completo, incluido el costo de envío</strong>, conforme a la garantía legal de idoneidad de la <strong>Ley N.º 29571</strong>.</p>
+                <ul>
+                  <li>Escríbenos dentro de <mark class="policy-tbd">[PENDIENTE-PAUL: plazo razonable — p. ej. 7 días calendario]</mark> desde la recepción, a <a href="mailto:apbeautyoficial@gmail.com">apbeautyoficial@gmail.com</a> o por WhatsApp, adjuntando el número de pedido y fotos o video del producto y del empaque donde se vea el problema.</li>
+                  <li>En estos casos <strong>el costo de la devolución lo asume siempre AP Beauty</strong>.</li>
                 </ul>
 
-                <h3>3. Confirmación de pedido</h3>
-                <p>Tras un pago aprobado, el cliente recibe automáticamente:</p>
+                <h3>5. Productos que no admiten devolución ni cambio</h3>
                 <ul>
-                  <li>Un correo electrónico de confirmación con el número de pedido y el detalle de los productos.</li>
-                  <li><mark class="policy-tbd">[En su caso: el comprobante/boleta fiscal correspondiente a su país, generado según la normativa local.]</mark></li>
-                </ul>
-                <p>Si el pago es rechazado o queda pendiente, no se genera ningún pedido en firme y no se realiza ningún cargo salvo el que, en su caso, gestione directamente el banco emisor de la tarjeta del cliente (autorizaciones no confirmadas), ajeno a AP Beauty.</p>
-
-                <h3>4. Envíos</h3>
-                <ul>
-                  <li>Plazo estimado de entrega: <mark class="policy-tbd">[PLAZO REAL — ej. 24-48h península, X días Baleares/Canarias, X días internacional]</mark>. Este plazo es orientativo y puede variar por causas de fuerza mayor o incidencias del transportista.</li>
-                  <li>Coste de envío: <mark class="policy-tbd">[GRATIS A PARTIR DE X€ / COSTE FIJO — indicar importe real]</mark>. El coste exacto se muestra siempre antes de pagar.</li>
-                  <li>Transportista(s): <mark class="policy-tbd">[NOMBRE DEL/LOS TRANSPORTISTA(S)]</mark>.</li>
-                  <li>Una vez despachado el pedido, se enviará al cliente un número de seguimiento cuando esté disponible.</li>
+                  <li>Productos abiertos, usados o con el sello de higiene roto (salvo los casos del punto 4).</li>
+                  <li>Productos en promoción o liquidación marcados expresamente como "venta final". <mark class="policy-tbd">[PENDIENTE-PAUL: confirmar si AP Beauty quiere esta excepción. REVISIÓN LEGAL: no puede usarse para excluir la garantía por defectos.]</mark></li>
+                  <li><mark class="policy-tbd">[PENDIENTE-PAUL: productos personalizados — eliminar esta línea si no aplica.]</mark></li>
                 </ul>
 
-                <h3>5. Derecho de desistimiento (devoluciones)</h3>
-
-                <h4>5.1 Para clientes en España / Unión Europea</h4>
-                <p>De acuerdo con el Real Decreto Legislativo 1/2007 (TRLGDCU), el cliente que tenga la condición de consumidor dispone de <strong>14 días naturales</strong> desde la recepción del producto para desistir de la compra sin necesidad de justificar el motivo, salvo las excepciones legales indicadas a continuación.</p>
-                <p><strong>Excepción por higiene (muy relevante en cosmética):</strong> conforme al artículo 103.d) del TRLGDCU, <strong>quedan excluidos del derecho de desistimiento los productos precintados que no sean aptos para ser devueltos por razones de protección de la salud o higiene y que hayan sido desprecintados/abiertos tras la entrega</strong>. En la práctica, esto significa que:</p>
-                <ul>
-                  <li>Un producto <strong>cerrado, sin abrir y con su precinto/sello de higiene intacto</strong> puede devolverse dentro del plazo de 14 días naturales.</li>
-                  <li>Un producto <strong>abierto o con el precinto de higiene roto</strong> (por ejemplo, un labial probado o unas pestañas retiradas de su envase sellado) <strong>no puede devolverse</strong> por motivos de higiene, salvo que el producto llegue defectuoso o distinto al pedido, en cuyo caso se aplica la garantía legal (ver punto 6).</li>
-                </ul>
-                <p>Para ejercer el desistimiento, el cliente debe comunicarlo a <mark class="policy-tbd">[EMAIL]</mark> indicando el número de pedido, antes de que finalice el plazo de 14 días. AP Beauty confirmará la recepción de dicha comunicación.</p>
-
-                <h4>5.2 Para clientes fuera de la Unión Europea (Perú y otros países de Latinoamérica)</h4>
-                <p>Los clientes residentes fuera de la UE se benefician, además, de los derechos de protección al consumidor de su país de residencia, que pueden diferir de los descritos arriba. <mark class="policy-tbd">[Pendiente de confirmar el plazo y condiciones exactas aplicables en Perú con asesoría legal local antes de publicar.]</mark></p>
-
-                <h3>6. Producto defectuoso, incorrecto o dañado (garantía legal)</h3>
-                <p>Si el producto recibido está defectuoso, dañado en el transporte o no se corresponde con lo pedido, el cliente puede solicitar su sustitución o reembolso completo (incluyendo gastos de envío) escribiendo a <mark class="policy-tbd">[EMAIL]</mark> con fotos del producto y el número de pedido, en un plazo razonable desde la recepción. Para clientes en España, aplica además la garantía legal de conformidad de 3 años prevista en el TRLGDCU para bienes nuevos.</p>
-
-                <h3>7. Proceso y plazo de reembolso</h3>
+                <h3>6. Procedimiento</h3>
                 <ol>
-                  <li>El cliente comunica la devolución/incidencia a <mark class="policy-tbd">[EMAIL]</mark> indicando el número de pedido.</li>
-                  <li>AP Beauty confirma si procede la devolución conforme a los puntos 5 y 6 anteriores.</li>
-                  <li>Si procede, el cliente envía el producto a: <mark class="policy-tbd">[DIRECCIÓN DE DEVOLUCIÓN]</mark>.</li>
-                  <li>Una vez AP Beauty recibe y verifica el producto (o, en desistimiento sin defecto, en el plazo legal máximo de 14 días naturales desde la comunicación), se emite el reembolso.</li>
-                  <li>El reembolso se realiza <strong>siempre a través del mismo medio de pago utilizado en la compra</strong> (Stripe o Mercado Pago), nunca en efectivo ni por otro canal, y puede tardar entre 5 y 14 días hábiles en reflejarse según el banco o entidad emisora del cliente.</li>
+                  <li>Escribes a <a href="mailto:apbeautyoficial@gmail.com">apbeautyoficial@gmail.com</a> o por WhatsApp indicando el número de pedido y el motivo (cambio de opinión / defecto / producto incorrecto), con fotos si aplica.</li>
+                  <li>AP Beauty responde en <mark class="policy-tbd">[PENDIENTE-PAUL: plazo de respuesta — p. ej. 3 días hábiles]</mark> confirmando si la devolución procede y cómo enviar el producto.</li>
+                  <li>Envías el producto a: <mark class="policy-tbd">[PENDIENTE-PAUL: dirección de devolución]</mark>.</li>
+                  <li>Al recibir y verificar el producto, AP Beauty aprueba la devolución.</li>
                 </ol>
 
-                <h3>8. Gastos de devolución</h3>
+                <h3>7. Reembolsos</h3>
                 <ul>
-                  <li>Si el motivo de la devolución es un desistimiento sin defecto (producto sellado, cliente cambia de opinión): <mark class="policy-tbd">[el cliente asume el coste de envío de vuelta / AP Beauty lo asume — A CONFIRMAR]</mark>.</li>
-                  <li>Si el motivo es un producto defectuoso, incorrecto o dañado por causa imputable a AP Beauty o al transportista: <strong>el coste de la devolución lo asume siempre AP Beauty</strong>.</li>
+                  <li>El reembolso se realiza <strong>siempre por el mismo medio de pago con el que compraste, a través de Mercado Pago</strong>. No se hacen reembolsos en efectivo ni por otro canal.</li>
+                  <li>Plazo: AP Beauty inicia el reembolso dentro de <mark class="policy-tbd">[PENDIENTE-PAUL: p. ej. 7 días hábiles]</mark> desde que aprueba la devolución. El tiempo en que el dinero se refleja en tu cuenta o tarjeta depende de tu banco o entidad y de Mercado Pago (puede tomar varios días hábiles adicionales).</li>
+                  <li>En devoluciones por cambio de opinión se reembolsa el precio del producto, no el costo de envío original.</li>
+                  <li>En devoluciones por defecto o error de AP Beauty se reembolsa el importe total, incluido el envío.</li>
                 </ul>
 
-                <h3>9. Cancelación de pedido</h3>
-                <p>El cliente puede solicitar la cancelación de un pedido antes de que este sea despachado, escribiendo a <mark class="policy-tbd">[EMAIL]</mark> con el número de pedido. Una vez el pedido ha sido enviado, se aplica en su lugar el procedimiento de desistimiento/devolución descrito arriba.</p>
+                <h3>8. Cancelación de un pedido no despachado</h3>
+                <p>Puedes solicitar la cancelación de un pedido <strong>antes de que sea despachado</strong>, escribiendo a <a href="mailto:apbeautyoficial@gmail.com">apbeautyoficial@gmail.com</a> con el número de pedido. Si el pago ya se realizó, se reembolsa por Mercado Pago según el punto 7. Una vez despachado el pedido, se aplica el procedimiento de devolución.</p>
+
+                <h3>9. Libro de Reclamaciones e INDECOPI</h3>
+                <p>Si no estás conforme con la respuesta a tu solicitud, puedes dejar una queja o reclamo en el <strong>Libro de Reclamaciones virtual</strong> del Sitio <mark class="policy-tbd">[PENDIENTE-PAUL: enlace]</mark> y/o acudir a <strong>INDECOPI</strong>.</p>
 
                 <h3>10. Contacto</h3>
-                <p>Para cualquier incidencia relacionada con pagos, envíos o reembolsos: <mark class="policy-tbd">[EMAIL]</mark> o a través de los canales oficiales de AP Beauty (Instagram/TikTok/WhatsApp @apbeauty).</p>
+                <ul>
+                  <li>Correo: <a href="mailto:apbeautyoficial@gmail.com">apbeautyoficial@gmail.com</a></li>
+                  <li>WhatsApp: <mark class="policy-tbd">[PENDIENTE-PAUL: número]</mark></li>
+                  <li>Horario: <mark class="policy-tbd">[PENDIENTE-PAUL: horario, hora de Perú]</mark></li>
+                </ul>
               </div>
             </div>
           </div>
@@ -389,145 +406,161 @@
               aria-labelledby="acc-trigger-privacidad"
               hidden>
               <div class="accordion-panel-inner">
-                <p class="policy-updated">Última actualización: <mark class="policy-tbd">[FECHA]</mark></p>
+                <p class="policy-updated">Última actualización: <mark class="policy-tbd">[PENDIENTE-PAUL: fecha]</mark></p>
 
-                <h3>1. Responsable del tratamiento</h3>
+                <p>Esta política se rige por la <strong>Ley N.º 29733, Ley de Protección de Datos Personales</strong>, su Reglamento (D.S. 003-2013-JUS) y las directivas de la Autoridad Nacional de Protección de Datos Personales (ANPD).</p>
+
+                <h3>1. ¿Quién es el responsable del tratamiento de tus datos?</h3>
                 <ul>
-                  <li><strong>Identidad:</strong> <mark class="policy-tbd">[RAZÓN SOCIAL O NOMBRE COMERCIAL COMPLETO]</mark></li>
-                  <li><strong>NIF/CIF:</strong> <mark class="policy-tbd">[NIF/CIF]</mark></li>
-                  <li><strong>Domicilio:</strong> <mark class="policy-tbd">[DIRECCIÓN COMPLETA]</mark></li>
-                  <li><strong>Email de contacto para protección de datos:</strong> <mark class="policy-tbd">[EMAIL]</mark></li>
+                  <li><strong>Titular / Responsable:</strong> <mark class="policy-tbd">[PENDIENTE-PAUL: razón social o nombre completo del titular]</mark></li>
+                  <li><strong>RUC:</strong> <mark class="policy-tbd">[PENDIENTE-PAUL: RUC]</mark></li>
+                  <li><strong>Domicilio:</strong> <mark class="policy-tbd">[PENDIENTE-PAUL: dirección fiscal completa — distrito, provincia, departamento, Perú]</mark></li>
+                  <li><strong>Correo de contacto para temas de datos personales:</strong> <a href="mailto:apbeautyoficial@gmail.com">apbeautyoficial@gmail.com</a></li>
+                  <li><strong>Sitio web:</strong> apbeauty-lima.com</li>
+                  <li><strong>Nombre comercial:</strong> AP Beauty</li>
                 </ul>
 
-                <h3>2. ¿Qué datos recopilamos?</h3>
+                <h3>2. ¿Qué datos personales tratamos y de dónde salen?</h3>
                 <div class="table-wrap">
                   <table>
                     <thead>
                       <tr>
                         <th>Momento</th>
-                        <th>Datos recopilados</th>
+                        <th>Datos que tratamos</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr>
                         <td>Compra en el Sitio</td>
-                        <td>Nombre, apellidos, dirección de envío y facturación, email, teléfono, historial de pedidos</td>
+                        <td>Nombres y apellidos, documento de identidad (si se requiere para el comprobante), dirección de entrega, distrito/provincia/departamento, correo electrónico, teléfono, detalle y monto del pedido</td>
                       </tr>
                       <tr>
                         <td>Pago</td>
-                        <td>AP Beauty <strong>no recibe ni almacena</strong> los datos completos de la tarjeta; estos se gestionan directamente por Stripe o Mercado Pago</td>
+                        <td>AP Beauty <strong>no recibe ni almacena</strong> los datos de tu tarjeta. Los ingresas directamente en el entorno de Mercado Pago. AP Beauty solo recibe la confirmación del estado del pago y un identificador de la operación</td>
                       </tr>
                       <tr>
-                        <td>Contacto (email, WhatsApp, redes sociales)</td>
-                        <td>Nombre, email o número de teléfono, contenido de la conversación</td>
+                        <td>Emisión del comprobante de pago</td>
+                        <td>Datos fiscales necesarios para la boleta o factura electrónica (nombre o razón social, DNI/RUC, dirección)</td>
                       </tr>
                       <tr>
-                        <td>Navegación (cookies, si el usuario las acepta)</td>
-                        <td>Comportamiento en el Sitio, dispositivo, aproximación de ubicación — ver Política de Cookies</td>
+                        <td>Contacto (correo, WhatsApp, redes sociales)</td>
+                        <td>Nombre, correo o número de teléfono y el contenido de la conversación</td>
                       </tr>
                       <tr>
-                        <td>Newsletter (si el usuario se suscribe voluntariamente)</td>
-                        <td>Email, y nombre si se solicita</td>
+                        <td>Suscripción voluntaria a novedades / newsletter</td>
+                        <td>Correo electrónico (y nombre, si se solicita)</td>
+                      </tr>
+                      <tr>
+                        <td>Navegación en el Sitio (cookies, solo si las aceptas)</td>
+                        <td>Datos técnicos y de uso — ver Política de Cookies</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
+                <p>No solicitamos datos sensibles. No compres ni te registres si eres menor de edad — ver punto 9.</p>
 
-                <h3>3. ¿Con qué finalidad tratamos los datos?</h3>
+                <h3>3. ¿Para qué usamos tus datos? (finalidades)</h3>
                 <ul>
-                  <li>Gestionar y tramitar los pedidos realizados (preparación, envío, facturación, atención de incidencias y devoluciones).</li>
-                  <li>Responder a consultas realizadas por email, WhatsApp o redes sociales.</li>
-                  <li>Enviar comunicaciones comerciales sobre productos, novedades o promociones, <strong>únicamente si el usuario ha dado su consentimiento expreso</strong> para ello (por ejemplo, al suscribirse a la newsletter o al aceptar cookies de marketing).</li>
-                  <li>Analizar de forma agregada el uso del Sitio para mejorar la experiencia de compra, cuando el usuario acepte cookies analíticas.</li>
-                  <li>Cumplir con obligaciones legales y fiscales (facturación, contabilidad).</li>
+                  <li>Procesar, preparar, enviar y facturar tu pedido, y gestionar cambios, devoluciones e incidencias.</li>
+                  <li>Emitir y remitirte el comprobante de pago electrónico exigido por SUNAT.</li>
+                  <li>Comunicarnos contigo sobre el estado de tu pedido (confirmación, despacho, seguimiento).</li>
+                  <li>Atender tus consultas y reclamos por correo, WhatsApp o redes sociales.</li>
+                  <li>Enviarte comunicaciones comerciales sobre productos, lanzamientos y promociones, <strong>únicamente si nos diste tu consentimiento</strong> (por ejemplo, al suscribirte a la newsletter o aceptar cookies de marketing). Puedes retirarlo cuando quieras.</li>
+                  <li>Analizar de forma agregada y anónima el uso del Sitio para mejorarlo, <strong>solo si aceptas las cookies analíticas</strong>.</li>
+                  <li>Cumplir obligaciones legales, tributarias y contables.</li>
                 </ul>
 
-                <h3>4. Base legal (legitimación)</h3>
+                <h3>4. ¿Cuál es la base legal para tratar tus datos?</h3>
                 <ul>
-                  <li><strong>Ejecución de un contrato:</strong> para gestionar pedidos, pagos, envíos y garantías.</li>
-                  <li><strong>Consentimiento del usuario:</strong> para comunicaciones comerciales, newsletter, y cookies analíticas/de marketing.</li>
-                  <li><strong>Interés legítimo:</strong> para responder a consultas iniciadas voluntariamente por el usuario a través de nuestros canales de contacto.</li>
-                  <li><strong>Obligación legal:</strong> para conservar documentos fiscales y contables durante el plazo exigido por la normativa.</li>
+                  <li><strong>Ejecución de la relación contractual contigo:</strong> para gestionar la compra, el pago, el envío y la garantía. Sin estos datos no podemos venderte ni entregarte el pedido.</li>
+                  <li><strong>Cumplimiento de obligaciones legales:</strong> emisión de comprobantes, contabilidad, atención de requerimientos de autoridades.</li>
+                  <li><strong>Tu consentimiento:</strong> para la newsletter, las comunicaciones comerciales y las cookies no necesarias. Es libre y revocable.</li>
                 </ul>
 
-                <h3>5. ¿A quién se comunican los datos?</h3>
-                <p>Para poder prestar el servicio, algunos datos se comparten con los siguientes encargados de tratamiento, únicamente en la medida necesaria para su función:</p>
+                <h3>5. ¿Con quién compartimos tus datos?</h3>
+                <p>Compartimos datos solo con quienes necesitan tratarlos para que puedas recibir el servicio, y solo en la medida necesaria:</p>
                 <div class="table-wrap">
                   <table>
                     <thead>
                       <tr>
-                        <th>Proveedor</th>
+                        <th>Destinatario</th>
                         <th>Función</th>
                         <th>Datos que trata</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr>
-                        <td>Stripe</td>
-                        <td>Procesamiento de pagos (clientes España/UE)</td>
-                        <td>Datos de pago, email, país</td>
+                        <td>Mercado Pago Perú S.R.L.</td>
+                        <td>Procesamiento del pago</td>
+                        <td>Datos de la operación de pago, correo, monto</td>
                       </tr>
                       <tr>
-                        <td>Mercado Pago</td>
-                        <td>Procesamiento de pagos (clientes Perú/LatAm)</td>
-                        <td>Datos de pago, email, país</td>
+                        <td><mark class="policy-tbd">[PENDIENTE-PAUL: empresa(s) de courier]</mark></td>
+                        <td>Entrega del pedido a domicilio</td>
+                        <td>Nombre, dirección, distrito, teléfono</td>
                       </tr>
                       <tr>
-                        <td><mark class="policy-tbd">[PROVEEDOR DE HOSTING — ej. Hostinger]</mark></td>
-                        <td>Alojamiento del sitio web (VPS)</td>
-                        <td>Datos técnicos de navegación, datos del pedido almacenados en el servidor</td>
+                        <td><mark class="policy-tbd">[PENDIENTE-PAUL: proveedor de alojamiento web — infra actual: Hetzner Online GmbH, Alemania]</mark></td>
+                        <td>Alojamiento del Sitio y de la base de datos de pedidos</td>
+                        <td>Datos técnicos de navegación y datos del pedido</td>
                       </tr>
                       <tr>
-                        <td><mark class="policy-tbd">[TRANSPORTISTA]</mark></td>
-                        <td>Entrega física de los pedidos</td>
-                        <td>Nombre, dirección, teléfono</td>
+                        <td>Resend (envío de correos transaccionales)</td>
+                        <td>Correos de confirmación de pedido y comprobantes</td>
+                        <td>Nombre, correo electrónico, referencia de pedido</td>
                       </tr>
                       <tr>
-                        <td>Google (Google Analytics 4) — <em>si/cuando se active</em></td>
+                        <td>Contador / estudio contable de AP Beauty</td>
+                        <td>Emisión de comprobantes y cumplimiento tributario</td>
+                        <td>Datos fiscales del pedido</td>
+                      </tr>
+                      <tr>
+                        <td>Google (Google Analytics 4) — <em>solo si/cuando se active y aceptes cookies analíticas</em></td>
                         <td>Analítica web</td>
                         <td>Datos de navegación, dispositivo, ubicación aproximada</td>
                       </tr>
                       <tr>
-                        <td>Meta (Meta Pixel, WhatsApp Business) — <em>si/cuando se active</em></td>
-                        <td>Publicidad y atención al cliente</td>
-                        <td>Datos de navegación con fines publicitarios; contenido de conversaciones de WhatsApp</td>
+                        <td>Meta (Meta Pixel) — <em>solo si/cuando se active y aceptes cookies de marketing</em></td>
+                        <td>Medición de publicidad</td>
+                        <td>Datos de navegación con fines publicitarios</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
-                <p>Algunos de estos proveedores (Stripe, Meta, Google) pueden estar ubicados fuera del Espacio Económico Europeo. En esos casos, la transferencia internacional se ampara en las garantías previstas por el RGPD (decisiones de adecuación de la Comisión Europea o cláusulas contractuales tipo suscritas por dichos proveedores).</p>
-                <p>AP Beauty no vende ni cede datos personales a terceros con fines comerciales ajenos a los indicados en esta política.</p>
+                <p><mark class="policy-tbd">[REVISIÓN LEGAL: transferencias internacionales. La Ley 29733 permite el flujo transfronterizo de datos cuando el país de destino ofrece niveles adecuados de protección o mediante garantías contractuales; hay que documentar la base de cada transferencia y, si corresponde, declararla en el registro del banco de datos.]</mark></p>
+                <p>AP Beauty <strong>no vende ni cede</strong> tus datos personales a terceros para fines comerciales distintos de los descritos aquí.</p>
 
-                <h3>6. Plazo de conservación</h3>
+                <h3>6. ¿Cuánto tiempo conservamos tus datos?</h3>
                 <ul>
-                  <li>Los datos asociados a un pedido se conservan mientras dure la relación comercial y, posteriormente, durante los plazos legales de prescripción fiscal y mercantil (con carácter general, hasta 6 años en España).</li>
-                  <li>Los datos tratados con base en el consentimiento (newsletter, marketing) se conservan hasta que el usuario retire dicho consentimiento.</li>
-                  <li>Los datos de navegación/cookies se conservan según los plazos indicados en la Política de Cookies.</li>
+                  <li><strong>Datos del pedido:</strong> mientras dure la relación comercial y, después, durante los plazos que exigen las normas tributarias y comerciales. <mark class="policy-tbd">[REVISIÓN LEGAL: fijar el plazo aplicable a los comprobantes con el contador.]</mark></li>
+                  <li><strong>Datos tratados con tu consentimiento</strong> (newsletter, marketing): hasta que retires el consentimiento o te des de baja.</li>
+                  <li><strong>Datos de navegación / cookies:</strong> según los plazos de la Política de Cookies.</li>
+                  <li><strong>Conversaciones de atención al cliente:</strong> el tiempo necesario para resolver la consulta y acreditar su gestión.</li>
                 </ul>
 
-                <h3>7. Derechos de los usuarios</h3>
-                <p>Cualquier usuario puede ejercer, en relación con sus datos personales, los siguientes derechos, escribiendo a <mark class="policy-tbd">[EMAIL]</mark> e identificándose debidamente:</p>
+                <h3>7. Tus derechos (ARCO y otros)</h3>
+                <p>Como titular de los datos puedes ejercer, de forma gratuita, tus derechos de:</p>
                 <ul>
-                  <li><strong>Acceso:</strong> conocer qué datos tratamos sobre ti.</li>
-                  <li><strong>Rectificación:</strong> corregir datos inexactos.</li>
-                  <li><strong>Supresión ("derecho al olvido"):</strong> solicitar la eliminación de tus datos cuando ya no sean necesarios.</li>
-                  <li><strong>Oposición:</strong> oponerte a un tratamiento concreto, en particular al marketing directo.</li>
-                  <li><strong>Limitación del tratamiento:</strong> solicitar que se restrinja el uso de tus datos en determinados supuestos.</li>
-                  <li><strong>Portabilidad:</strong> recibir tus datos en un formato estructurado para transmitirlos a otro responsable.</li>
+                  <li><strong>Acceso:</strong> saber qué datos tuyos tratamos y cómo.</li>
+                  <li><strong>Rectificación:</strong> corregir datos inexactos o incompletos.</li>
+                  <li><strong>Cancelación (supresión):</strong> pedir que eliminemos tus datos cuando ya no sean necesarios o retires tu consentimiento, salvo que debamos conservarlos por obligación legal.</li>
+                  <li><strong>Oposición:</strong> oponerte a un tratamiento concreto, en especial al envío de publicidad.</li>
                 </ul>
-                <p>Si consideras que tus derechos no han sido atendidos correctamente, puedes presentar una reclamación ante la <strong>Agencia Española de Protección de Datos (AEPD)</strong>, www.aepd.es.</p>
+                <p>También puedes <strong>revocar tu consentimiento</strong> en cualquier momento, sin efecto retroactivo.</p>
+                <p>Para ejercerlos, escríbenos a <a href="mailto:apbeautyoficial@gmail.com">apbeautyoficial@gmail.com</a> indicando el derecho que quieres ejercer y adjuntando copia de tu documento de identidad para verificar que eres tú. Responderemos en los plazos que fija el Reglamento de la Ley 29733.</p>
+                <p>Si consideras que no atendimos bien tu solicitud, puedes presentar un reclamo ante la <strong>Autoridad Nacional de Protección de Datos Personales (ANPD)</strong>, adscrita al Ministerio de Justicia y Derechos Humanos — www.gob.pe/minjus.</p>
 
-                <h3>8. Menores de edad</h3>
-                <p>El Sitio y sus productos están dirigidos a personas mayores de 18 años. No recopilamos conscientemente datos de menores de 14 años sin el consentimiento de sus padres o tutores legales.</p>
+                <h3>8. Seguridad de la información</h3>
+                <p>Aplicamos medidas técnicas y organizativas razonables para proteger tus datos frente a accesos no autorizados, pérdida o alteración, incluyendo el uso de conexión cifrada (HTTPS) en todo el Sitio y el acceso restringido a la base de datos de pedidos. Ningún sistema es 100% infalible, pero trabajamos para reducir esos riesgos.</p>
 
-                <h3>9. Seguridad</h3>
-                <p>AP Beauty aplica medidas técnicas y organizativas razonables para proteger los datos personales frente a accesos no autorizados, pérdida o alteración, incluyendo el uso de conexiones cifradas (HTTPS) en todo el Sitio.</p>
+                <h3>9. Menores de edad</h3>
+                <p>El Sitio y sus productos están dirigidos a personas mayores de edad. No recogemos de forma consciente datos de menores de edad sin el consentimiento de sus padres, madres o tutores. Si detectamos que tratamos datos de un menor sin esa autorización, los eliminaremos.</p>
 
                 <h3>10. Cambios en esta política</h3>
-                <p>Esta política puede actualizarse para adaptarse a novedades legislativas o cambios en el funcionamiento del Sitio (por ejemplo, al activar nuevas herramientas de analítica). La fecha de "última actualización" al inicio del documento refleja la versión vigente.</p>
+                <p>Podemos actualizar esta política para adaptarla a cambios legales o al funcionamiento del Sitio (por ejemplo, al activar herramientas de analítica). La fecha de "última actualización" del encabezado indica la versión vigente. Si el cambio es relevante, lo avisaremos por el Sitio o por correo.</p>
 
                 <h3>11. Contacto</h3>
-                <p>Para cualquier cuestión relativa a esta política de privacidad: <mark class="policy-tbd">[EMAIL]</mark>.</p>
+                <p>Para cualquier tema relacionado con tus datos personales: <a href="mailto:apbeautyoficial@gmail.com">apbeautyoficial@gmail.com</a>.</p>
               </div>
             </div>
           </div>
@@ -552,25 +585,24 @@
               aria-labelledby="acc-trigger-cookies"
               hidden>
               <div class="accordion-panel-inner">
-                <p class="policy-updated">Última actualización: <mark class="policy-tbd">[FECHA]</mark></p>
+                <p class="policy-updated">Última actualización: <mark class="policy-tbd">[PENDIENTE-PAUL: fecha]</mark></p>
 
                 <h3>1. ¿Qué son las cookies?</h3>
-                <p>Las cookies son pequeños archivos de texto que un sitio web guarda en el navegador del usuario al visitarlo. Permiten, entre otras cosas, recordar preferencias, reconocer al usuario en futuras visitas y analizar cómo se usa el sitio.</p>
+                <p>Las cookies son pequeños archivos que un sitio web guarda en tu navegador cuando lo visitas. Junto con tecnologías similares (como el almacenamiento local del navegador), permiten que el Sitio recuerde información entre páginas y visitas —por ejemplo, lo que tienes en el carrito— y, si lo autorizas, medir cómo se usa el Sitio o mostrarte publicidad relevante.</p>
 
-                <h3>2. Cookies que utiliza apbeauty.com</h3>
-                <p>Clasificamos las cookies según su finalidad:</p>
+                <h3>2. ¿Qué tipos de cookies usa apbeauty-lima.com?</h3>
                 <ul>
-                  <li><strong>Técnicas o necesarias:</strong> imprescindibles para el funcionamiento del Sitio (por ejemplo, mantener el contenido del carrito de compra o recordar tu elección sobre esta misma política de cookies). No requieren consentimiento previo porque sin ellas el Sitio no funcionaría correctamente.</li>
-                  <li><strong>Analíticas:</strong> permiten medir y analizar el uso del Sitio de forma agregada, para entender qué funciona y mejorar la experiencia. Requieren tu consentimiento previo.</li>
-                  <li><strong>Marketing/publicidad:</strong> permiten mostrar publicidad relevante en otras plataformas (por ejemplo, Instagram o Facebook) en función de tu navegación, y medir el rendimiento de las campañas. Requieren tu consentimiento previo.</li>
+                  <li><strong>Necesarias (técnicas):</strong> imprescindibles para que el Sitio funcione. Mantienen el contenido de tu carrito y recuerdan tu elección sobre esta política de cookies. No requieren tu consentimiento porque sin ellas el Sitio no funciona.</li>
+                  <li><strong>Analíticas:</strong> miden de forma agregada cómo se usa el Sitio (páginas más vistas, errores, rendimiento) para mejorarlo. <strong>Requieren tu consentimiento.</strong></li>
+                  <li><strong>De marketing:</strong> permiten medir campañas y mostrarte publicidad de AP Beauty en otras plataformas (por ejemplo, Instagram o Facebook) según tu navegación. <strong>Requieren tu consentimiento.</strong></li>
                 </ul>
 
-                <h3>3. Detalle de cookies</h3>
+                <h3>3. Detalle de cookies y almacenamiento</h3>
                 <div class="table-wrap">
                   <table>
                     <thead>
                       <tr>
-                        <th>Cookie</th>
+                        <th>Nombre</th>
                         <th>Proveedor</th>
                         <th>Categoría</th>
                         <th>Finalidad</th>
@@ -579,50 +611,53 @@
                     </thead>
                     <tbody>
                       <tr>
-                        <td><mark class="policy-tbd">[nombre cookie carrito]</mark></td>
+                        <td><mark class="policy-tbd">[PENDIENTE-PAUL: nombre real del almacenamiento del carrito]</mark></td>
                         <td>AP Beauty (propia)</td>
-                        <td>Técnica</td>
-                        <td>Recordar el contenido del carrito de compra</td>
-                        <td>Sesión</td>
+                        <td>Necesaria</td>
+                        <td>Recordar los productos del carrito</td>
+                        <td>Persistente en el navegador</td>
                       </tr>
                       <tr>
-                        <td>cookie_consent</td>
+                        <td><code>ap_cookie_consent</code> (almacenamiento local del navegador, no es una cookie)</td>
                         <td>AP Beauty (propia)</td>
-                        <td>Técnica</td>
-                        <td>Recordar tu elección sobre esta política de cookies</td>
-                        <td>12 meses</td>
+                        <td>Necesaria</td>
+                        <td>Recordar tu elección sobre cookies (aceptar / rechazar / preferencias por categoría)</td>
+                        <td>Hasta que borres los datos del navegador o cambies tu elección</td>
                       </tr>
                       <tr>
-                        <td>_ga, _ga_*</td>
+                        <td><code>_ga</code>, <code>_ga_*</code></td>
                         <td>Google Analytics 4 <em>(pendiente de activar)</em></td>
                         <td>Analítica</td>
-                        <td>Medición de visitas, sesiones y comportamiento en el Sitio</td>
+                        <td>Medición de visitas y comportamiento en el Sitio</td>
                         <td>Hasta 14 meses</td>
                       </tr>
                       <tr>
-                        <td>_fbp, fr</td>
+                        <td><code>_fbp</code>, <code>fr</code></td>
                         <td>Meta Pixel <em>(pendiente de activar)</em></td>
                         <td>Marketing</td>
-                        <td>Medición de conversiones y publicidad personalizada en Meta (Instagram/Facebook)</td>
+                        <td>Medición de conversiones y publicidad en Meta (Instagram/Facebook)</td>
                         <td>Hasta 90 días</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
-                <p>Esta tabla se actualizará cada vez que se incorpore o retire una herramienta de analítica o marketing en el Sitio.</p>
+                <p><mark class="policy-tbd">[PENDIENTE-PAUL: AB-D7/AB-D8 — confirmar qué herramientas de analítica o marketing están realmente activas en producción. Mientras GA4 y Meta Pixel no estén instalados, esas filas deben decir "pendiente de activar" o retirarse.]</mark> Esta tabla se actualiza cada vez que se incorpora o retira una herramienta.</p>
 
                 <h3>4. Base legal</h3>
-                <p>De acuerdo con el artículo 22.2 de la Ley 34/2002 (LSSI-CE) y el RGPD, las cookies que no sean estrictamente necesarias para el funcionamiento del Sitio <strong>solo se instalan tras obtener tu consentimiento explícito</strong>, que puedes otorgar, rechazar o personalizar por categorías desde el banner de cookies que aparece en tu primera visita.</p>
+                <p>Conforme a la <strong>Ley N.º 29733</strong> y su Reglamento, y a las normas de protección del consumidor, las cookies que <strong>no</strong> son estrictamente necesarias solo se instalan <strong>después de que las aceptes</strong>. Puedes aceptarlas todas, rechazarlas todas (salvo las necesarias) o elegir por categoría desde el banner de cookies que aparece en tu primera visita.</p>
 
-                <h3>5. ¿Cómo gestionar tu consentimiento?</h3>
+                <h3>5. ¿Cómo gestionas tu consentimiento?</h3>
                 <ul>
-                  <li><strong>Desde el banner de cookies:</strong> puedes aceptar todas, rechazar todas (salvo las técnicas) o configurar tu preferencia por categoría en cualquier momento en que aparezca.</li>
-                  <li><strong>Desde el propio Sitio:</strong> <mark class="policy-tbd">[enlace/botón "Configurar cookies" en el footer, si se implementa]</mark> te permite revisar o cambiar tu elección en cualquier momento posterior.</li>
-                  <li><strong>Desde tu navegador:</strong> también puedes bloquear o eliminar cookies desde la configuración de tu navegador (Chrome, Safari, Firefox, Edge), aunque esto puede afectar al funcionamiento de algunas partes del Sitio.</li>
+                  <li><strong>Desde el banner de cookies:</strong> aparece en tu primera visita y te deja aceptar, rechazar o configurar por categoría.</li>
+                  <li><strong>Desde el Sitio en cualquier momento:</strong> con el enlace <a href="#" data-ap-privacy>"Configurar cookies"</a>, también disponible en el pie de página.</li>
+                  <li><strong>Desde tu navegador:</strong> puedes bloquear o borrar cookies desde la configuración de Chrome, Safari, Firefox o Edge. Si bloqueas las necesarias, algunas partes del Sitio (como el carrito) pueden dejar de funcionar.</li>
                 </ul>
 
-                <h3>6. Contacto</h3>
-                <p>Para cualquier duda sobre el uso de cookies en apbeauty.com: <mark class="policy-tbd">[EMAIL]</mark>.</p>
+                <h3>6. Cambios en esta política</h3>
+                <p>Actualizaremos esta política cada vez que cambien las cookies del Sitio. La fecha del encabezado indica la versión vigente.</p>
+
+                <h3>7. Contacto</h3>
+                <p>Dudas sobre cookies: <a href="mailto:apbeautyoficial@gmail.com">apbeautyoficial@gmail.com</a>.</p>
               </div>
             </div>
           </div>
@@ -684,7 +719,7 @@
           <h2 class="footer-col__title">Legal</h2>
           <ul class="footer-col__links">
             <li><a href="politicas.html#terminos">Términos y Condiciones</a></li>
-            <li><a href="politicas.html#pagos">Pagos y Reembolsos</a></li>
+            <li><a href="politicas.html#devoluciones">Devoluciones y Cambios</a></li>
             <li><a href="politicas.html#privacidad">Privacidad</a></li>
             <li><a href="politicas.html#cookies">Cookies</a></li>
           </ul>
@@ -709,6 +744,6 @@
     </div>
   </footer>
 
-  <script type="module" defer src="main.js?v=20260902"></script>
+  <script type="module" defer src="main.js?v=20260906"></script>
 </body>
 </html>

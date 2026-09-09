@@ -4,16 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- ===== DOMINIO SEO ===== -->
-  <!-- Página TRANSACCIONAL (revisión de carrito). DEBE llevar:
-         <meta name="robots" content="noindex, nofollow">
-       Title claro pero sin esfuerzo SEO. SIN structured data. Front no toca este bloque. -->
+  <!-- ===== DOMINIO SEO — Front no toca este bloque ===== -->
+  <!-- Página transaccional: no indexar, sin structured data. -->
+  <title>Tu carrito | AP Beauty</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#000000">
   <!-- ===== FIN bloque SEO ===== -->
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260902">
+  <link rel="stylesheet" href="style.css?v=20260906">
   <link rel="icon" href="brand/ap_ico_wnb-removebg-preview.png">
 </head>
 <body>
@@ -103,7 +104,7 @@
     <div class="cart-drawer__foot" id="cart-foot" hidden>
       <div class="cart-drawer__summary">
         <span>Subtotal</span>
-        <span id="cart-subtotal">0,00€</span>
+        <span id="cart-subtotal">S/ 0,00</span>
       </div>
       <p class="cart-drawer__note">Envío e impuestos calculados al finalizar.</p>
       <a href="carrito.html" class="btn-editorial btn-editorial--solid cart-drawer__checkout" id="cart-checkout">Ver carrito y pagar</a>
@@ -115,7 +116,7 @@
     <!-- ===== REVISIÓN DEL CARRITO (= "checkout" on-site: revisar + saltar a Stripe) ===== -->
     <!-- NO hay form de tarjeta/dirección: los recoge Stripe en su página hosted. Aquí solo se revisa.
          Contrato JS: #cart-page-empty (vacío) · #cart-page-layout (con items) · #cart-page-items (render, usa #cart-line-tpl)
-         · #cart-page-subtotal (€) · #btn-checkout (STUB "Finalizar compra": en esta pasada → confirmacion.html). -->
+         · #cart-page-subtotal (S/) · #btn-checkout (STUB "Finalizar compra": en esta pasada → confirmacion.html). -->
     <section class="cart-page">
       <div class="container">
         <div class="cart-page__head">
@@ -139,7 +140,7 @@
             <h2 class="cart-summary__title">Resumen</h2>
             <div class="cart-summary__row">
               <span>Subtotal</span>
-              <span id="cart-page-subtotal">0,00€</span>
+              <span id="cart-page-subtotal">S/ 0,00</span>
             </div>
             <p class="cart-summary__note">Envío e impuestos se calculan en el pago seguro.</p>
             <button class="btn-editorial btn-editorial--solid cart-summary__checkout" id="btn-checkout">Finalizar compra</button>
@@ -203,7 +204,7 @@
           <h2 class="footer-col__title">Legal</h2>
           <ul class="footer-col__links">
             <li><a href="politicas.html#terminos">Términos y Condiciones</a></li>
-            <li><a href="politicas.html#pagos">Pagos y Reembolsos</a></li>
+            <li><a href="politicas.html#devoluciones">Devoluciones y Cambios</a></li>
             <li><a href="politicas.html#privacidad">Privacidad</a></li>
             <li><a href="politicas.html#cookies">Cookies</a></li>
           </ul>
@@ -244,6 +245,6 @@
     </li>
   </template>
 
-  <script type="module" defer src="main.js?v=20260902"></script>
+  <script type="module" defer src="main.js?v=20260906"></script>
 </body>
 </html>

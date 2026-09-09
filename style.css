@@ -362,13 +362,23 @@ section { padding-block: var(--section-pad-y); }
    en desktop ancho como pasaría con `1fr`) y deja que encojan en viewports
    medianos. */
 .product-rail__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 440px)); justify-content: start; gap: var(--gutter); }
-.rail-card { display: block; text-decoration: none; color: #fff; }
+.rail-card { position: relative; display: block; text-decoration: none; color: #fff; }
 .rail-card-img { position: relative; background: var(--color-ink-soft); border-radius: 12px; overflow: hidden; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
 .rail-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; }
 .rail-card:hover .rail-card-img img { transform: scale(1.04); }
 .rail-card-name { font-family: var(--font-body); font-size: 15px; font-weight: 700; margin: 0 0 4px; color: #fff; }
 .rail-card-meta { font-size: 13px; color: rgba(255, 255, 255, 0.66); margin: 0 0 6px; }
 .rail-card-price { font-size: 16px; font-weight: 800; margin: 0; color: #fff; }
+
+/* AB-C27 · Botón "Ver más" (AB-F34). `.btn-editorial--ghost` global ya es blanco
+   con borde blanco → legible sobre el rail oscuro y su hover (fondo blanco/texto
+   negro) también; aquí sólo layout: separarlo del precio + variante compacta (el
+   padding 15/36 de `.btn-editorial` es de CTA grande). El `::after inset:0` es un
+   "stretched link": devuelve TODA la `.rail-card` a clicable como antes de que
+   front cambiara el `<a>` envolvente por `<article>` (AB-F34) — el `<a>` sigue
+   viéndose como botón, el pseudo-elemento cubre la card. */
+.rail-card-cta { margin-top: 14px; padding: 11px 24px; font-size: 12px; }
+.rail-card-cta::after { content: ""; position: absolute; inset: 0; }
 
 @media (max-width: 768px) {
   .product-rail__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1086,6 +1096,25 @@ section { padding-block: var(--section-pad-y); }
 .cart-summary__checkout.is-hidden-mp,
 .cart-summary__secure.is-hidden-mp { display: none; }
 
+/* AB-C28 · Checkout Mercado Pago. Los 2 nodos los crea `initPaymentGateway()`
+   en `main.js` (sin HTML): `.mp-brick-container` va tras `#btn-checkout` (oculto
+   con `.is-hidden-mp` en el mercado MP), `.mp-brick-error` justo después. */
+.mp-brick-container { margin-top: 18px; }
+/* Aviso de error del Brick (`<p role="alert">`, oculto de serie). NO fijar
+   `display` aquí — el JS lo revela con `el.hidden = false` y cualquier regla
+   `display` en esta clase ganaría a `[hidden]` (mismo gotcha que `.cat-item
+   [hidden]`) dejándolo siempre visible. Se queda con el `display:block` del <p>.
+   Paleta = la de `mark.policy-tbd` (rosa pálido + rojo-hover), sin color nuevo. */
+.mp-brick-error {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-left: 3px solid var(--color-red);
+  border-radius: var(--radius-soft);
+  background: #FDE7EA;
+  color: var(--color-red-hover);
+  font: 600 .82rem/1.5 var(--font-body);
+}
+
 @media (min-width: 900px) {
   .cart-page__layout { grid-template-columns: 1fr 360px; }
   .cart-summary { position: sticky; top: 96px; }   /* acompaña el scroll bajo el header sticky */
@@ -1117,9 +1146,13 @@ section { padding-block: var(--section-pad-y); }
 .policies-header { max-width: 70ch; margin: 0 0 40px; }
 .policies-header h1 { font-family: var(--font-display); font-size: clamp(2.2rem, 4vw, 3rem); font-weight: 700; color: var(--negro); margin: 0 0 14px; }
 .policies-intro { font-size: 16px; line-height: 1.6; color: var(--gris-texto); margin: 0; }
+/* AB-L2 metió un 2º .policies-intro (aviso "borrador · revisión legal") — separarlos */
+.policies-intro + .policies-intro { margin-top: 14px; }
 
 .accordion { max-width: 78ch; border-top: 1px solid var(--borde); }
-.accordion-item { border-bottom: 1px solid var(--borde); }
+/* scroll-margin: los enlaces del footer saltan a politicas.html#<slug> y el
+   header es sticky (mismo criterio que #historia/#destacados/.cat-item) */
+.accordion-item { border-bottom: 1px solid var(--borde); scroll-margin-top: 100px; }
 .accordion-heading { margin: 0; }
 
 .accordion-trigger {
@@ -1164,13 +1197,36 @@ section { padding-block: var(--section-pad-y); }
 .accordion-panel-inner p { margin: 0 0 16px; }
 
 .table-wrap { overflow-x: auto; margin: 0 0 20px; border: 1px solid var(--borde); border-radius: var(--radius-soft); }
-.table-wrap table { width: 100%; border-collapse: collapse; font-size: 13.5px; white-space: nowrap; }
+/* min-width: por debajo de esto la tabla scrollea dentro de .table-wrap en vez de
+   aplastar columnas (la de Cookies tiene 5 col). En el panel (~68ch) las de 2-3
+   col caben sin scroll; en móvil scrollean, que es lo correcto. */
+.table-wrap table { width: 100%; min-width: 460px; border-collapse: collapse; font-size: 13.5px; white-space: nowrap; }
 .table-wrap th,
-.table-wrap td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--borde); white-space: normal; }
+.table-wrap td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--borde); white-space: normal; vertical-align: top; }
 .table-wrap thead th { font-family: var(--font-body); font-weight: 700; color: var(--negro); background: var(--fondo-alt); white-space: nowrap; }
 .table-wrap tbody tr:last-child td { border-bottom: none; }
 
-mark.policy-tbd, mark.content-tbd { background: #FDE7EA; color: var(--color-red-hover); padding: 1px 5px; border-radius: 3px; font-weight: 600; font-style: normal; }
+/* Enlaces dentro del cuerpo legal (mailto, "Configurar cookies", ANPD…): negro
+   subrayado, editorial — el rojo se reserva para el acento de estado abierto */
+.accordion-panel-inner a { color: var(--negro); text-decoration: underline; text-underline-offset: 2px; }
+.accordion-panel-inner a:hover { color: var(--color-red-hover); }
+
+/* <code> de la tabla de cookies (ap_cookie_consent, _ga, _fbp…) */
+.accordion-panel-inner code,
+.table-wrap code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .88em; background: var(--fondo-alt); color: var(--negro);
+  padding: 1px 5px; border-radius: 3px;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+
+/* box-decoration-break: clone → el resaltado mantiene padding/borde en cada
+   línea cuando el <mark> abarca un párrafo entero (varios en el borrador legal) */
+mark.policy-tbd, mark.content-tbd {
+  background: #FDE7EA; color: var(--color-red-hover);
+  padding: 1px 5px; border-radius: 3px; font-weight: 600; font-style: normal;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
 
 /* --------------------------------------------------------------------------
    17 · SUBPÁGINAS SERVICIOS (novias.html + clases.html · AB-C13)
@@ -1364,6 +1420,119 @@ mark.policy-tbd, mark.content-tbd { background: #FDE7EA; color: var(--color-red-
 .reserva-novias__micro, .reserva-clases__micro { font: 400 .85rem/1.5 var(--font-body); margin: clamp(18px, 2vw, 24px) 0 0; }
 .reserva-novias__micro { color: rgba(255,255,255,.6); }
 .reserva-clases__micro { color: var(--gris-texto); }
+
+/* --------------------------------------------------------------------------
+   18 · BANNER DE CONSENTIMIENTO DE COOKIES (AB-L3 · UI de AB-L4)
+   La UI la construye `initCookieConsent()` en main.js (`buildConsentUI()`), no
+   hay markup en el HTML. Contrato: `.ap-privacy-bar*` (aviso fijo abajo) y
+   `.ap-privacy-panel*` (modal de preferencias). Botones `.ap-privacy-btn` +
+   modificador (`--accept` primario negro; resto contorno). Nombres `ap-privacy-*`
+   a propósito (no `cookie-*`): los adblock ocultan `.cookie-*` por filtro
+   cosmético. Fondo blanco dominante, rojo NO se usa aquí (≤10%).
+
+   GATE: el JS solo pinta el aviso si este centinela existe. Es la señal de
+   "AB-L3 está publicado y estilado" — si se revierte el CSS, quitar también
+   esta línea para que no salga un banner sin estilar.
+   -------------------------------------------------------------------------- */
+:root { --ap-privacy-ui: ready; }
+
+/* [hidden] no gana por especificidad al `display` propio de estas clases (mismo
+   gotcha que .cat-item[hidden] / .accordion-panel[hidden]) — el JS togglea
+   `el.hidden`, así que hay que reponer el hide del navegador a mano. */
+.ap-privacy-bar[hidden],
+.ap-privacy-panel[hidden] { display: none; }
+
+/* ---- Aviso (barra fija inferior) ---- */
+/* Sin animación de entrada a propósito: el aviso y el modal deben ser usables
+   incluso si el motor de animación no arranca. Aparecen al quitarles [hidden]. */
+.ap-privacy-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 1080;
+  background: #fff; border-top: 1px solid var(--borde);
+  box-shadow: 0 -6px 28px rgba(0, 0, 0, .10);
+}
+
+.ap-privacy-bar__inner {
+  max-width: var(--container-max); margin-inline: auto;
+  padding: 16px var(--gutter);
+  display: flex; flex-direction: column; gap: 14px;
+}
+.ap-privacy-bar__title {
+  font-family: var(--font-display); font-size: 1.05rem; font-weight: 700;
+  color: var(--negro); margin: 0;
+}
+.ap-privacy-bar__text {
+  font-size: 13.5px; line-height: 1.6; color: var(--gris-texto); margin: 0; max-width: 64ch;
+}
+.ap-privacy-bar__text a { color: var(--negro); text-decoration: underline; text-underline-offset: 2px; }
+.ap-privacy-bar__text a:hover { color: var(--color-red-hover); }
+.ap-privacy-bar__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+@media (min-width: 860px) {
+  .ap-privacy-bar__inner {
+    display: grid; grid-template-columns: 1fr auto;
+    grid-template-areas: "title actions" "text actions";
+    column-gap: 32px; row-gap: 4px; align-items: center;
+  }
+  .ap-privacy-bar__title { grid-area: title; }
+  .ap-privacy-bar__text { grid-area: text; }
+  .ap-privacy-bar__actions { grid-area: actions; flex-wrap: nowrap; }
+}
+
+/* ---- Modal de preferencias ---- */
+.ap-privacy-panel {
+  position: fixed; inset: 0; z-index: 1200;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+/* Estado visible por defecto — no dependemos de `.is-open` (el JS la añade en un
+   requestAnimationFrame; si no llega, el modal debe verse igual). */
+.ap-privacy-panel__backdrop { position: absolute; inset: 0; background: rgba(10, 10, 10, .5); }
+
+.ap-privacy-panel__dialog {
+  position: relative; width: 100%; max-width: 480px;
+  max-height: calc(100dvh - 40px); overflow-y: auto;
+  background: #fff; border-radius: var(--radius-card);
+  padding: clamp(24px, 4vw, 36px);
+  box-shadow: var(--shadow-hover);
+}
+
+.ap-privacy-panel__close {
+  position: absolute; top: 10px; right: 12px;
+  background: none; border: none; padding: 6px; cursor: pointer;
+  font-size: 22px; line-height: 1; color: var(--gris-muted); transition: color .2s ease;
+}
+.ap-privacy-panel__close:hover { color: var(--negro); }
+
+.ap-privacy-panel__title {
+  font-family: var(--font-display); font-size: 1.4rem; font-weight: 700;
+  color: var(--negro); margin: 0 0 8px;
+}
+.ap-privacy-panel__intro { font-size: 13.5px; line-height: 1.6; color: var(--gris-texto); margin: 0 0 20px; }
+
+.ap-privacy-panel__list { list-style: none; margin: 0 0 22px; padding: 0; }
+.ap-privacy-panel__row { padding: 15px 0; border-top: 1px solid var(--borde); }
+.ap-privacy-panel__row:last-child { border-bottom: 1px solid var(--borde); }
+.ap-privacy-panel__label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.ap-privacy-panel__toggle { width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--negro); cursor: pointer; }
+.ap-privacy-panel__toggle:disabled { cursor: not-allowed; opacity: .55; }
+.ap-privacy-panel__name { font-family: var(--font-body); font-size: .95rem; font-weight: 600; color: var(--negro); }
+.ap-privacy-panel__desc { font-size: 12.5px; line-height: 1.55; color: var(--gris-texto); margin: 6px 0 0 26px; }
+
+.ap-privacy-panel__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.ap-privacy-panel__actions .ap-privacy-btn { flex: 1 1 130px; }
+
+/* ---- Botones (sistema editorial, tamaño UI) ---- */
+.ap-privacy-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 10px 18px;
+  font-family: var(--font-body); font-size: 11.5px; font-weight: 600;
+  letter-spacing: .8px; text-transform: uppercase;
+  border: 1.5px solid var(--negro); border-radius: var(--radius-soft);
+  background: #fff; color: var(--negro); white-space: nowrap;
+  cursor: pointer; text-decoration: none; transition: all .2s ease;
+}
+.ap-privacy-btn:hover { background: var(--negro); color: #fff; }
+.ap-privacy-btn--accept { background: var(--negro); color: #fff; }
+.ap-privacy-btn--accept:hover { background: var(--color-ink-soft); }
 
 /* --------------------------------------------------------------------------
    Accesibilidad
