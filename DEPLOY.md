@@ -78,6 +78,17 @@ sudo certbot --nginx -d apbeauty-lima.com -d www.apbeauty-lima.com
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
+## 4bis. Cache-Control (AB-J14, 2026-09-09)
+- `nginx/apbeauty.conf` incluye `map $uri $ap_cache_control` → `Cache-Control:
+  no-cache` para `*.html` y `/`. El navegador **revalida el HTML en cada visita**
+  (no sirve HTML/CSP rancio de la caché heurística — causaba checkout roto en
+  visitantes recurrentes cuando cambió la CSP del Brick).
+- Los assets (`style.css?v=`, `main.js?v=`) NO llevan la cabecera → siguen
+  cacheables; el `?v=` los invalida en cada release (regla AB-F29, front).
+- `/api/*` y `/health` tampoco la llevan (Node manda lo suyo).
+- Cloudflare: no cachea HTML por defecto (`cf-cache-status: DYNAMIC`) → no hace
+  falta page rule. Si algún día se añade una que cachee HTML, excluir `*.html`.
+
 ## 5. Cloudflare
 - DNS: `A apbeauty-lima.com → <IP del VPS>` (proxied, nube naranja) + `www` igual.
 - SSL/TLS: modo **Full (strict)** (con cert válido en el origen).
