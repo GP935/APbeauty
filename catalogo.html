@@ -44,7 +44,7 @@
   <!-- ===== 1 · HEADER (reutilizado del home · hrefs de categoría → catalogo.html?cat=<slug>) ===== -->
   <!-- Mismo componente que index.html (grid 3 zonas, logo centrado). Cambia SOLO el destino de los
        enlaces de categoría: en el home apuntan a /tienda?cat=, aquí apuntan a catalogo.html?cat= para
-       que el filtro de esta misma página los recoja (contrato JS ?cat=). Logo → index.html. -->
+       que el filtro de esta misma página los recoja (contrato JS ?cat=). Logo → /inicio. -->
   <header class="site-header" id="site-header">
     <div class="site-header__inner">
 
@@ -64,7 +64,7 @@
       </div>
 
       <!-- ZONA CENTRO: logo -->
-      <a class="header-logo" href="index.html" aria-label="AP Beauty inicio">
+      <a class="header-logo" href="/inicio" aria-label="AP Beauty inicio">
         <img src="brand/ap_ico_wnb-removebg-preview.png" alt="AP Beauty">
       </a>
 
@@ -73,7 +73,7 @@
         <nav class="nav-cluster" aria-label="Más categorías">
           <a class="nav-link" href="catalogo.html?cat=sets">Sets</a>
           <a class="nav-link" href="catalogo.html?cat=brochas">Brochas</a>
-          <a class="nav-link" href="index.html#historia">Historia</a>
+          <a class="nav-link" href="/inicio#historia">Historia</a>
         </nav>
         <button class="header-icon header-cart" id="btn-cart" aria-label="Abrir carrito" aria-controls="cart-drawer" aria-expanded="false">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
@@ -106,7 +106,7 @@
       <a href="catalogo.html?cat=brochas">Brochas</a>
     </nav>
     <nav class="menu-secondary" aria-label="Más opciones">
-      <a href="index.html#historia">Historia</a>
+      <a href="/inicio#historia">Historia</a>
       <a href="#" id="menu-search-link" data-open-search>Buscar</a>
     </nav>
   </aside>
@@ -225,9 +225,7 @@
              data-image   = swatch.dataset.image
 
            Estado inicial servido por front: Icónica / Talla M (editable moviendo .is-active +
-           aria-pressed + [hidden]). Precios en S/ (soles) — ver handoff en inbox/js sobre formatEuros().
-           Fotos: pestanas-catalogo/<slug>.jpg (entregadas por Paul 2026-08-31).
-           PENDIENTE Paul: 5 Price IDs de Stripe (placeholders TODO_STRIPE_PRICE_ID_*).
+           aria-pressed + [hidden]). Precios en S/ (soles). Fotos: pestanas-catalogo/<slug>.jpg.
            ========================================================================================= -->
       <article class="cat-item cat-item--lash" id="individuales" data-category="pestanas">
         <div class="cat-item__media">
@@ -353,9 +351,7 @@
                   data-image   = swatch.dataset.image
 
            Estado inicial servido por front: Destellos (editable moviendo .is-active + aria-pressed + [hidden]).
-           Precios en S/ (soles), formatPEN() ya renombrada en AB-J9. Todas S/ 10,00.
-           Fotos: pestanas-tiras-catalogo/<slug>.jpg (entregadas por Paul 2026-09-02).
-           PENDIENTE Paul: 4 Price IDs de Stripe (placeholders TODO_STRIPE_PRICE_ID_*).
+           Precios en S/ (soles). Todas S/ 10,00. Fotos: pestanas-tiras-catalogo/<slug>.jpg.
            ========================================================================================= -->
       <article class="cat-item cat-item--lash" id="tiras" data-category="pestanas">
         <div class="cat-item__media">

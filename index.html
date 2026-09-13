@@ -40,9 +40,8 @@
     <p>Envío gratis en pedidos +35€ · Maquilladora profesional · 100% Cruelty-free</p>
   </div>
 
-  <!-- ===== 1 · HEADER (rework Gucci: logo centrado · nav 3+3 flanqueando) ===== -->
-  <!-- Sólido blanco siempre (retirado `site-header--overlay`/`.is-stuck`/scrim — ver inbox css+js).
-       Grid 3 zonas: [search + nav-izq(3)] · [logo centro] · [nav-der(3) + carrito].
+  <!-- ===== 1 · HEADER (logo centrado · nav 3+3 flanqueando) ===== -->
+  <!-- Grid 3 zonas: [search + nav-izq(3)] · [logo centro] · [nav-der(3) + carrito].
        Móvil (CSS ≤900px): ocultar navs + search → barra [☰ · logo · 🛒]. Logo header = AP NEGRO (wnb) sobre blanco. -->
   <header class="site-header" id="site-header">
     <div class="site-header__inner">
@@ -63,7 +62,7 @@
       </div>
 
       <!-- ZONA CENTRO: logo -->
-      <a class="header-logo" href="index.html" aria-label="AP Beauty inicio">
+      <a class="header-logo" href="/inicio" aria-label="AP Beauty inicio">
         <img src="brand/ap_ico_wnb-removebg-preview.png" alt="AP Beauty">
       </a>
 
@@ -173,16 +172,6 @@
       </div>
       <!-- Scrim superior para legibilidad del header blanco — dominio CSS (scrim) -->
       <div class="hero-scrim" aria-hidden="true"></div>
-      <!-- Wrapper `.hero-overlay` eliminado (petición directa de Paul, 2026-08-10): el titular/CTA
-           pasan a hijos directos de `.hero` en vez de vivir en un div propio. Motivo: en móvil
-           `.hero-overlay` se volvía `position:static` con fondo sólido propio (style.css, media
-           query del hero), lo que la convertía en un 2º bloque apilado debajo de `.hero-media`
-           en vez de superpuesto sobre la foto — la sección dejaba de leerse como "una sola imagen
-           de fondo" y pasaba a ser imagen+bloque-negro-separado. Sin el wrapper, la única forma de
-           que el titular quede legible en cualquier viewport es que CSS lo posicione superpuesto
-           (absolute/inset o similar) tanto en desktop como en móvil — la foto es el único fondo
-           real de la sección en todo momento, nunca dos bloques verticales. Handoff completo con
-           la regla CSS exacta a corregir en inbox/css.md (o el agente correspondiente). -->
       <div class="container">
         <span class="hero-eyebrow">AP BEAUTY</span>
         <h1 id="hero-titulo">Tu poder está en tu mirada</h1>
@@ -190,17 +179,7 @@
       </div>
     </section>
 
-    <!-- ===== 3 · DESTACADOS (cards cuadradas estáticas — antes carrusel marquee) ===== -->
-    <!-- Carrusel giratorio eliminado. Cards de misma dimensión, simétricas dentro del .container
-         (sin sangrar márgenes). CSS: .product-rail__grid + .rail-card cuadrada.
-         AB-F33 (2026-09-05): los 3 SKUs anteriores (Lip Eclipse / Power Matte / Sculpt Liner) están
-         agotados / fuera de producción → salen de Destacados y quedan al final del catálogo. Aquí solo
-         los 2 productos activos: Individuales y Tiras. Ahora son 2 cards, no 3 → ver handoff css AB-C26
-         (grid a 2 columnas + sección OSCURA con texto claro sobre la paleta ya definida).
-         AB-F34 (2026-09-05): cada .rail-card pasa de <a> envolvente a <article> + botón visible
-         <a class="rail-card-cta">Ver más</a> que enlaza a la ficha del producto en el catálogo
-         (?cat=pestanas#individuales / #tiras). css: estilar .rail-card-cta (ghost sobre fondo oscuro);
-         opcional pattern "stretched link" (::after inset:0) para que toda la card siga siendo clicable. -->
+    <!-- ===== 3 · DESTACADOS (cards cuadradas estáticas) ===== -->
     <section class="product-rail" id="destacados" aria-labelledby="rail-titulo">
       <div class="container">
         <div class="rail-head">
@@ -230,15 +209,7 @@
       </div>
     </section>
 
-    <!-- ===== 3B · SPOTLIGHT PRODUCT (SECCIÓN NUEVA · §3B v3 — sustituye al antiguo statement) ===== -->
-    <!-- Climax de producto tras Destacados: el héroe del catálogo. Producto = MÁS VENDIDO actual: pestañas postizas.
-         Split editorial full-bleed: render de producto a un lado, texto al otro (eyebrow / nombre Playfair / línea / precio / CTA).
-         Necesita CSS nuevo: .spotlight, .spotlight-grid, .spotlight-media, .spotlight-text (mismo patrón estructural que storytelling; sin .container, full-bleed).
-         RITMO (§3): el fondo debe ser DISTINTO a sus vecinos para cortar la racha de oscuros. El vecino siguiente
-         (storytelling) es OSCURO → este spotlight NO debe ser oscuro: usar gris/charcoal-claro o claro. Dominio CSS.
-         ROJO (§3B): un único punto. ⚠️ CAMBIO: el producto ya NO es rojo (estuche de pestañas sobre fondo oscuro)
-         → el rojo de esta vista pasa al CTA (puede ir rojo como único acento) O queda neutro. Decisión CSS. Ver inbox/css.
-         ⚠️ Precio = FACHADA, confirmar con el usuario. -->
+    <!-- ===== 3B · SPOTLIGHT PRODUCT ===== -->
     <section class="spotlight" aria-labelledby="spotlight-titulo">
       <div class="spotlight-grid">
         <div class="spotlight-media">
@@ -260,10 +231,7 @@
       </div>
     </section>
 
-    <!-- ===== 5 · STORYTELLING (SECCIÓN NUEVA · §3 ACT 2) ===== -->
-    <!-- No existe en comodex. Construida con el grid heredado (.container, section-pad, full-bleed).
-         Necesita CSS nuevo: .storytelling, .story-grid, .story-media, .story-text, .story-pullquote.
-         Editorial alternando imagen / texto sobre blanco y gris; sin rojo (o un único trazo). -->
+    <!-- ===== 5 · STORYTELLING ===== -->
     <section class="storytelling" id="historia" aria-labelledby="story-titulo">
       <div class="story-grid">
         <div class="story-media">
@@ -282,10 +250,7 @@
       </div>
     </section>
 
-    <!-- ===== 6 · POR QUÉ AP BEAUTY (4 cifras) · §3 ACT 2 — cierra el bloque de marca ("esto somos en números") ===== -->
-    <!-- RITMO (§3.1): why es OSCURO; su vecino de arriba (storytelling) también es oscuro → CSS debe dar
-         remate/aire al final del storytelling para que no lean como 2 oscuros de corrido. Abajo, el vecino
-         (dual-cards) es CLARO. -->
+    <!-- ===== 6 · POR QUÉ AP BEAUTY (4 cifras) ===== -->
 
     <section class="why" aria-labelledby="why-titulo">
       <div class="container">
@@ -317,8 +282,7 @@
       </div>
     </section>
 
-    <!-- ===== 7 · DOS CARDS INTERACTIVAS · §3 ACT 3 — BEAT CLARO que separa el why (oscuro) del proof ===== -->
-    <!-- Scrim OBLIGATORIO sobre la imagen de fondo + ocultar texto scaffold "1200x800" de los placeholders — dominio CSS (§3 ACT 3). -->
+    <!-- ===== 7 · DOS CARDS INTERACTIVAS ===== -->
     <section class="dual-cards" aria-label="Ayuda para elegir">
       <div class="container dual-grid">
         <a href="catalogo.html?cat=paquetes#paquete-inicial" class="dual-card">
@@ -340,15 +304,7 @@
       </div>
     </section>
 
-    <!-- ===== 8 · BANNER SOCIAL PROOF (antes / después) · §3 ACT 3 — prueba real, último empujón antes de navegar a comprar ===== -->
-    <!-- v3.1: movido de ACT 2 a ACT 3. proof y why son la MISMA función (prueba social) en 2 formatos
-         (foto-resultado vs. cifras) → se separan con el beat claro de las dual-cards para que no se canibalicen.
-         Sección CLARA (§3.1). Foto fuente vertical = 2 tomas apiladas → partida por la costura central (y=684) en
-         social-proof/antes.jpg (ceja natural) y social-proof/despues.jpg (ceja+delineado definidos).
-         Banda apaisada: 2 celdas lado a lado en PC, apiladas en móvil (CSS).
-         El resultado ES el contenido → texto NUNCA encima de la imagen; copy en barra propia debajo.
-         background-image de cada celda va por CSS en .pb-cell--before/.pb-cell--after (sin estilo inline). Ver inbox/css.
-         ⚠️ Cifra de prueba social = PLACEHOLDER. Sustituir por dato real antes de tráfico real. -->
+    <!-- ===== 8 · BANNER SOCIAL PROOF (antes / después) ===== -->
     <section class="proof-banner" aria-label="Resultados reales: antes y después">
       <div class="proof-banner__media">
         <figure class="pb-cell pb-cell--before">
@@ -364,7 +320,7 @@
       </div>
     </section>
 
-    <!-- ===== 9 · COMPRA POR CATEGORÍA (6 cat-cards) · §3 ACT 3 ===== -->
+    <!-- ===== 9 · COMPRA POR CATEGORÍA (6 cat-cards) ===== -->
     <section class="category-rail" aria-labelledby="cat-titulo">
       <div class="container">
         <div class="rail-head">
@@ -404,8 +360,7 @@
       </div>
     </section>
 
-    <!-- ===== 10 · @APBEAUTY (GRID INSTAGRAM) · §3 ACT 3 ===== -->
-    <!-- Sin gradiente IG (§6.2): handle en rojo/negro según contraste — dominio CSS. -->
+    <!-- ===== 10 · @APBEAUTY (GRID INSTAGRAM) ===== -->
     <section class="insta" aria-labelledby="insta-titulo">
       <div class="container">
         <h2 class="insta-handle" id="insta-titulo">@apbeauty.official</h2>

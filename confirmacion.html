@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260906">
+  <link rel="stylesheet" href="style.css?v=20260909">
   <link rel="icon" href="brand/ap_ico_wnb-removebg-preview.png">
 </head>
 <body>
@@ -42,7 +42,7 @@
         </nav>
       </div>
 
-      <a class="header-logo" href="index.html" aria-label="AP Beauty inicio">
+      <a class="header-logo" href="/inicio" aria-label="AP Beauty inicio">
         <img src="brand/ap_ico_wnb-removebg-preview.png" alt="AP Beauty">
       </a>
 
@@ -50,7 +50,7 @@
         <nav class="nav-cluster" aria-label="Más categorías">
           <a class="nav-link" href="catalogo.html?cat=sets">Sets</a>
           <a class="nav-link" href="catalogo.html?cat=brochas">Brochas</a>
-          <a class="nav-link" href="index.html#historia">Historia</a>
+          <a class="nav-link" href="/inicio#historia">Historia</a>
         </nav>
         <button class="header-icon header-cart" id="btn-cart" aria-label="Abrir carrito" aria-controls="cart-drawer" aria-expanded="false">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
@@ -82,7 +82,7 @@
       <a href="catalogo.html?cat=brochas">Brochas</a>
     </nav>
     <nav class="menu-secondary" aria-label="Más opciones">
-      <a href="index.html#historia">Historia</a>
+      <a href="/inicio#historia">Historia</a>
       <a href="#" id="menu-search-link" data-open-search>Buscar</a>
     </nav>
   </aside>
@@ -113,8 +113,8 @@
 
   <main>
 
-    <!-- ===== CONFIRMACIÓN DE PEDIDO (destino success_url de Stripe) ===== -->
-    <!-- JS vacía el carrito (localStorage ap_cart) al cargar esta página. Front solo aporta la estructura. -->
+    <!-- ===== CONFIRMACIÓN DE PEDIDO ===== -->
+    <!-- JS vacía el carrito (localStorage ap_cart) al cargar esta página. -->
     <section class="confirmation">
       <div class="container">
         <svg class="confirmation__icon" viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>
@@ -123,7 +123,7 @@
         <p class="confirmation__text">Hemos recibido tu pedido. Recibirás un correo con los detalles y el seguimiento en cuanto salga del estudio.</p>
         <div class="confirmation__cta">
           <a href="catalogo.html" class="btn-editorial btn-editorial--solid">Ver catálogo</a>
-          <a href="index.html" class="btn-editorial btn-editorial--ghost">Volver al inicio</a>
+          <a href="/inicio" class="btn-editorial btn-editorial--ghost">Volver al inicio</a>
         </div>
       </div>
     </section>
@@ -202,6 +202,6 @@
     </div>
   </footer>
 
-  <script type="module" defer src="main.js?v=20260906"></script>
+  <script type="module" defer src="main.js?v=20260909"></script>
 </body>
 </html>

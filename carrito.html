@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260906">
+  <link rel="stylesheet" href="style.css?v=20260909">
   <link rel="icon" href="brand/ap_ico_wnb-removebg-preview.png">
 </head>
 <body>
@@ -42,7 +42,7 @@
         </nav>
       </div>
 
-      <a class="header-logo" href="index.html" aria-label="AP Beauty inicio">
+      <a class="header-logo" href="/inicio" aria-label="AP Beauty inicio">
         <img src="brand/ap_ico_wnb-removebg-preview.png" alt="AP Beauty">
       </a>
 
@@ -50,7 +50,7 @@
         <nav class="nav-cluster" aria-label="Más categorías">
           <a class="nav-link" href="catalogo.html?cat=sets">Sets</a>
           <a class="nav-link" href="catalogo.html?cat=brochas">Brochas</a>
-          <a class="nav-link" href="index.html#historia">Historia</a>
+          <a class="nav-link" href="/inicio#historia">Historia</a>
         </nav>
         <button class="header-icon header-cart" id="btn-cart" aria-label="Abrir carrito" aria-controls="cart-drawer" aria-expanded="false">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
@@ -82,7 +82,7 @@
       <a href="catalogo.html?cat=brochas">Brochas</a>
     </nav>
     <nav class="menu-secondary" aria-label="Más opciones">
-      <a href="index.html#historia">Historia</a>
+      <a href="/inicio#historia">Historia</a>
       <a href="#" id="menu-search-link" data-open-search>Buscar</a>
     </nav>
   </aside>
@@ -113,10 +113,10 @@
 
   <main>
 
-    <!-- ===== REVISIÓN DEL CARRITO (= "checkout" on-site: revisar + saltar a Stripe) ===== -->
-    <!-- NO hay form de tarjeta/dirección: los recoge Stripe en su página hosted. Aquí solo se revisa.
-         Contrato JS: #cart-page-empty (vacío) · #cart-page-layout (con items) · #cart-page-items (render, usa #cart-line-tpl)
-         · #cart-page-subtotal (S/) · #btn-checkout (STUB "Finalizar compra": en esta pasada → confirmacion.html). -->
+    <!-- ===== REVISIÓN DEL CARRITO ===== -->
+    <!-- Contrato JS: #cart-page-empty (vacío) · #cart-page-layout (con items) · #cart-page-items (render, usa #cart-line-tpl)
+         · #cart-page-subtotal (S/) · #btn-checkout (abre el pago: JS inserta el formulario de envío
+         y el Brick de Mercado Pago justo debajo, y oculta este botón). -->
     <section class="cart-page">
       <div class="container">
         <div class="cart-page__head">
@@ -245,6 +245,6 @@
     </li>
   </template>
 
-  <script type="module" defer src="main.js?v=20260906"></script>
+  <script type="module" defer src="main.js?v=20260909"></script>
 </body>
 </html>
