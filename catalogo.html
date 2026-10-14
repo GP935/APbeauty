@@ -31,7 +31,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20261014b">
+  <link rel="stylesheet" href="style.css?v=20261014c">
   <link rel="icon" href="brand/ap_ico_wnb-removebg-preview.png">
 </head>
 <body>
@@ -196,23 +196,21 @@
 
       <!-- 1 · Individuales (activo · pestañas · UN solo producto con selector de diseño) -->
       <!-- ============ CONTRATO JS — initLashPicker() (dominio js) ==================================
-           Un producto, 5 diseños (sin selector de talla: en la caja vienen las 3). El botón .add-to-cart lee SU dataset al hacer
+           Un producto, 5 diseños. El botón .add-to-cart lee SU dataset al hacer
            clic (initCart → addToCart(btn.dataset)); JS debe mantener esos data-* sincronizados con la
            selección activa en todo momento (mantener SIEMPRE una selección válida).
 
            Fuentes de verdad en el markup:
-           · .lash-swatch (5) → data-slug · data-box-note (presente = muestra la nota de caja) · data-cart-name ·
+           · .lash-swatch (5) → data-slug · data-cart-name ·
                                 data-price (céntimos, coincide con el precio visible) · data-priceid ·
                                 data-image · aria-controls (id del .lash-panel) · aria-pressed
            · .lash-panel (5)  → copy visible del diseño (desc + meta + precio). [hidden] salvo el activo.
-           · #lash-box-note → texto central BOX_NOTE (main.js); [hidden] si el swatch no lleva data-box-note
            · .cat-item__media img[data-lash-media] → foto que cambia por diseño
 
            Al elegir diseño (.lash-swatch):
              1. .is-active + aria-pressed="true" en el swatch (resto a false)
              2. quitar [hidden] de su .lash-panel (aria-controls); [hidden] en los otros 4
              3. img[data-lash-media]: src = data-image ; alt = "Pestañas individuales <cart-name> de AP Beauty en su estuche"
-             4. #lash-box-note: visible solo si el swatch lleva data-box-note
              5. recomponer el botón .add-to-cart (abajo)
 
            Recomposición de .add-to-cart desde el swatch activo:
@@ -236,11 +234,11 @@
           <div class="lash-picker__group">
             <p class="lash-picker__label" id="lash-design-label">Diseño</p>
             <div class="lash-swatches" role="group" aria-labelledby="lash-design-label">
-              <button class="lash-swatch" type="button" data-stock-sku="individuales-esencial" data-slug="esencial" data-box-note data-cart-name="Esencial" data-price="2500" data-priceid="TODO_STRIPE_PRICE_ID_ESENCIAL" data-image="pestanas-catalogo/esencial.jpg" aria-pressed="false" aria-controls="lash-panel-esencial">
+              <button class="lash-swatch" type="button" data-stock-sku="individuales-esencial" data-slug="esencial" data-cart-name="Esencial" data-price="2500" data-priceid="TODO_STRIPE_PRICE_ID_ESENCIAL" data-image="pestanas-catalogo/esencial.jpg" aria-pressed="false" aria-controls="lash-panel-esencial">
                 <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-catalogo/esencial.jpg" alt="" width="128" height="128" loading="lazy"></span>
                 <span class="lash-swatch__name">Esencial</span>
               </button>
-              <button class="lash-swatch is-active" type="button" data-stock-sku="individuales-iconica" data-slug="iconica" data-box-note data-cart-name="Icónica" data-price="3500" data-priceid="TODO_STRIPE_PRICE_ID_ICONICA" data-image="pestanas-catalogo/iconica.jpg" aria-pressed="true" aria-controls="lash-panel-iconica">
+              <button class="lash-swatch is-active" type="button" data-stock-sku="individuales-iconica" data-slug="iconica" data-cart-name="Icónica" data-price="3500" data-priceid="TODO_STRIPE_PRICE_ID_ICONICA" data-image="pestanas-catalogo/iconica.jpg" aria-pressed="true" aria-controls="lash-panel-iconica">
                 <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-catalogo/iconica.jpg" alt="" width="128" height="128" loading="lazy"></span>
                 <span class="lash-swatch__name">Icónica</span>
               </button>
@@ -248,11 +246,11 @@
                 <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-catalogo/despierta.jpg" alt="" width="128" height="128" loading="lazy"></span>
                 <span class="lash-swatch__name">Despierta</span>
               </button>
-              <button class="lash-swatch" type="button" data-stock-sku="individuales-suspiro" data-slug="suspiro" data-box-note data-cart-name="Suspiro" data-price="2500" data-priceid="TODO_STRIPE_PRICE_ID_SUSPIRO" data-image="pestanas-catalogo/suspiro.jpg" aria-pressed="false" aria-controls="lash-panel-suspiro">
+              <button class="lash-swatch" type="button" data-stock-sku="individuales-suspiro" data-slug="suspiro" data-cart-name="Suspiro" data-price="2500" data-priceid="TODO_STRIPE_PRICE_ID_SUSPIRO" data-image="pestanas-catalogo/suspiro.jpg" aria-pressed="false" aria-controls="lash-panel-suspiro">
                 <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-catalogo/suspiro.jpg" alt="" width="128" height="128" loading="lazy"></span>
                 <span class="lash-swatch__name">Suspiro</span>
               </button>
-              <button class="lash-swatch" type="button" data-stock-sku="individuales-anhelada" data-slug="anhelada" data-box-note data-cart-name="Anhelada" data-price="4000" data-priceid="TODO_STRIPE_PRICE_ID_ANHELADA" data-image="pestanas-catalogo/anhelada.jpg" aria-pressed="false" aria-controls="lash-panel-anhelada">
+              <button class="lash-swatch" type="button" data-stock-sku="individuales-anhelada" data-slug="anhelada" data-cart-name="Anhelada" data-price="4000" data-priceid="TODO_STRIPE_PRICE_ID_ANHELADA" data-image="pestanas-catalogo/anhelada.jpg" aria-pressed="false" aria-controls="lash-panel-anhelada">
                 <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-catalogo/anhelada.jpg" alt="" width="128" height="128" loading="lazy"></span>
                 <span class="lash-swatch__name">Anhelada</span>
               </button>
@@ -312,7 +310,6 @@
             </div>
           </div>
 
-          <p class="lash-box-note" id="lash-box-note" hidden></p>
 
           <div class="cat-item__actions">
             <button class="add-to-cart btn-editorial btn-editorial--solid" data-id="individuales-iconica" data-name="Individuales · Icónica" data-price="3500" data-priceid="TODO_STRIPE_PRICE_ID_ICONICA" data-image="pestanas-catalogo/iconica.jpg">Añadir</button>
@@ -322,7 +319,7 @@
 
       <!-- 2 · Tiras (activo · pestañas · UN solo producto con selector de diseño) -->
       <!-- ============ CONTRATO JS — selector de Tiras (dominio js) ================================
-           Mismo patrón que #individuales pero SIN nota de caja. Lo ideal es
+           Mismo patrón que #individuales. Lo ideal es
            GENERALIZAR initLashPicker() para que itere sobre cada article.cat-item--lash y derive
            el prefijo de ids de article.id — así cubre #individuales y #tiras con un solo código.
 
@@ -332,7 +329,6 @@
                                 data-image · aria-controls (id del .lash-panel) · aria-pressed
            · .lash-panel (5) → copy visible (desc + meta). [hidden] salvo el activo.
            · .cat-item__media img[data-lash-media] → foto que cambia por diseño
-           · NO hay #lash-box-note en #tiras (sin texto de tallas).
 
            Al elegir diseño (.lash-swatch dentro de #tiras):
              1. .is-active + aria-pressed="true" en el swatch (resto a false)
@@ -742,6 +738,6 @@
   </script>
   <!-- ===== FIN JSON-LD SEO ===== -->
 
-  <script type="module" defer src="main.js?v=20261014b"></script>
+  <script type="module" defer src="main.js?v=20261014c"></script>
 </body>
 </html>

@@ -877,7 +877,7 @@ section { padding-block: var(--section-pad-y); }
    del catálogo). Dos instancias: #individuales y #tiras (5 diseños cada uno). Hereda eyebrow con filete rojo +
    título Playfair + .cat-item__desc/.cat-item__price.
    Rojo ≤10%: sin rojo nuevo aquí — la selección activa se marca en negro.
-   GOTCHA [hidden]: .lash-panel / .lash-box-note los togglea JS
+   GOTCHA [hidden]: .lash-panel lo togglea JS
    con el atributo hidden → regla [hidden]{display:none} repuesta abajo (mismo
    bug que .cat-item[hidden] / .accordion-panel[hidden]).
    -------------------------------------------------------------------------- */
@@ -936,12 +936,9 @@ section { padding-block: var(--section-pad-y); }
 .lash-panel__row dt { flex: 0 0 8.5rem; font-weight: 600; color: var(--gris-texto); }
 .lash-panel__row dd { flex: 1; margin: 0; color: #4A4A4A; }
 
-/* Nota de caja (Individuales): "En la misma caja vienen las 3 tallas" */
-.lash-box-note { margin: 0; font: 500 .9rem/1.4 var(--font-body); color: var(--gris-texto); }
 
 /* GOTCHA OBLIGATORIO — restaura el hide del navegador (JS togglea `hidden`) */
-.lash-panel[hidden],
-.lash-box-note[hidden] { display: none; }
+.lash-panel[hidden] { display: none; }
 
 /* Móvil — miniaturas más juntas, specs apiladas */
 @media (max-width: 768px) {

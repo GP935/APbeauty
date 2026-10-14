@@ -1092,9 +1092,9 @@ function initCatalog() {
 
 // 5b · Catálogo — Pestañas: selector de diseño (AB-J9 · AB-J11)
 // Cada <article class="cat-item--lash"> es un producto con N diseños (.lash-swatch):
-//   #individuales → 5 diseños; muestra la nota de caja en los swatches con data-box-note
-//   #tiras        → 5 diseños, sin nota
-// Sin selector de talla (decisión de Antonio y Andrea: en la misma caja vienen las 3).
+//   #individuales → 5 diseños
+//   #tiras        → 5 diseños
+// Sin selector de talla (decisión de Antonio y Andrea).
 // Mantiene los data-* del botón .add-to-cart sincronizados con la selección activa (initCart
 // lee btn.dataset en el clic). Contratos completos en los comentarios <!-- CONTRATO JS --> de
 // catalogo.html. Prefijo de id, nombre de carrito y frase del alt se derivan de article.id.
@@ -1102,9 +1102,6 @@ const LASH_LINES = {
   individuales: { cartPrefix: 'Individuales', altNoun: 'Pestañas individuales' },
   tiras: { cartPrefix: 'Tiras', altNoun: 'Pestañas de tira' },
 };
-
-// Texto ÚNICO de la nota de caja (provisional: lo confirma Andrea). Cambiarlo solo aquí.
-const BOX_NOTE = 'En la misma caja vienen las 3 tallas';
 
 function initLashPicker() {
   document.querySelectorAll('.cat-item--lash').forEach(setupLashArticle);
@@ -1116,7 +1113,6 @@ function setupLashArticle(article) {
 
   const swatches = Array.from(article.querySelectorAll('.lash-swatch'));
   const panels = Array.from(article.querySelectorAll('.lash-panel'));
-  const boxNote = article.querySelector('#lash-box-note');
   const media = article.querySelector('.cat-item__media img[data-lash-media]');
   const addBtn = article.querySelector('.add-to-cart');
   if (!swatches.length || !addBtn) return;
@@ -1148,18 +1144,12 @@ function setupLashArticle(article) {
       media.alt = line.altNoun + ' ' + swatch.dataset.cartName + ' de AP Beauty en su estuche';
     }
 
-    if (boxNote) {
-      const show = swatch.hasAttribute('data-box-note');
-      boxNote.textContent = show ? BOX_NOTE : '';
-      boxNote.hidden = !show;
-    }
-
     recomposeButton();
   }
 
   swatches.forEach((s) => s.addEventListener('click', () => selectSwatch(s)));
 
-  // Alinear nota y botón con el estado inicial servido por front (#individuales: Icónica · #tiras: Destellos)
+  // Alinear el botón con el estado inicial servido por front (#individuales: Icónica · #tiras: Destellos)
   selectSwatch(activeSwatch());
 }
 
