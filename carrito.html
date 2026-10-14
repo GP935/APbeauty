@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260909">
+  <link rel="stylesheet" href="style.css?v=20261014">
   <link rel="icon" href="brand/ap_ico_wnb-removebg-preview.png">
 </head>
 <body>
@@ -122,6 +122,7 @@
         <div class="cart-page__head">
           <p class="eyebrow">REVISIÓN</p>
           <h1>Tu carrito</h1>
+          <p class="stock-msg" role="status" aria-live="polite" hidden></p>
         </div>
 
         <!-- Estado vacío (JS muestra/oculta) -->
@@ -207,6 +208,7 @@
             <li><a href="politicas.html#devoluciones">Devoluciones y Cambios</a></li>
             <li><a href="politicas.html#privacidad">Privacidad</a></li>
             <li><a href="politicas.html#cookies">Cookies</a></li>
+            <li><a href="#" data-ap-privacy>Configurar cookies</a></li>
           </ul>
         </nav>
 
@@ -235,6 +237,7 @@
       <div class="cart-line__info">
         <p class="cart-line__name"></p>
         <p class="cart-line__price"></p>
+        <p class="stock-note" data-stock-slot hidden></p>
         <div class="cart-line__qty">
           <button class="qty-btn" data-action="dec" aria-label="Quitar una unidad">−</button>
           <span class="cart-line__qval">1</span>
@@ -245,6 +248,6 @@
     </li>
   </template>
 
-  <script type="module" defer src="main.js?v=20260909"></script>
+  <script type="module" defer src="main.js?v=20261014"></script>
 </body>
 </html>

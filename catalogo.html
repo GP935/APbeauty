@@ -31,7 +31,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260906">
+  <link rel="stylesheet" href="style.css?v=20261014">
   <link rel="icon" href="brand/ap_ico_wnb-removebg-preview.png">
 </head>
 <body>
@@ -238,23 +238,23 @@
           <div class="lash-picker__group">
             <p class="lash-picker__label" id="lash-design-label">Diseño</p>
             <div class="lash-swatches" role="group" aria-labelledby="lash-design-label">
-              <button class="lash-swatch" type="button" data-slug="esencial" data-tallas="S,M,L" data-cart-name="Esencial" data-price="2500" data-priceid="TODO_STRIPE_PRICE_ID_ESENCIAL" data-image="pestanas-catalogo/esencial.jpg" aria-pressed="false" aria-controls="lash-panel-esencial">
+              <button class="lash-swatch" type="button" data-stock-sku="individuales-esencial" data-slug="esencial" data-tallas="S,M,L" data-cart-name="Esencial" data-price="2500" data-priceid="TODO_STRIPE_PRICE_ID_ESENCIAL" data-image="pestanas-catalogo/esencial.jpg" aria-pressed="false" aria-controls="lash-panel-esencial">
                 <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-catalogo/esencial.jpg" alt="" width="128" height="128" loading="lazy"></span>
                 <span class="lash-swatch__name">Esencial</span>
               </button>
-              <button class="lash-swatch is-active" type="button" data-slug="iconica" data-tallas="S,M,L" data-cart-name="Icónica" data-price="3500" data-priceid="TODO_STRIPE_PRICE_ID_ICONICA" data-image="pestanas-catalogo/iconica.jpg" aria-pressed="true" aria-controls="lash-panel-iconica">
+              <button class="lash-swatch is-active" type="button" data-stock-sku="individuales-iconica" data-slug="iconica" data-tallas="S,M,L" data-cart-name="Icónica" data-price="3500" data-priceid="TODO_STRIPE_PRICE_ID_ICONICA" data-image="pestanas-catalogo/iconica.jpg" aria-pressed="true" aria-controls="lash-panel-iconica">
                 <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-catalogo/iconica.jpg" alt="" width="128" height="128" loading="lazy"></span>
                 <span class="lash-swatch__name">Icónica</span>
               </button>
-              <button class="lash-swatch" type="button" data-slug="despierta" data-tallas="unica" data-cart-name="Despierta" data-price="3000" data-priceid="TODO_STRIPE_PRICE_ID_DESPIERTA" data-image="pestanas-catalogo/despierta.jpg" aria-pressed="false" aria-controls="lash-panel-despierta">
+              <button class="lash-swatch" type="button" data-stock-sku="individuales-despierta" data-slug="despierta" data-tallas="unica" data-cart-name="Despierta" data-price="3000" data-priceid="TODO_STRIPE_PRICE_ID_DESPIERTA" data-image="pestanas-catalogo/despierta.jpg" aria-pressed="false" aria-controls="lash-panel-despierta">
                 <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-catalogo/despierta.jpg" alt="" width="128" height="128" loading="lazy"></span>
                 <span class="lash-swatch__name">Despierta</span>
               </button>
-              <button class="lash-swatch" type="button" data-slug="suspiro" data-tallas="S,M,L" data-cart-name="Suspiro" data-price="2500" data-priceid="TODO_STRIPE_PRICE_ID_SUSPIRO" data-image="pestanas-catalogo/suspiro.jpg" aria-pressed="false" aria-controls="lash-panel-suspiro">
+              <button class="lash-swatch" type="button" data-stock-sku="individuales-suspiro" data-slug="suspiro" data-tallas="S,M,L" data-cart-name="Suspiro" data-price="2500" data-priceid="TODO_STRIPE_PRICE_ID_SUSPIRO" data-image="pestanas-catalogo/suspiro.jpg" aria-pressed="false" aria-controls="lash-panel-suspiro">
                 <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-catalogo/suspiro.jpg" alt="" width="128" height="128" loading="lazy"></span>
                 <span class="lash-swatch__name">Suspiro</span>
               </button>
-              <button class="lash-swatch" type="button" data-slug="anhelada" data-tallas="S,M,L" data-cart-name="Anhelada" data-price="4000" data-priceid="TODO_STRIPE_PRICE_ID_ANHELADA" data-image="pestanas-catalogo/anhelada.jpg" aria-pressed="false" aria-controls="lash-panel-anhelada">
+              <button class="lash-swatch" type="button" data-stock-sku="individuales-anhelada" data-slug="anhelada" data-tallas="S,M,L" data-cart-name="Anhelada" data-price="4000" data-priceid="TODO_STRIPE_PRICE_ID_ANHELADA" data-image="pestanas-catalogo/anhelada.jpg" aria-pressed="false" aria-controls="lash-panel-anhelada">
                 <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-catalogo/anhelada.jpg" alt="" width="128" height="128" loading="lazy"></span>
                 <span class="lash-swatch__name">Anhelada</span>
               </button>
@@ -262,7 +262,7 @@
           </div>
 
           <div class="lash-panels" aria-live="polite">
-            <div class="lash-panel" id="lash-panel-esencial" data-slug="esencial" hidden>
+            <div class="lash-panel" id="lash-panel-esencial" data-stock-sku="individuales-esencial" data-slug="esencial" hidden>
               <p class="cat-item__desc">Pensada para piel madura y novias reales. Se mezcla a la perfección con la pestaña natural, realzando sin alterar la mirada. La elección ideal cuando el objetivo es que "parezca que no traes nada puesto".</p>
               <dl class="lash-panel__meta">
                 <div class="lash-panel__row"><dt>Ideal para</dt><dd>Piel madura, novias, looks de día</dd></div>
@@ -270,8 +270,9 @@
                 <div class="lash-panel__row"><dt>Contenido</dt><dd>48 pestañas</dd></div>
               </dl>
               <p class="cat-item__price">S/ 25,00</p>
+              <p class="stock-note" data-stock-slot hidden></p>
             </div>
-            <div class="lash-panel" id="lash-panel-iconica" data-slug="iconica">
+            <div class="lash-panel" id="lash-panel-iconica" data-stock-sku="individuales-iconica" data-slug="iconica">
               <p class="cat-item__desc">Nuestro modelo más pedido. Se ve poblada y con carácter, pero conserva un aire natural que la hace versátil para cualquier ocasión. La favorita de nuestras clientas.</p>
               <dl class="lash-panel__meta">
                 <div class="lash-panel__row"><dt>Ideal para</dt><dd>Uso diario, looks versátiles</dd></div>
@@ -279,8 +280,9 @@
                 <div class="lash-panel__row"><dt>Contenido</dt><dd>60 pestañas</dd></div>
               </dl>
               <p class="cat-item__price">S/ 35,00</p>
+              <p class="stock-note" data-stock-slot hidden></p>
             </div>
-            <div class="lash-panel" id="lash-panel-despierta" data-slug="despierta" hidden>
+            <div class="lash-panel" id="lash-panel-despierta" data-stock-sku="individuales-despierta" data-slug="despierta" hidden>
               <p class="cat-item__desc">Puntas que abren y agrandan la mirada, dando un efecto despierto y luminoso. Perfecta para quienes buscan una mirada más grande sin recurrir a técnicas dramáticas.</p>
               <dl class="lash-panel__meta">
                 <div class="lash-panel__row"><dt>Ideal para</dt><dd>Agrandar la mirada, looks frescos</dd></div>
@@ -288,8 +290,9 @@
                 <div class="lash-panel__row"><dt>Contenido</dt><dd>60 pestañas</dd></div>
               </dl>
               <p class="cat-item__price">S/ 30,00</p>
+              <p class="stock-note" data-stock-slot hidden></p>
             </div>
-            <div class="lash-panel" id="lash-panel-suspiro" data-slug="suspiro" hidden>
+            <div class="lash-panel" id="lash-panel-suspiro" data-stock-sku="individuales-suspiro" data-slug="suspiro" hidden>
               <p class="cat-item__desc">Un efecto lateral sutil que estira la mirada con delicadeza. Elegante y liviano, ideal para quienes buscan una mirada alargada sin perder naturalidad.</p>
               <dl class="lash-panel__meta">
                 <div class="lash-panel__row"><dt>Ideal para</dt><dd>Mirada alargada y sutil</dd></div>
@@ -297,8 +300,9 @@
                 <div class="lash-panel__row"><dt>Contenido</dt><dd>72 pestañas</dd></div>
               </dl>
               <p class="cat-item__price">S/ 25,00</p>
+              <p class="stock-note" data-stock-slot hidden></p>
             </div>
-            <div class="lash-panel" id="lash-panel-anhelada" data-slug="anhelada" hidden>
+            <div class="lash-panel" id="lash-panel-anhelada" data-stock-sku="individuales-anhelada" data-slug="anhelada" hidden>
               <p class="cat-item__desc">El modelo más querido por nuestra comunidad. Su efecto alargado crea una mirada envolvente y memorable — el favorito indiscutible.</p>
               <dl class="lash-panel__meta">
                 <div class="lash-panel__row"><dt>Ideal para</dt><dd>Looks de impacto, ocasiones especiales</dd></div>
@@ -306,6 +310,7 @@
                 <div class="lash-panel__row"><dt>Contenido</dt><dd>30 pestañas</dd></div>
               </dl>
               <p class="cat-item__price">S/ 40,00</p>
+              <p class="stock-note" data-stock-slot hidden></p>
             </div>
           </div>
 
@@ -327,21 +332,21 @@
 
       <!-- 2 · Tiras (activo · pestañas · UN solo producto con selector de diseño · TODAS talla única) -->
       <!-- ============ CONTRATO JS — selector de Tiras (dominio js) ================================
-           Mismo patrón que #individuales pero SIN tallas (las 4 son talla única). Lo ideal es
+           Mismo patrón que #individuales pero SIN tallas (las 5 son talla única). Lo ideal es
            GENERALIZAR initLashPicker() para que itere sobre cada article.cat-item--lash y derive
            el prefijo de ids de article.id — así cubre #individuales y #tiras con un solo código.
 
            Fuentes de verdad en el markup de #tiras:
-           · .lash-swatch (4) → data-slug · data-tallas="unica" · data-cart-name ·
+           · .lash-swatch (5) → data-slug · data-tallas="unica" · data-cart-name ·
                                 data-price (céntimos, = precio visible) · data-priceid ·
                                 data-image · aria-controls (id del .lash-panel) · aria-pressed
-           · .lash-panel (4) → copy visible (desc + meta). [hidden] salvo el activo.
+           · .lash-panel (5) → copy visible (desc + meta). [hidden] salvo el activo.
            · .cat-item__media img[data-lash-media] → foto que cambia por diseño
            · NO hay #lash-sizes en #tiras: "Talla única" es texto estático siempre visible.
 
            Al elegir diseño (.lash-swatch dentro de #tiras):
              1. .is-active + aria-pressed="true" en el swatch (resto a false)
-             2. quitar [hidden] de su .lash-panel (aria-controls); [hidden] en los otros 3
+             2. quitar [hidden] de su .lash-panel (aria-controls); [hidden] en los otros 4
              3. img[data-lash-media]: src = data-image ; alt = "Pestañas de tira <cart-name> de AP Beauty en su estuche"
              4. recomponer .add-to-cart:
                   data-id      = "tiras-" + slug + "-unica"
@@ -351,7 +356,7 @@
                   data-image   = swatch.dataset.image
 
            Estado inicial servido por front: Destellos (editable moviendo .is-active + aria-pressed + [hidden]).
-           Precios en S/ (soles). Todas S/ 10,00. Fotos: pestanas-tiras-catalogo/<slug>.jpg.
+           Precios en S/ (soles). Todas S/ 10,00 (Hipnótica confirmada por Paul). Fotos: pestanas-tiras-catalogo/<slug>.jpg.
            ========================================================================================= -->
       <article class="cat-item cat-item--lash" id="tiras" data-category="pestanas">
         <div class="cat-item__media">
@@ -364,57 +369,74 @@
           <div class="lash-picker__group">
             <p class="lash-picker__label" id="tiras-design-label">Diseño</p>
             <div class="lash-swatches" role="group" aria-labelledby="tiras-design-label">
-              <button class="lash-swatch is-active" type="button" data-slug="destellos" data-tallas="unica" data-cart-name="Destellos" data-price="1000" data-priceid="TODO_STRIPE_PRICE_ID_DESTELLOS" data-image="pestanas-tiras-catalogo/destellos.jpg" aria-pressed="true" aria-controls="tiras-panel-destellos">
+              <button class="lash-swatch is-active" type="button" data-stock-sku="tiras-destellos" data-slug="destellos" data-tallas="unica" data-cart-name="Destellos" data-price="1000" data-priceid="TODO_STRIPE_PRICE_ID_DESTELLOS" data-image="pestanas-tiras-catalogo/destellos.jpg" aria-pressed="true" aria-controls="tiras-panel-destellos">
                 <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-tiras-catalogo/destellos.jpg" alt="" width="128" height="128" loading="lazy"></span>
                 <span class="lash-swatch__name">Destellos</span>
               </button>
-              <button class="lash-swatch" type="button" data-slug="hechizo" data-tallas="unica" data-cart-name="Hechizo" data-price="1000" data-priceid="TODO_STRIPE_PRICE_ID_HECHIZO" data-image="pestanas-tiras-catalogo/hechizo.jpg" aria-pressed="false" aria-controls="tiras-panel-hechizo">
+              <button class="lash-swatch" type="button" data-stock-sku="tiras-hechizo" data-slug="hechizo" data-tallas="unica" data-cart-name="Hechizo" data-price="1000" data-priceid="TODO_STRIPE_PRICE_ID_HECHIZO" data-image="pestanas-tiras-catalogo/hechizo.jpg" aria-pressed="false" aria-controls="tiras-panel-hechizo">
                 <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-tiras-catalogo/hechizo.jpg" alt="" width="128" height="128" loading="lazy"></span>
                 <span class="lash-swatch__name">Hechizo</span>
               </button>
-              <button class="lash-swatch" type="button" data-slug="velada" data-tallas="unica" data-cart-name="Velada" data-price="1000" data-priceid="TODO_STRIPE_PRICE_ID_VELADA" data-image="pestanas-tiras-catalogo/velada.jpg" aria-pressed="false" aria-controls="tiras-panel-velada">
+              <button class="lash-swatch" type="button" data-stock-sku="tiras-velada" data-slug="velada" data-tallas="unica" data-cart-name="Velada" data-price="1000" data-priceid="TODO_STRIPE_PRICE_ID_VELADA" data-image="pestanas-tiras-catalogo/velada.jpg" aria-pressed="false" aria-controls="tiras-panel-velada">
                 <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-tiras-catalogo/velada.jpg" alt="" width="128" height="128" loading="lazy"></span>
                 <span class="lash-swatch__name">Velada</span>
               </button>
-              <button class="lash-swatch" type="button" data-slug="vertigo" data-tallas="unica" data-cart-name="Vértigo" data-price="1000" data-priceid="TODO_STRIPE_PRICE_ID_VERTIGO" data-image="pestanas-tiras-catalogo/vertigo.jpg" aria-pressed="false" aria-controls="tiras-panel-vertigo">
+              <button class="lash-swatch" type="button" data-stock-sku="tiras-vertigo" data-slug="vertigo" data-tallas="unica" data-cart-name="Vértigo" data-price="1000" data-priceid="TODO_STRIPE_PRICE_ID_VERTIGO" data-image="pestanas-tiras-catalogo/vertigo.jpg" aria-pressed="false" aria-controls="tiras-panel-vertigo">
                 <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-tiras-catalogo/vertigo.jpg" alt="" width="128" height="128" loading="lazy"></span>
                 <span class="lash-swatch__name">Vértigo</span>
+              </button>
+              <button class="lash-swatch" type="button" data-stock-sku="tiras-hipnotica" data-slug="hipnotica" data-tallas="unica" data-cart-name="Hipnótica" data-price="1000" data-priceid="TODO_STRIPE_PRICE_ID_HIPNOTICA" data-image="pestanas-tiras-catalogo/hipnotica.jpg" aria-pressed="false" aria-controls="tiras-panel-hipnotica">
+                <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-tiras-catalogo/hipnotica.jpg" alt="" width="128" height="128" loading="lazy"></span>
+                <span class="lash-swatch__name">Hipnótica</span>
               </button>
             </div>
           </div>
 
           <div class="lash-panels" aria-live="polite">
-            <div class="lash-panel" id="tiras-panel-destellos" data-slug="destellos">
+            <div class="lash-panel" id="tiras-panel-destellos" data-stock-sku="tiras-destellos" data-slug="destellos">
               <p class="cat-item__desc">Puntas definidas que abren la mirada con un efecto muñeca/anime, sin perder un aire natural. Ideal para looks frescos y con vida, donde los ojos son protagonistas.</p>
               <dl class="lash-panel__meta">
                 <div class="lash-panel__row"><dt>Ideal para</dt><dd>Looks frescos, mirada abierta y despierta</dd></div>
                 <div class="lash-panel__row"><dt>Efecto</dt><dd>Muñeca/anime, natural</dd></div>
               </dl>
               <p class="cat-item__price">S/ 10,00</p>
+              <p class="stock-note" data-stock-slot hidden></p>
             </div>
-            <div class="lash-panel" id="tiras-panel-hechizo" data-slug="hechizo" hidden>
+            <div class="lash-panel" id="tiras-panel-hechizo" data-stock-sku="tiras-hechizo" data-slug="hechizo" hidden>
               <p class="cat-item__desc">Un efecto ligero y etéreo, como salido de un cuento. Textura delicada que envuelve la mirada con un toque mágico, perfecta para looks soñadores y llenos de encanto.</p>
               <dl class="lash-panel__meta">
                 <div class="lash-panel__row"><dt>Ideal para</dt><dd>Looks etéreos, románticos, con encanto</dd></div>
                 <div class="lash-panel__row"><dt>Efecto</dt><dd>Hada, ligero, mágico</dd></div>
               </dl>
               <p class="cat-item__price">S/ 10,00</p>
+              <p class="stock-note" data-stock-slot hidden></p>
             </div>
-            <div class="lash-panel" id="tiras-panel-velada" data-slug="velada" hidden>
+            <div class="lash-panel" id="tiras-panel-velada" data-stock-sku="tiras-velada" data-slug="velada" hidden>
               <p class="cat-item__desc">Un toque de soft glam para esas salidas que piden un poco más de brillo. Volumen elegante y bien distribuido, perfecto para una noche entre amigas o una cita, sin perder ese aire natural.</p>
               <dl class="lash-panel__meta">
                 <div class="lash-panel__row"><dt>Ideal para</dt><dd>Salidas, soft glam, looks de noche</dd></div>
                 <div class="lash-panel__row"><dt>Efecto</dt><dd>Natural con volumen elegante</dd></div>
               </dl>
               <p class="cat-item__price">S/ 10,00</p>
+              <p class="stock-note" data-stock-slot hidden></p>
             </div>
-            <div class="lash-panel" id="tiras-panel-vertigo" data-slug="vertigo" hidden>
+            <div class="lash-panel" id="tiras-panel-vertigo" data-stock-sku="tiras-vertigo" data-slug="vertigo" hidden>
               <p class="cat-item__desc">Volumen denso y textura cruzada para looks que no pasan desapercibidos. Un efecto dramático pero elegante, ideal para quien quiere hacer una entrada memorable.</p>
               <dl class="lash-panel__meta">
                 <div class="lash-panel__row"><dt>Ideal para</dt><dd>Looks de impacto, ocasiones especiales</dd></div>
                 <div class="lash-panel__row"><dt>Efecto</dt><dd>Denso, cruzado, dramático</dd></div>
               </dl>
               <p class="cat-item__price">S/ 10,00</p>
+              <p class="stock-note" data-stock-slot hidden></p>
+            </div>
+            <div class="lash-panel" id="tiras-panel-hipnotica" data-stock-sku="tiras-hipnotica" data-slug="hipnotica" hidden>
+              <p class="cat-item__desc">Nuestro modelo más pedido. Banda invisible y un efecto dramático pero delicado que atrapa la mirada al instante. Elegante, femenina y con ese "algo" que no pasa desapercibido.</p>
+              <dl class="lash-panel__meta">
+                <div class="lash-panel__row"><dt>Ideal para</dt><dd>Looks de impacto con banda invisible, la más vendida</dd></div>
+                <div class="lash-panel__row"><dt>Efecto</dt><dd>Dramático pero lindo, banda transparente</dd></div>
+              </dl>
+              <p class="cat-item__price">S/ 10,00</p>
+              <p class="stock-note" data-stock-slot hidden></p>
             </div>
           </div>
 
@@ -587,6 +609,7 @@
             <li><a href="politicas.html#devoluciones">Devoluciones y Cambios</a></li>
             <li><a href="politicas.html#privacidad">Privacidad</a></li>
             <li><a href="politicas.html#cookies">Cookies</a></li>
+            <li><a href="#" data-ap-privacy>Configurar cookies</a></li>
           </ul>
         </nav>
 
@@ -652,7 +675,7 @@
             { "@type": "Offer", "name": "Icónica", "price": "35.00", "priceCurrency": "PEN", "availability": "https://schema.org/InStock" },
             { "@type": "Offer", "name": "Despierta", "price": "30.00", "priceCurrency": "PEN", "availability": "https://schema.org/InStock" },
             { "@type": "Offer", "name": "Suspiro", "price": "25.00", "priceCurrency": "PEN", "availability": "https://schema.org/InStock" },
-            { "@type": "Offer", "name": "Anhelada", "price": "40.00", "priceCurrency": "PEN", "availability": "https://schema.org/InStock" }
+            { "@type": "Offer", "name": "Anhelada", "price": "40.00", "priceCurrency": "PEN", "availability": "https://schema.org/OutOfStock" }
           ]
         }
       },
@@ -668,14 +691,15 @@
           "https://apbeauty-lima.com/pestanas-tiras-catalogo/destellos.jpg",
           "https://apbeauty-lima.com/pestanas-tiras-catalogo/hechizo.jpg",
           "https://apbeauty-lima.com/pestanas-tiras-catalogo/velada.jpg",
-          "https://apbeauty-lima.com/pestanas-tiras-catalogo/vertigo.jpg"
+          "https://apbeauty-lima.com/pestanas-tiras-catalogo/vertigo.jpg",
+          "https://apbeauty-lima.com/pestanas-tiras-catalogo/hipnotica.jpg"
         ],
         "offers": {
           "@type": "AggregateOffer",
           "priceCurrency": "PEN",
           "lowPrice": "10.00",
           "highPrice": "10.00",
-          "offerCount": 4,
+          "offerCount": 5,
           "availability": "https://schema.org/InStock",
           "seller": { "@id": "https://apbeauty-lima.com/#organization" }
         }
@@ -733,6 +757,6 @@
   </script>
   <!-- ===== FIN JSON-LD SEO ===== -->
 
-  <script type="module" defer src="main.js?v=20260906"></script>
+  <script type="module" defer src="main.js?v=20261014"></script>
 </body>
 </html>

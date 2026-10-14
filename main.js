@@ -161,12 +161,185 @@ function formatPEN(cents) {
 const cartQty = (cart) => cart.items.reduce((n, i) => n + i.qty, 0);
 const cartSubtotal = (cart) => cart.items.reduce((n, i) => n + i.price * i.qty, 0);
 
+// ── Stock en vivo (AB-J19 · backend AB-B10) ─────────────────────────────────
+// GET /api/stock → { "<sku>": { disponible, agotado } }. El SKU es el id de carrito SIN talla
+// (el stock es por DISEÑO: S/M/L comparten contador). SKU ausente = no controlado (sin contador,
+// sin bloqueo). Si el endpoint falla (503/red) → stockCache = null: sin contadores y sin bloquear
+// (el servidor valida igual y responde 409). Estado visible solo por clases/[hidden]/textContent.
+let stockCache = null;
+
+const skuBase = (id) => String(id || '').replace(/-(S|M|L|unica)$/i, '');
+
+async function fetchStock() {
+  try {
+    const res = await fetch('/api/stock', { cache: 'no-store' });
+    if (!res.ok) throw new Error('stock_' + res.status);
+    const data = await res.json();
+    stockCache = data && typeof data === 'object' ? data : null;
+  } catch (_) {
+    stockCache = null;
+  }
+  return stockCache;
+}
+
+const stockEntry = (sku) => (stockCache && stockCache[sku]) || null;
+const isSoldOut = (sku) => { const e = stockEntry(sku); return !!e && (e.agotado || e.disponible <= 0); };
+
+// Unidades de un diseño ya en el carrito (suma de todas las tallas)
+function cartQtyForSku(cart, sku) {
+  return cart.items.filter((i) => skuBase(i.id) === sku).reduce((n, i) => n + i.qty, 0);
+}
+
+// Unidades que aún se pueden añadir de un diseño (Infinity si no está controlado)
+function remainingFor(cart, sku) {
+  const e = stockEntry(sku);
+  if (!e) return Infinity;
+  return Math.max(0, e.disponible - cartQtyForSku(cart, sku));
+}
+
+function stockLabel(e) {
+  if (e.agotado || e.disponible <= 0) return 'Agotado';
+  if (e.disponible <= 3) return e.disponible === 1 ? 'Última unidad' : 'Últimas ' + e.disponible + ' unidades';
+  return 'Quedan ' + e.disponible + ' unidades';
+}
+
+// Aviso del carrito (.stock-msg). Si front no lo ha puesto, se crea junto a la lista del carrito.
+function showStockMsg(text) {
+  const targets = Array.from(document.querySelectorAll('.stock-msg'));
+  if (!targets.length) {
+    ['cart-items', 'cart-page-items'].forEach((id) => {
+      const list = document.getElementById(id);
+      if (!list) return;
+      const p = document.createElement('p');
+      p.className = 'stock-msg';
+      p.setAttribute('role', 'status');
+      p.setAttribute('aria-live', 'polite');
+      p.hidden = true;
+      list.insertAdjacentElement('beforebegin', p);
+      targets.push(p);
+    });
+  }
+  targets.forEach((p) => { p.textContent = text || ''; p.hidden = !text; });
+}
+
+// Recorta el carrito al stock disponible (por diseño, sumando tallas). Devuelve los avisos.
+function adjustCartToStock() {
+  if (!stockCache) return [];
+  const cart = readCart();
+  const notes = [];
+  const skus = Array.from(new Set(cart.items.map((i) => skuBase(i.id))));
+  skus.forEach((sku) => {
+    const e = stockEntry(sku);
+    if (!e) return;
+    const max = e.agotado ? 0 : Math.max(0, e.disponible);
+    let excess = cartQtyForSku(cart, sku) - max;
+    if (excess <= 0) return;
+    const raw = (cart.items.find((i) => skuBase(i.id) === sku) || {}).name || sku;
+    const name = raw.replace(/ · Talla.*$/, '');
+    for (let k = cart.items.length - 1; k >= 0 && excess > 0; k--) {
+      const it = cart.items[k];
+      if (skuBase(it.id) !== sku) continue;
+      const cut = Math.min(it.qty, excess);
+      it.qty -= cut;
+      excess -= cut;
+    }
+    cart.items = cart.items.filter((i) => i.qty > 0);
+    notes.push(max === 0
+      ? 'Se agotó "' + name + '" y lo quitamos de tu carrito.'
+      : 'Solo quedan ' + max + ' de "' + name + '"; ajustamos tu carrito.');
+  });
+  if (notes.length) writeCart(cart);
+  return notes;
+}
+
+function syncCartWithStock() {
+  const notes = adjustCartToStock();
+  if (notes.length) { renderCart(); showStockMsg(notes.join(' ')); }
+  return notes;
+}
+
+function paintSlot(slot, e) {
+  if (!e) { slot.hidden = true; slot.textContent = ''; return; }
+  slot.textContent = stockLabel(e);
+  slot.classList.toggle('stock-note--low', e.agotado || e.disponible <= 3);
+  slot.hidden = false;
+}
+
+// Pinta contadores / "Agotado" en catálogo, home y líneas del carrito.
+function applyStock() {
+  // 1 · Botones "Añadir": estado + contador (el botón de las líneas de pestañas se recompone al
+  //     cambiar de swatch, por eso esto se vuelve a llamar desde selectSwatch).
+  document.querySelectorAll('.add-to-cart').forEach((btn) => {
+    const sku = skuBase(btn.dataset.id);
+    const e = stockEntry(sku);
+    const out = !!e && (e.agotado || e.disponible <= 0);
+    if (btn.dataset.labelOrig === undefined) btn.dataset.labelOrig = btn.textContent;
+    btn.disabled = out;
+    if (out) btn.setAttribute('aria-disabled', 'true'); else btn.removeAttribute('aria-disabled');
+    btn.textContent = out ? 'Agotado' : btn.dataset.labelOrig;
+
+    // Producto sin slots de front → se crea uno junto al botón. Si front ya puso slots
+    // (por panel / línea de carrito, con data-stock-sku en un ancestro) los pinta el paso 2.
+    const host = btn.closest('article, li, .cat-item') || btn.parentElement;
+    if (host && e && !host.querySelector('[data-stock-slot]')) {
+      const slot = document.createElement('p');
+      slot.className = 'stock-note';
+      slot.hidden = true;
+      slot.setAttribute('data-stock-slot', '');
+      slot.setAttribute('data-stock-auto', '');
+      slot.dataset.stockSku = sku;
+      (btn.parentElement || host).insertAdjacentElement('beforebegin', slot);
+    }
+  });
+
+  // 2 · Slots con SKU propio (front: data-stock-sku en el slot o en un ancestro)
+  document.querySelectorAll('[data-stock-slot]').forEach((slot) => {
+    if (slot.hasAttribute('data-stock-line')) return;
+    const owner = slot.closest('[data-stock-sku]');
+    if (owner) paintSlot(slot, stockEntry(owner.dataset.stockSku));
+  });
+
+  // 2b · Home: la card agrega varios diseños → solo se avisa si TODA la línea está agotada
+  document.querySelectorAll('[data-stock-slot][data-stock-line]').forEach((slot) => {
+    const prefix = slot.dataset.stockLine + '-';
+    const entries = stockCache ? Object.keys(stockCache).filter((k) => k.startsWith(prefix)).map((k) => stockCache[k]) : [];
+    const allOut = entries.length > 0 && entries.every((e) => e.agotado || e.disponible <= 0);
+    paintSlot(slot, allOut ? { agotado: true, disponible: 0 } : null);
+  });
+
+  // 3 · Swatches de pestañas: marcar diseño agotado (sigue siendo seleccionable para verlo)
+  document.querySelectorAll('.cat-item--lash').forEach((article) => {
+    article.querySelectorAll('.lash-swatch').forEach((sw) => {
+      const out = isSoldOut(article.id + '-' + sw.dataset.slug);
+      sw.classList.toggle('lash-swatch--agotado', out);
+      if (out) sw.setAttribute('data-agotado', 'true'); else sw.removeAttribute('data-agotado');
+    });
+  });
+
+  // 4 · Carrito: "+" deshabilitado al llegar al tope del diseño
+  const cart = readCart();
+  document.querySelectorAll('.cart-line[data-id]').forEach((li) => {
+    const inc = li.querySelector('[data-action="inc"]');
+    if (!inc) return;
+    const full = remainingFor(cart, skuBase(li.dataset.id)) <= 0;
+    inc.disabled = full;
+    if (full) inc.setAttribute('aria-disabled', 'true'); else inc.removeAttribute('aria-disabled');
+  });
+}
+
+async function refreshStock() {
+  await fetchStock();
+  syncCartWithStock();
+  applyStock();
+}
+
 // Construye una línea clonando #cart-line-tpl (sin hardcodear markup)
 function buildLine(item) {
   const tpl = document.getElementById('cart-line-tpl');
   if (!tpl) return null;
   const li = tpl.content.firstElementChild.cloneNode(true);
   li.dataset.id = item.id;
+  li.dataset.stockSku = skuBase(item.id);
   const img = li.querySelector('.cart-line__img');
   if (img) { img.src = item.image || ''; img.alt = item.name || ''; }
   const name = li.querySelector('.cart-line__name');
@@ -216,10 +389,18 @@ function renderCart() {
     if (pageLayout) pageLayout.hidden = !hasItems;
     if (pageSub) pageSub.textContent = formatPEN(subtotal);
   }
+
+  applyStock(); // "+" de las líneas, contadores y Agotado siguen al carrito
 }
 
 function addToCart(data) {
   const cart = readCart();
+  const sku = skuBase(data.id);
+  if (isSoldOut(sku)) { showStockMsg('Este producto está agotado.'); return false; }
+  if (remainingFor(cart, sku) <= 0) {
+    showStockMsg('Ya tienes en tu carrito todas las unidades disponibles de este producto.');
+    return false;
+  }
   const existing = cart.items.find((i) => i.id === data.id);
   if (existing) {
     existing.qty += 1;
@@ -234,13 +415,19 @@ function addToCart(data) {
     });
   }
   writeCart(cart);
+  showStockMsg('');
   renderCart();
+  return true;
 }
 
 function changeQty(id, delta) {
   const cart = readCart();
   const item = cart.items.find((i) => i.id === id);
   if (!item) return;
+  if (delta > 0 && remainingFor(cart, skuBase(id)) < delta) {
+    showStockMsg('No hay más unidades disponibles de este producto.');
+    return;
+  }
   item.qty += delta;
   if (item.qty <= 0) cart.items = cart.items.filter((i) => i.id !== id);
   writeCart(cart);
@@ -324,7 +511,7 @@ function initCart() {
         return;
       }
       addToCart(addBtn.dataset);
-      if (drawer) drawer.open();
+      if (drawer) drawer.open(); // también al toparse con el límite: ahí el drawer enseña el aviso de stock
       return;
     }
     const actionBtn = e.target.closest('[data-action]');
@@ -378,6 +565,7 @@ function initCart() {
   if (location.pathname.endsWith('confirmacion.html')) clearCart();
 
   renderCart();
+  refreshStock(); // contadores/Agotado + ajuste del carrito a lo disponible (no bloquea si falla)
 
   // Fase 2 — router dual-market (AP-B5). No bloquea el flujo Stripe: si falla
   // o el mercado sigue siendo 'stripe', #btn-checkout queda tal cual ya lo
@@ -504,12 +692,12 @@ function readShippingForm(form) {
 // Monta el Card Payment Brick dentro de `container` (ya insertado en el DOM
 // por initPaymentGateway). `orderId`/`amount` vienen de POST /api/mp/create-order
 // — el Brick nunca decide el importe, solo lo muestra (initialization.amount).
-async function mountMercadoPagoBrick(container, errorEl, orderId, amount, shippingForm) {
+async function mountMercadoPagoBrick(container, errorEl, orderId, amount, shippingForm, onStockConflict) {
   await loadMercadoPagoSdk();
   const mp = new window.MercadoPago(MP_PUBLIC_KEY, { locale: 'es-PE' });
   const bricksBuilder = mp.bricks();
 
-  await bricksBuilder.create('cardPayment', container.id, {
+  return bricksBuilder.create('cardPayment', container.id, {
     initialization: { amount },
     customization: {
       visual: {
@@ -577,9 +765,12 @@ async function mountMercadoPagoBrick(container, errorEl, orderId, amount, shippi
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(payload),
         })
-          .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
-          .then(({ ok, data }) => {
+          .then((res) => res.json().catch(() => ({})).then((data) => ({ ok: res.ok, status: res.status, data })))
+          .then(({ ok, status, data }) => {
             resolve(); // resuelve siempre: el Brick solo espera que la promesa termine
+            // 409 sin_stock: el pedido viejo conserva las cantidades antiguas → NO reintentar
+            // el mismo orderId; se avisa, se reajusta el carrito y se monta un pedido nuevo.
+            if (status === 409 && onStockConflict) { onStockConflict(data); return; }
             if (!ok) { showMpError(errorEl, 'No se pudo procesar el pago. Inténtalo de nuevo.'); return; }
             if (data.status === 'approved') {
               clearCart();
@@ -647,9 +838,8 @@ async function initPaymentGateway() {
 
   if (!btnCheckout.closest('.cart-summary')) return; // guarda: estructura esperada de carrito.html
 
-  const cart = readCart();
-  const items = cart.items.filter((i) => i.qty > 0).map((i) => ({ id: i.id, quantity: i.qty }));
-  if (items.length === 0) return; // carrito vacío: se resuelve al recargar con items
+  await refreshStock(); // ajusta el carrito al stock ANTES de crear el pedido / montar el Brick
+  if (!readCart().items.some((i) => i.qty > 0)) return; // carrito vacío: se resuelve al recargar con items
 
   // NO uso `.hidden` aquí: `.cart-summary__checkout` ya trae `display:flex`
   // propio en style.css, que gana por especificidad sobre la regla
@@ -675,26 +865,53 @@ async function initPaymentGateway() {
   errorEl.hidden = true;
   container.insertAdjacentElement('afterend', errorEl);
 
-  try {
-    const orderRes = await fetch('/api/mp/create-order', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ items }),
-    });
-    const order = await orderRes.json().catch(() => ({}));
-    if (!orderRes.ok || !order.orderId) throw new Error(order.error || 'order_failed');
+  let brick = null; // controller del Brick montado (para desmontarlo ante un 409)
 
-    // Sin await bloqueante: si el código del Brick está bloqueado, `create()`
-    // puede colgarse sin resolver ni rechazar. Lanzamos el montaje y verificamos
-    // aparte que el iframe aparece; si no, mensaje visible en vez de página en blanco.
-    mountMercadoPagoBrick(container, errorEl, order.orderId, order.amount, shippingForm)
-      .catch((err) => console.error('Mercado Pago — el Brick no montó:', err));
-
-    if (!(await brickRendered(container, 8000))) throw new Error('brick_no_render');
-  } catch (err) {
-    console.error('Mercado Pago — no se pudo iniciar el checkout:', err);
-    showMpError(errorEl, 'No se pudo cargar el formulario de pago. Recarga la página e inténtalo de nuevo.');
+  // 409 sin_stock (create-order o process-payment): mostrar el texto del backend, refrescar
+  // stock, ajustar el carrito y devolver true si aún queda algo que cobrar.
+  async function resolveStockConflict(data) {
+    showMpError(errorEl, (data && data.error) || 'Algún producto ya no tiene stock suficiente.');
+    await refreshStock();
+    return readCart().items.length > 0;
   }
+
+  async function startCheckout(retry) {
+    const items = readCart().items.filter((i) => i.qty > 0).map((i) => ({ id: i.id, quantity: i.qty }));
+    if (items.length === 0) { container.textContent = ''; return; }
+    try {
+      const orderRes = await fetch('/api/mp/create-order', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ items }),
+      });
+      const order = await orderRes.json().catch(() => ({}));
+      if (orderRes.status === 409) {
+        // Un solo reintento con orderId NUEVO (el pedido viejo conserva las cantidades antiguas)
+        if (await resolveStockConflict(order) && retry < 1) await startCheckout(retry + 1);
+        return;
+      }
+      if (!orderRes.ok || !order.orderId) throw new Error(order.error || 'order_failed');
+
+      // Sin await bloqueante: si el código del Brick está bloqueado, `create()`
+      // puede colgarse sin resolver ni rechazar. Lanzamos el montaje y verificamos
+      // aparte que el iframe aparece; si no, mensaje visible en vez de página en blanco.
+      mountMercadoPagoBrick(container, errorEl, order.orderId, order.amount, shippingForm, async (data) => {
+        try { if (brick && brick.unmount) brick.unmount(); } catch (_) { /* ya desmontado */ }
+        brick = null;
+        container.textContent = '';
+        if (await resolveStockConflict(data)) await startCheckout(0);
+      })
+        .then((ctrl) => { brick = ctrl; })
+        .catch((err) => console.error('Mercado Pago — el Brick no montó:', err));
+
+      if (!(await brickRendered(container, 8000))) throw new Error('brick_no_render');
+    } catch (err) {
+      console.error('Mercado Pago — no se pudo iniciar el checkout:', err);
+      showMpError(errorEl, 'No se pudo cargar el formulario de pago. Recarga la página e inténtalo de nuevo.');
+    }
+  }
+
+  await startCheckout(0);
 }
 
 // confirmacion.html — variante "pago en revisión" (Mercado Pago in_process/
@@ -853,7 +1070,7 @@ function initCatalog() {
 // 5b · Catálogo — Pestañas: selector de diseño (+ talla en la línea que la tenga) (AB-J9 · AB-J11)
 // Cada <article class="cat-item--lash"> es un producto con N diseños (.lash-swatch):
 //   #individuales → 5 diseños con talla (S/M/L, Despierta = única)
-//   #tiras        → 4 diseños, todos talla única (sin #lash-sizes)
+//   #tiras        → 5 diseños, todos talla única (sin #lash-sizes)
 // Mantiene los data-* del botón .add-to-cart sincronizados con la selección activa (initCart
 // lee btn.dataset en el clic). Contratos completos en los comentarios <!-- CONTRATO JS --> de
 // catalogo.html. Prefijo de id, nombre de carrito y frase del alt se derivan de article.id.
@@ -894,6 +1111,7 @@ function setupLashArticle(article) {
     addBtn.dataset.price = swatch.dataset.price;
     addBtn.dataset.priceid = swatch.dataset.priceid;
     addBtn.dataset.image = swatch.dataset.image;
+    applyStock(); // el botón cambió de SKU → recalcular Agotado/contador
   }
 
   function selectSize(btn) {

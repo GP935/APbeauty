@@ -875,7 +875,7 @@ section { padding-block: var(--section-pad-y); }
    14b · SELECTOR DE PESTAÑAS (catalogo.html · .cat-item--lash · AB-C22 / AB-C25)
    Cada .cat-item--lash es UN producto con selector de diseño (tarjeta "hero"
    del catálogo). Dos instancias: #individuales (5 diseños + talla S/M/L) y
-   #tiras (4 diseños, todas talla única). Hereda eyebrow con filete rojo +
+   #tiras (5 diseños, todas talla única). Hereda eyebrow con filete rojo +
    título Playfair + .cat-item__desc/.cat-item__price.
    Rojo ≤10%: sin rojo nuevo aquí — la selección activa se marca en negro.
    GOTCHA [hidden]: .lash-panel / .lash-sizes / .lash-size-unica los togglea JS
@@ -904,9 +904,10 @@ section { padding-block: var(--section-pad-y); }
   color: var(--gris-texto); margin: 0 0 12px;
 }
 
-/* Diseño — miniaturas repartidas a partes iguales (4 en #tiras, 5 en #individuales) */
-.lash-swatches { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; width: 100%; }
+/* Diseño — miniaturas repartidas a partes iguales (5 en #tiras, 5 en #individuales) */
+.lash-swatches { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; width: 100%; }
 .lash-swatch {
+  min-width: 0;
   display: flex; flex-direction: column; align-items: center; gap: 8px;
   padding: 8px 4px 10px;
   background: none; border: 1px solid var(--borde); border-radius: var(--radius-soft);
@@ -957,6 +958,12 @@ section { padding-block: var(--section-pad-y); }
 @media (max-width: 768px) {
   .lash-swatches { gap: 6px; }
   .lash-swatch__name { font-size: .62rem; }
+}
+@media (max-width: 420px) {
+  .lash-swatch { padding: 6px 2px 8px; }
+  .lash-swatch__name { font-size: .58rem; letter-spacing: 0; overflow-wrap: anywhere; }
+}
+@media (max-width: 768px) {
   .lash-panel__row { flex-direction: column; gap: 2px; }
   .lash-panel__row dt { flex: none; }
 }
