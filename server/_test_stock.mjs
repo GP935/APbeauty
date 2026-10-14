@@ -11,7 +11,7 @@ const STOCK = join(tmp, 'stock.json');
 await writeFile(STOCK, JSON.stringify({
   base: null,
   stock_inicial: {
-    'tiras-vertigo': 1, 'tiras-velada': 2, 'tiras-hechizo': 20, 'tiras-destellos': 1, 'individuales-anhelada': 3,
+    'tiras-vertigo': 1, 'tiras-velada': 2, 'tiras-hechizo': 20, 'tiras-destellos': 1, 'individuales-anhelada': 3, 'tiras-hipnotica': 3,
   },
 }));
 // Compra de prueba ANTERIOR a la base: no debe descontar.
@@ -159,6 +159,27 @@ check('sobreventa: ambos pagos se aprueban (no se bloquea el registro)', () => {
 check('correo interno "SOBREVENTA - revisar/reembolsar"', () => assert.ok(correos.some((c) => c.subject === 'SOBREVENTA - revisar/reembolsar')));
 s = await getStock();
 check('destellos se muestra agotado (0, nunca negativo)', () => assert.deepEqual(s.body['tiras-destellos'], { disponible: 0, agotado: true }));
+
+// ids con y sin sufijo de talla mezclados en el mismo pedido → mismo SKU (carritos viejos + nuevos)
+const ordenMix = (items) => post('/api/mp/create-order', { items });
+r = await ordenMix([{ id: 'tiras-hipnotica-unica', quantity: 2 }, { id: 'tiras-hipnotica', quantity: 2 }]);
+check('mixto con y sin sufijo: la SUMA (4) excede el stock (3) → 409', () => {
+  assert.equal(r.status, 409);
+  assert.equal(r.body.stock[0].sku, 'tiras-hipnotica');
+  assert.equal(r.body.stock[0].pedido, 4);
+});
+r = await ordenMix([{ id: 'tiras-hipnotica-unica', quantity: 2 }, { id: 'tiras-hipnotica', quantity: 1 }]);
+check('mixto 2+1 = 3 cabe; mismo precio server-side (S/ 30)', () => { assert.ok(r.body.orderId); assert.equal(r.body.amount, 30); });
+mpCalls = 0;
+const pm = await pagar(r.body.orderId);
+await esperar();
+s = await getStock();
+check('mixto aprobado descuenta 3 de un solo SKU → agotado', () => {
+  assert.equal(pm.body.status, 'approved');
+  assert.deepEqual(s.body['tiras-hipnotica'], { disponible: 0, agotado: true });
+});
+r = await ordenMix([{ id: 'tiras-hipnotica', quantity: 1 }]);
+check('sin sufijo tras agotarse con ids mixtos → 409', () => assert.equal(r.status, 409));
 
 // reload: nueva instancia sobre los mismos archivos
 const antes = (await getStock()).body;

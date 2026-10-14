@@ -133,6 +133,27 @@ function bindRail(trackId, prevId, nextId, cardSelector, perPage = 1) {
 // Moneda visible de AP Beauty: soles peruanos (S/) — alineado con el catálogo (AB-F21/AB-F22).
 const CART_KEY = 'ap_cart';
 
+// El id de carrito == SKU de CATALOGO == clave de /api/stock. Las tallas ya no existen en la
+// interfaz; este regex es el MISMO que `skuBase` del backend y solo sirve para normalizar
+// carritos viejos de localStorage (`individuales-iconica-M` → `individuales-iconica`).
+const skuBase = (id) => String(id || '').replace(/-(S|M|L|unica)$/i, '');
+
+// Carrito viejo → ids sin sufijo de talla, nombre sin "· Talla …" y líneas del mismo SKU
+// fusionadas (qty sumada). No recorta al stock: adjustCartToStock lo hace al cargar /api/stock.
+// Devuelve el mismo objeto si no había nada que normalizar.
+function normalizeCart(cart) {
+  let changed = false;
+  const byId = new Map();
+  cart.items.forEach((it) => {
+    const id = skuBase(it.id);
+    const name = String(it.name || '').replace(/ · Talla.*$/, '');
+    if (id !== it.id || name !== it.name) changed = true;
+    const prev = byId.get(id);
+    if (prev) { prev.qty += it.qty; changed = true; } else byId.set(id, { ...it, id, name });
+  });
+  return changed ? { ...cart, items: Array.from(byId.values()) } : cart;
+}
+
 // Mercado Pago (AP-B5 / AP-J2). Clave PÚBLICA de PRODUCCIÓN — cuenta Perú (MPE)
 // de Paul, credenciales `APP_USR-` válidas verificadas por backend contra
 // `GET /users/me` 2026-09-05 (el fallo de agosto era el prefijo compuesto
@@ -144,7 +165,11 @@ const MP_PUBLIC_KEY = 'APP_USR-61ebb75a-2d17-45e0-a1ae-8d2edf6cdd6c';
 function readCart() {
   try {
     const data = JSON.parse(localStorage.getItem(CART_KEY));
-    if (data && Array.isArray(data.items)) return data;
+    if (data && Array.isArray(data.items)) {
+      const norm = normalizeCart(data);
+      if (norm !== data) { try { writeCart(norm); } catch (_) { /* sin storage: se normaliza en memoria */ } }
+      return norm;
+    }
   } catch (_) { /* JSON corrupto → carrito vacío */ }
   return { items: [] };
 }
@@ -162,13 +187,12 @@ const cartQty = (cart) => cart.items.reduce((n, i) => n + i.qty, 0);
 const cartSubtotal = (cart) => cart.items.reduce((n, i) => n + i.price * i.qty, 0);
 
 // ── Stock en vivo (AB-J19 · backend AB-B10) ─────────────────────────────────
-// GET /api/stock → { "<sku>": { disponible, agotado } }. El SKU es el id de carrito SIN talla
-// (el stock es por DISEÑO: S/M/L comparten contador). SKU ausente = no controlado (sin contador,
+// GET /api/stock → { "<sku>": { disponible, agotado } }. El SKU es el id de carrito
+// (el stock es por DISEÑO). SKU ausente = no controlado (sin contador,
 // sin bloqueo). Si el endpoint falla (503/red) → stockCache = null: sin contadores y sin bloquear
 // (el servidor valida igual y responde 409). Estado visible solo por clases/[hidden]/textContent.
 let stockCache = null;
 
-const skuBase = (id) => String(id || '').replace(/-(S|M|L|unica)$/i, '');
 
 async function fetchStock() {
   try {
@@ -185,7 +209,7 @@ async function fetchStock() {
 const stockEntry = (sku) => (stockCache && stockCache[sku]) || null;
 const isSoldOut = (sku) => { const e = stockEntry(sku); return !!e && (e.agotado || e.disponible <= 0); };
 
-// Unidades de un diseño ya en el carrito (suma de todas las tallas)
+// Unidades de un diseño ya en el carrito
 function cartQtyForSku(cart, sku) {
   return cart.items.filter((i) => skuBase(i.id) === sku).reduce((n, i) => n + i.qty, 0);
 }
@@ -222,7 +246,7 @@ function showStockMsg(text) {
   targets.forEach((p) => { p.textContent = text || ''; p.hidden = !text; });
 }
 
-// Recorta el carrito al stock disponible (por diseño, sumando tallas). Devuelve los avisos.
+// Recorta el carrito al stock disponible (por diseño). Devuelve los avisos.
 function adjustCartToStock() {
   if (!stockCache) return [];
   const cart = readCart();
@@ -234,8 +258,7 @@ function adjustCartToStock() {
     const max = e.agotado ? 0 : Math.max(0, e.disponible);
     let excess = cartQtyForSku(cart, sku) - max;
     if (excess <= 0) return;
-    const raw = (cart.items.find((i) => skuBase(i.id) === sku) || {}).name || sku;
-    const name = raw.replace(/ · Talla.*$/, '');
+    const name = (cart.items.find((i) => skuBase(i.id) === sku) || {}).name || sku;
     for (let k = cart.items.length - 1; k >= 0 && excess > 0; k--) {
       const it = cart.items[k];
       if (skuBase(it.id) !== sku) continue;
@@ -1067,10 +1090,11 @@ function initCatalog() {
   window.addEventListener('popstate', () => apply(catFromURL()));
 }
 
-// 5b · Catálogo — Pestañas: selector de diseño (+ talla en la línea que la tenga) (AB-J9 · AB-J11)
+// 5b · Catálogo — Pestañas: selector de diseño (AB-J9 · AB-J11)
 // Cada <article class="cat-item--lash"> es un producto con N diseños (.lash-swatch):
-//   #individuales → 5 diseños con talla (S/M/L, Despierta = única)
-//   #tiras        → 5 diseños, todos talla única (sin #lash-sizes)
+//   #individuales → 5 diseños; muestra la nota de caja en los swatches con data-box-note
+//   #tiras        → 5 diseños, sin nota
+// Sin selector de talla (decisión de Antonio y Andrea: en la misma caja vienen las 3).
 // Mantiene los data-* del botón .add-to-cart sincronizados con la selección activa (initCart
 // lee btn.dataset en el clic). Contratos completos en los comentarios <!-- CONTRATO JS --> de
 // catalogo.html. Prefijo de id, nombre de carrito y frase del alt se derivan de article.id.
@@ -1078,6 +1102,9 @@ const LASH_LINES = {
   individuales: { cartPrefix: 'Individuales', altNoun: 'Pestañas individuales' },
   tiras: { cartPrefix: 'Tiras', altNoun: 'Pestañas de tira' },
 };
+
+// Texto ÚNICO de la nota de caja (provisional: lo confirma Andrea). Cambiarlo solo aquí.
+const BOX_NOTE = 'En la misma caja vienen las 3 tallas';
 
 function initLashPicker() {
   document.querySelectorAll('.cat-item--lash').forEach(setupLashArticle);
@@ -1089,38 +1116,21 @@ function setupLashArticle(article) {
 
   const swatches = Array.from(article.querySelectorAll('.lash-swatch'));
   const panels = Array.from(article.querySelectorAll('.lash-panel'));
-  const sizeWrap = article.querySelector('#lash-sizes');
-  const sizeButtons = Array.from(article.querySelectorAll('#lash-sizes .lash-size'));
-  const sizeUnica = article.querySelector('#lash-size-unica');
+  const boxNote = article.querySelector('#lash-box-note');
   const media = article.querySelector('.cat-item__media img[data-lash-media]');
   const addBtn = article.querySelector('.add-to-cart');
   if (!swatches.length || !addBtn) return;
 
   const activeSwatch = () => swatches.find((s) => s.classList.contains('is-active')) || swatches[0];
-  const activeSizeBtn = () => sizeButtons.find((b) => b.classList.contains('is-active')) || sizeButtons[0];
 
   function recomposeButton() {
     const swatch = activeSwatch();
-    const btn = activeSizeBtn();
-    const unica = swatch.dataset.tallas === 'unica' || !btn;
-    const size = unica ? 'unica' : btn.dataset.size;
-    const sizeLabel = unica ? 'Talla única' : 'Talla ' + size;
-
-    addBtn.dataset.id = article.id + '-' + swatch.dataset.slug + '-' + size;
-    addBtn.dataset.name = line.cartPrefix + ' · ' + swatch.dataset.cartName + ' · ' + sizeLabel;
+    addBtn.dataset.id = article.id + '-' + swatch.dataset.slug; // = SKU de CATALOGO / clave de /api/stock
+    addBtn.dataset.name = line.cartPrefix + ' · ' + swatch.dataset.cartName;
     addBtn.dataset.price = swatch.dataset.price;
     addBtn.dataset.priceid = swatch.dataset.priceid;
     addBtn.dataset.image = swatch.dataset.image;
     applyStock(); // el botón cambió de SKU → recalcular Agotado/contador
-  }
-
-  function selectSize(btn) {
-    sizeButtons.forEach((b) => {
-      const on = b === btn;
-      b.classList.toggle('is-active', on);
-      b.setAttribute('aria-pressed', on ? 'true' : 'false');
-    });
-    recomposeButton();
   }
 
   function selectSwatch(swatch) {
@@ -1138,24 +1148,19 @@ function setupLashArticle(article) {
       media.alt = line.altNoun + ' ' + swatch.dataset.cartName + ' de AP Beauty en su estuche';
     }
 
-    const unica = swatch.dataset.tallas === 'unica';
-    if (sizeWrap) sizeWrap.hidden = unica;
-    if (sizeUnica) sizeUnica.hidden = !unica;
-
-    // Al volver de un diseño de talla única, garantizar una talla S/M/L activa
-    if (!unica && sizeButtons.length && !sizeButtons.some((b) => b.classList.contains('is-active'))) {
-      sizeButtons[0].classList.add('is-active');
-      sizeButtons[0].setAttribute('aria-pressed', 'true');
+    if (boxNote) {
+      const show = swatch.hasAttribute('data-box-note');
+      boxNote.textContent = show ? BOX_NOTE : '';
+      boxNote.hidden = !show;
     }
 
     recomposeButton();
   }
 
   swatches.forEach((s) => s.addEventListener('click', () => selectSwatch(s)));
-  sizeButtons.forEach((b) => b.addEventListener('click', () => selectSize(b)));
 
-  // Alinear el botón con el estado inicial servido por front (#individuales: Icónica/M · #tiras: Destellos)
-  recomposeButton();
+  // Alinear nota y botón con el estado inicial servido por front (#individuales: Icónica · #tiras: Destellos)
+  selectSwatch(activeSwatch());
 }
 
 // 6 · Políticas — acordeón exclusivo (AB-P3): un solo panel abierto a la vez

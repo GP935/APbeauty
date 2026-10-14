@@ -874,11 +874,10 @@ section { padding-block: var(--section-pad-y); }
 /* --------------------------------------------------------------------------
    14b · SELECTOR DE PESTAÑAS (catalogo.html · .cat-item--lash · AB-C22 / AB-C25)
    Cada .cat-item--lash es UN producto con selector de diseño (tarjeta "hero"
-   del catálogo). Dos instancias: #individuales (5 diseños + talla S/M/L) y
-   #tiras (5 diseños, todas talla única). Hereda eyebrow con filete rojo +
+   del catálogo). Dos instancias: #individuales y #tiras (5 diseños cada uno). Hereda eyebrow con filete rojo +
    título Playfair + .cat-item__desc/.cat-item__price.
    Rojo ≤10%: sin rojo nuevo aquí — la selección activa se marca en negro.
-   GOTCHA [hidden]: .lash-panel / .lash-sizes / .lash-size-unica los togglea JS
+   GOTCHA [hidden]: .lash-panel / .lash-box-note los togglea JS
    con el atributo hidden → regla [hidden]{display:none} repuesta abajo (mismo
    bug que .cat-item[hidden] / .accordion-panel[hidden]).
    -------------------------------------------------------------------------- */
@@ -896,7 +895,7 @@ section { padding-block: var(--section-pad-y); }
 .cat-item--lash:nth-child(even) .btn-editorial--solid { background: var(--negro); color: #fff; }
 .cat-item--lash:nth-child(even) .btn-editorial--solid:hover { background: var(--color-red); }
 
-/* Grupo Diseño / Talla — rótulo + control */
+/* Grupo Diseño — rótulo + control */
 .lash-picker__group { width: 100%; margin: 0 0 clamp(20px, 2.6vw, 30px); }
 .lash-picker__label {
   display: block;
@@ -937,22 +936,12 @@ section { padding-block: var(--section-pad-y); }
 .lash-panel__row dt { flex: 0 0 8.5rem; font-weight: 600; color: var(--gris-texto); }
 .lash-panel__row dd { flex: 1; margin: 0; color: #4A4A4A; }
 
-/* Talla — S/M/L o "Talla única" */
-.lash-sizes { display: flex; gap: 8px; }
-.lash-size {
-  min-width: 48px; padding: 10px 14px;
-  background: none; border: 1px solid var(--borde); border-radius: var(--radius-soft);
-  font: 600 .8rem/1 var(--font-body); color: var(--gris-texto);
-  cursor: pointer; transition: border-color .18s, background .18s, color .18s;
-}
-.lash-size:hover { border-color: var(--color-gray); }
-.lash-size.is-active { background: var(--negro); border-color: var(--negro); color: #fff; }
-.lash-size-unica { margin: 0; font: 500 .9rem/1.4 var(--font-body); color: var(--gris-texto); }
+/* Nota de caja (Individuales): "En la misma caja vienen las 3 tallas" */
+.lash-box-note { margin: 0; font: 500 .9rem/1.4 var(--font-body); color: var(--gris-texto); }
 
 /* GOTCHA OBLIGATORIO — restaura el hide del navegador (JS togglea `hidden`) */
 .lash-panel[hidden],
-.lash-sizes[hidden],
-.lash-size-unica[hidden] { display: none; }
+.lash-box-note[hidden] { display: none; }
 
 /* Móvil — miniaturas más juntas, specs apiladas */
 @media (max-width: 768px) {
