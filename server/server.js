@@ -1,6 +1,8 @@
 import express from 'express';
 import crypto from 'crypto';
-import { appendFile, mkdir } from 'node:fs/promises';
+import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { resolve, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import Stripe from 'stripe';
 
 const {
@@ -35,6 +37,10 @@ const {
   //   'mercadopago' → Card Payment Brick (requiere MP_ACCESS_TOKEN válido).
   // AP Beauty opera solo en Perú y en soles (PEN); no hay ruteo geográfico.
   CHECKOUT_GATEWAY = 'none',
+  // Rutas alternativas de logs/stock (solo para tests de integración; en prod
+  // se usan los defaults `server/logs/` y `server/data/stock.json`).
+  LOGS_DIR,
+  STOCK_FILE,
 } = process.env;
 
 const GATEWAY = ['none', 'stripe', 'mercadopago'].includes(CHECKOUT_GATEWAY)
@@ -94,11 +100,12 @@ const CATALOGO = {
   'individuales-despierta': { title: 'Individuales · Despierta', price: 3000, priceId: 'TODO_STRIPE_PRICE_ID_DESPIERTA' },
   'individuales-suspiro':   { title: 'Individuales · Suspiro',   price: 2500, priceId: 'TODO_STRIPE_PRICE_ID_SUSPIRO' },
   'individuales-anhelada':  { title: 'Individuales · Anhelada',  price: 4000, priceId: 'TODO_STRIPE_PRICE_ID_ANHELADA' },
-  // Línea Tiras — 4 diseños, todas S/ 10, todas talla única
+  // Línea Tiras — 5 diseños, todas S/ 10, todas talla única
   'tiras-destellos': { title: 'Tiras · Destellos', price: 1000, priceId: 'TODO_STRIPE_PRICE_ID_DESTELLOS' },
   'tiras-hechizo':   { title: 'Tiras · Hechizo',   price: 1000, priceId: 'TODO_STRIPE_PRICE_ID_HECHIZO' },
   'tiras-velada':    { title: 'Tiras · Velada',    price: 1000, priceId: 'TODO_STRIPE_PRICE_ID_VELADA' },
   'tiras-vertigo':   { title: 'Tiras · Vértigo',   price: 1000, priceId: 'TODO_STRIPE_PRICE_ID_VERTIGO' },
+  'tiras-hipnotica': { title: 'Tiras · Hipnótica', price: 1000, priceId: 'TODO_STRIPE_PRICE_ID_HIPNOTICA' },
 };
 
 const MONEDA = 'PEN';
@@ -140,7 +147,7 @@ const postPago = new Map();           // payment_id → { logged: bool, mailed: 
 
 // Log de compras confirmadas — una línea JSON por pago aprobado.
 // Ruta git-ignored (datos personales de clientes): server/logs/purchases.jsonl.
-const LOG_DIR = new URL('./logs/', import.meta.url);
+const LOG_DIR = LOGS_DIR ? pathToFileURL(resolve(LOGS_DIR) + sep) : new URL('./logs/', import.meta.url);
 const PURCHASE_LOG = new URL('purchases.jsonl', LOG_DIR);
 await mkdir(LOG_DIR, { recursive: true });
 
@@ -155,6 +162,122 @@ async function appendJsonl(dest, obj) {
     await appendFile(dest, linea);
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+// STOCK EN VIVO — el LOG de compras es la fuente de lo vendido.
+//   disponible = stock_inicial[sku] − Σ cantidades de purchases.jsonl con ts >= base
+// `server/data/stock.json` (git-ignored) = { base, stock_inicial:{sku:n} }.
+// Reponer / devolver = SUMAR a stock_inicial + `pm2 reload`; la base NO se mueve.
+// Si falta el archivo se siembra desde `data/stock.example.json` y `base` = hora
+// de ese primer arranque (hora del deploy). Se reconstruye al arrancar y se
+// mantiene en memoria (se descuenta solo cuando el pago pasa a `approved`).
+// Si el inventario no carga → `stock.ok=false` y NO se cobra nada (fail-closed).
+// SKU sin entrada en stock.json = no controlado (se puede comprar; warn al arrancar).
+// ─────────────────────────────────────────────────────────────
+const DATA_DIR = new URL('./data/', import.meta.url);
+const STOCK_URL = STOCK_FILE ? pathToFileURL(resolve(STOCK_FILE)) : new URL('stock.json', DATA_DIR);
+const STOCK_EJEMPLO = new URL('stock.example.json', DATA_DIR);
+
+const stock = { ok: false, base: null, inicial: new Map(), vendido: new Map() };
+
+async function cargarStock() {
+  try {
+    let crudo;
+    try {
+      crudo = await readFile(STOCK_URL, 'utf8');
+    } catch (err) {
+      if (err.code !== 'ENOENT') throw err;
+      crudo = await readFile(STOCK_EJEMPLO, 'utf8'); // primer arranque: sembrar
+      console.warn('stock.json no existía — sembrado desde stock.example.json.');
+    }
+    const cfg = JSON.parse(crudo);
+    const ini = cfg?.stock_inicial;
+    if (!ini || typeof ini !== 'object') throw new Error('falta "stock_inicial"');
+
+    stock.inicial = new Map();
+    for (const [sku, n] of Object.entries(ini)) {
+      if (!Number.isInteger(n) || n < 0) throw new Error(`stock_inicial.${sku} debe ser entero >= 0`);
+      if (!CATALOGO[sku]) console.warn(`stock.json: "${sku}" no existe en CATALOGO — se ignora (¿falta darlo de alta?).`);
+      else stock.inicial.set(sku, n);
+    }
+    for (const sku of Object.keys(CATALOGO)) {
+      if (!stock.inicial.has(sku)) console.warn(`stock: "${sku}" sin entrada en stock.json — NO controlado.`);
+    }
+
+    let base = Date.parse(cfg.base);
+    if (!Number.isFinite(base)) {
+      base = Date.now();
+      cfg.base = new Date(base).toISOString();
+      await mkdir(new URL('./', STOCK_URL), { recursive: true });
+      await writeFile(STOCK_URL, `${JSON.stringify(cfg, null, 2)}\n`);
+      console.warn(`stock: base = hora del arranque (${cfg.base}), persistida en stock.json. Paul puede fijar la hora del conteo editando "base".`);
+    }
+    stock.base = base;
+
+    // Reconstruir lo vendido desde el log (cada payment_id cuenta UNA vez).
+    stock.vendido = new Map();
+    let contadas = 0;
+    let log = '';
+    try { log = await readFile(PURCHASE_LOG, 'utf8'); } catch (err) { if (err.code !== 'ENOENT') throw err; }
+    for (const linea of log.split('\n')) {
+      if (!linea.trim()) continue;
+      let c;
+      try { c = JSON.parse(linea); } catch { console.warn('purchases.jsonl: línea ilegible, se omite.'); continue; }
+      const pid = String(c.payment_id ?? '');
+      if (!pid || postPago.has(pid)) continue; // duplicada → no cuenta dos veces
+      // Idempotencia tras reload: un pago ya registrado no se vuelve a descontar/enviar.
+      postPago.set(pid, { logged: true, mailCliente: true, mailInterno: true });
+      if (!(Date.parse(c.ts) >= base)) continue; // compras de prueba anteriores a la base
+      for (const it of c.items || []) {
+        stock.vendido.set(it.sku, (stock.vendido.get(it.sku) || 0) + (Number(it.quantity) || 0));
+      }
+      contadas += 1;
+    }
+    stock.ok = true;
+    console.log(`stock: ${stock.inicial.size} SKUs controlados, base ${new Date(base).toISOString()}, ${contadas} compras descontadas del log.`);
+  } catch (err) {
+    stock.ok = false;
+    console.error(`stock: NO se pudo cargar el inventario (${err.message}). Checkout BLOQUEADO hasta corregirlo.`);
+  }
+}
+
+const disponibleDe = (sku) => stock.inicial.get(sku) - (stock.vendido.get(sku) || 0);
+
+// Cantidades pedidas por SKU base (varias tallas del mismo diseño suman).
+function cantidadesPorSku(items) {
+  const m = new Map();
+  for (const i of items) m.set(skuBase(i.id), (m.get(skuBase(i.id)) || 0) + i.cantidad);
+  return m;
+}
+
+// null si todo cabe; si no, `{ error, code, stock }` listo para el 409.
+function problemaDeStock(items) {
+  const faltas = [];
+  for (const [sku, pedido] of cantidadesPorSku(items)) {
+    if (!stock.inicial.has(sku)) continue;
+    const disp = Math.max(0, disponibleDe(sku));
+    if (pedido > disp) faltas.push({ sku, pedido, disponible: disp });
+  }
+  if (!faltas.length) return null;
+  const msg = faltas.map((f) => {
+    const t = CATALOGO[f.sku].title;
+    return f.disponible === 0 ? `«${t}» está agotado.` : `De «${t}» solo quedan ${f.disponible} unidad${f.disponible === 1 ? '' : 'es'}.`;
+  }).join(' ');
+  return { error: `${msg} Ajusta tu carrito para continuar.`, code: 'sin_stock', stock: faltas };
+}
+
+// Descuenta lo vendido (solo tras registrar la compra en el log). Devuelve los
+// SKUs que quedaron en negativo (sobreventa).
+function descontarStock(items) {
+  const sobreventa = [];
+  for (const [sku, n] of cantidadesPorSku(items)) {
+    stock.vendido.set(sku, (stock.vendido.get(sku) || 0) + n);
+    if (stock.inicial.has(sku) && disponibleDe(sku) < 0) sobreventa.push({ sku, disponible: disponibleDe(sku) });
+  }
+  return sobreventa;
+}
+
+await cargarStock();
 
 const app = express();
 app.disable('x-powered-by');
@@ -332,7 +455,8 @@ app.get('/api/market', (req, res) => {
   return res.json({ country: pais, gateway: GATEWAY, currency: MONEDA });
 });
 
-const mpLimiter = rateLimit({ windowMs: 60_000, max: 20 });
+// MP_RATE_LIMIT solo lo sube el test de integración; en prod rige el default.
+const mpLimiter = rateLimit({ windowMs: 60_000, max: Number(process.env.MP_RATE_LIMIT) || 20 });
 
 // ═════════════════════════════════════════════════════════════
 // POST-PAGO — al confirmarse un pago `approved` (por process-payment o por el
@@ -404,34 +528,43 @@ function leerDireccionDelPago(payment, pedido) {
   return pedido?.shipping || null;
 }
 
-// Tarea 5: reserva de stock. PENDIENTE-PAUL: aún no hay fuente de verdad de
-// inventario (números por SKU, ni "agotado" real). Por defecto — como pidió
-// Paul — se hace una "reserva simple": se deja constancia de las unidades a
-// descontar en logs/reservations.jsonl para que él las aplique/confirme.
-// Cuando exista el modelo real (stock por SKU en DB/JSON) este es el único
-// punto a tocar: descontar de verdad y rechazar en create-order si no alcanza.
-const RESERVATION_LOG = new URL('reservations.jsonl', LOG_DIR);
-async function reservarStock(orderId, items, paymentId) {
-  const linea = {
-    ts: new Date().toISOString(),
-    order_id: orderId,
-    payment_id: String(paymentId || ''),
-    estado: 'reserva_simple_pendiente_confirmacion_paul',
-    unidades: items.map((i) => ({ sku: skuBase(i.id), variante: i.id, cantidad: i.cantidad })),
-  };
-  try {
-    await appendJsonl(RESERVATION_LOG, linea);
-  } catch (err) {
-    console.error(`reservarStock ${orderId}: ${err.message}`);
-  }
-}
-
 // Tarea 2: log de compras confirmadas — una línea JSON por pago aprobado.
 async function registrarCompra(record) {
   await appendJsonl(PURCHASE_LOG, record);
 }
 
 const fmtPEN = (soles) => `S/ ${Number(soles).toFixed(2)}`;
+
+// Sobreventa: dos clientes pagaron la última unidad. No se bloquea el registro;
+// se avisa por consola y por el buzón interno para revisar/reembolsar.
+async function alertarSobreventa(orderId, paymentId, sobreventa) {
+  const detalle = sobreventa.map((s) => `${CATALOGO[s.sku]?.title || s.sku}: disponible ${s.disponible}`).join('; ');
+  console.error(`SOBREVENTA pedido=${orderId} pago=${paymentId} → ${detalle}`);
+  if (!RESEND_LISTO || !VENTAS_EMAIL_INTERNO) return;
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: RESEND_FROM,
+        to: [VENTAS_EMAIL_INTERNO],
+        subject: 'SOBREVENTA - revisar/reembolsar',
+        text: [
+          'Se aprobó un pago de un producto que ya no tenía stock.',
+          `Pedido: ${orderId}`,
+          `Pago MP: ${paymentId}`,
+          `Detalle: ${detalle}`,
+          '',
+          'Revisa el pedido: reembolsa en Mercado Pago o repón stock (stock.json + pm2 reload).',
+        ].join('\n'),
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) console.error(`Resend sobreventa ${orderId}: HTTP ${r.status}`);
+  } catch (err) {
+    console.error(`Resend sobreventa ${orderId}: ${err.message}`);
+  }
+}
 
 // Tarea 3: comprobante por correo vía Resend. Envía solo los correos pedidos
 // (`wantCliente` / `wantInterno`) y devuelve `{ cliente, interno }` indicando
@@ -582,7 +715,10 @@ async function procesarPagoAprobado(orderId, pedido, payment) {
 
   let st = postPago.get(pid);
   if (st?.logged && st?.mailCliente && st?.mailInterno) return;
+  if (st?.busy) return; // otra llamada (process-payment ↔ webhook) ya lo está procesando
   if (!st) { st = { logged: false, mailCliente: false, mailInterno: false }; postPago.set(pid, st); }
+  st.busy = true;
+  try {
 
   const direccion = leerDireccionDelPago(payment, pedido);
   const nombre = payment?.card?.cardholder?.name
@@ -593,7 +729,6 @@ async function procesarPagoAprobado(orderId, pedido, payment) {
   const fecha = payment?.date_approved || payment?.date_created || new Date().toISOString();
 
   if (!st.logged) {
-    await reservarStock(orderId, pedido.items, pid); // tarea 5
     try {
       await registrarCompra({ // tarea 2
         ts: new Date().toISOString(),
@@ -612,6 +747,9 @@ async function procesarPagoAprobado(orderId, pedido, payment) {
         payment_date: fecha,
       });
       st.logged = true;
+      // Descuento SOLO tras quedar en el log (el log es la fuente al reiniciar).
+      const sobreventa = descontarStock(pedido.items);
+      if (sobreventa.length) await alertarSobreventa(orderId, pid, sobreventa);
     } catch (err) {
       console.error(`registrarCompra ${orderId}: ${err.message}`); // el webhook reintenta
     }
@@ -626,6 +764,9 @@ async function procesarPagoAprobado(orderId, pedido, payment) {
     if (r.cliente) st.mailCliente = true;
     if (r.interno) st.mailInterno = true;
   }
+  } finally {
+    st.busy = false;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -635,6 +776,20 @@ async function procesarPagoAprobado(orderId, pedido, payment) {
 // Invariante 1: el precio SIEMPRE sale de CATALOGO, nunca del cliente.
 // CATALOGO.price está en céntimos de sol → /100 para la unidad mayor que usa MP.
 // ─────────────────────────────────────────────────────────────
+// GET /api/stock → { sku: { disponible, agotado } } solo de SKUs controlados.
+// no-store: el contador debe ser siempre el actual (Cloudflare: Cache=Bypass en /api/*).
+const stockLimiter = rateLimit({ windowMs: 60_000, max: 120 });
+app.get('/api/stock', stockLimiter, (_req, res) => {
+  res.set('Cache-Control', 'no-store');
+  if (!stock.ok) return res.status(503).json({ error: 'inventario no disponible' });
+  const out = {};
+  for (const sku of stock.inicial.keys()) {
+    const disponible = Math.max(0, disponibleDe(sku));
+    out[sku] = { disponible, agotado: disponible === 0 };
+  }
+  return res.json(out);
+});
+
 app.post('/api/mp/create-order', mpLimiter, (req, res) => {
   if (GATEWAY !== 'mercadopago') {
     return res.status(503).json({ error: 'checkout no disponible todavía' });
@@ -649,7 +804,8 @@ app.post('/api/mp/create-order', mpLimiter, (req, res) => {
   const resumen = [];
 
   for (const item of items) {
-    const cantidad = Number.parseInt(item?.quantity, 10);
+    const q = item?.quantity;
+    const cantidad = typeof q === 'number' ? q : (typeof q === 'string' && /^\d{1,3}$/.test(q) ? Number(q) : NaN);
     if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 99) {
       return res.status(400).json({ error: `cantidad inválida para ${item?.id}` });
     }
@@ -665,6 +821,10 @@ app.post('/api/mp/create-order', mpLimiter, (req, res) => {
   }
 
   amountExpected = Math.round(amountExpected * 100) / 100; // 2 decimales, sin artefactos float
+
+  if (!stock.ok) return res.status(503).json({ error: 'inventario no disponible, inténtalo en unos minutos' });
+  const sinStock = problemaDeStock(resumen);
+  if (sinStock) return res.status(409).json(sinStock);
 
   const orderId = crypto.randomUUID();
   pedidosMP.set(orderId, { amountExpected, estado: 'pendiente', items: resumen, paymentId: null });
@@ -701,6 +861,12 @@ app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
     if (pedido.estado !== 'pendiente') {
       return res.status(409).json({ error: 'pedido ya procesado' });
     }
+
+    // Stock — validar ANTES de llamar a MP: un producto sin stock nunca se cobra.
+    if (!stock.ok) return res.status(503).json({ error: 'inventario no disponible, inténtalo en unos minutos' });
+    const sinStock = problemaDeStock(pedido.items);
+    if (sinStock) return res.status(409).json(sinStock);
+
     if (payer?.email) pedido.payerEmail = payer.email; // fallback para el comprobante
 
     // Tarea 1 — dirección de envío (form del frontend, hermano del Brick).

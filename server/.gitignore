@@ -5,3 +5,6 @@ npm-debug.log*
 
 # Log de compras / reservas — datos personales de clientes, NUNCA versionar
 logs/
+
+# Stock vivo — editado a mano en el VPS (reponer = sumar a stock_inicial + pm2 reload)
+data/stock.json

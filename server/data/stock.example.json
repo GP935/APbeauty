@@ -1,0 +1,15 @@
+{
+  "base": null,
+  "stock_inicial": {
+    "individuales-esencial": 15,
+    "individuales-iconica": 46,
+    "individuales-despierta": 6,
+    "individuales-suspiro": 8,
+    "individuales-anhelada": 0,
+    "tiras-destellos": 8,
+    "tiras-hechizo": 20,
+    "tiras-velada": 7,
+    "tiras-vertigo": 5,
+    "tiras-hipnotica": 20
+  }
+}
