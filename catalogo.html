@@ -7,7 +7,7 @@
   <!-- ===== DOMINIO SEO — Front no toca este bloque ===== -->
   <!-- Canonical: las vistas ?cat= (filtro cliente, mismo HTML) canonizan a la base catalogo.html. -->
   <title>Catálogo de Pestañas Postizas y Maquillaje | AP Beauty</title>
-  <meta name="description" content="Catálogo de AP Beauty: pestañas postizas individuales (5 diseños) y de tira (4 diseños), delineador, labial y paleta de rostro. Envíos a todo el Perú.">
+  <meta name="description" content="Catálogo de AP Beauty: pestañas postizas individuales (5 diseños) y de tira (6 diseños), delineador, labial y paleta de rostro. Envíos a todo el Perú.">
   <link rel="canonical" href="https://apbeauty-lima.com/catalogo.html">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <meta name="theme-color" content="#000000">
@@ -375,6 +375,10 @@
                 <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-tiras-catalogo/hipnotica.jpg" alt="" width="128" height="128" loading="lazy"></span>
                 <span class="lash-swatch__name">Hipnótica</span>
               </button>
+              <button class="lash-swatch" type="button" data-stock-sku="tiras-fascinacion" data-slug="fascinacion" data-cart-name="Fascinación" data-price="1000" data-priceid="TODO_STRIPE_PRICE_ID_FASCINACION" data-image="pestanas-tiras-catalogo/fascinacion.jpg" aria-pressed="false" aria-controls="tiras-panel-fascinacion">
+                <span class="lash-swatch__thumb" aria-hidden="true"><img src="pestanas-tiras-catalogo/fascinacion.jpg" alt="" width="128" height="128" loading="lazy"></span>
+                <span class="lash-swatch__name">Fascinación</span>
+              </button>
             </div>
           </div>
 
@@ -420,6 +424,15 @@
               <dl class="lash-panel__meta">
                 <div class="lash-panel__row"><dt>Ideal para</dt><dd>Looks de impacto con banda invisible, la más vendida</dd></div>
                 <div class="lash-panel__row"><dt>Efecto</dt><dd>Dramático pero lindo, banda transparente</dd></div>
+              </dl>
+              <p class="cat-item__price">S/ 10,00</p>
+              <p class="stock-note" data-stock-slot hidden></p>
+            </div>
+            <div class="lash-panel" id="tiras-panel-fascinacion" data-stock-sku="tiras-fascinacion" data-slug="fascinacion" hidden>
+              <p class="cat-item__desc">Efecto foxy que alarga y levanta la mirada hacia el exterior. Un volumen sofisticado y sensual que seduce sin esfuerzo, ideal para looks elegantes donde los ojos lo dicen todo.</p>
+              <dl class="lash-panel__meta">
+                <div class="lash-panel__row"><dt>Ideal para</dt><dd>Looks elegantes, mirada alargada y levantada</dd></div>
+                <div class="lash-panel__row"><dt>Efecto</dt><dd>Foxy, volumen sofisticado y sensual</dd></div>
               </dl>
               <p class="cat-item__price">S/ 10,00</p>
               <p class="stock-note" data-stock-slot hidden></p>
@@ -614,7 +627,7 @@
   </footer>
 
   <!-- ===== DOMINIO SEO: JSON-LD ===== -->
-  <!-- SKUs comprables: Individuales (5 diseños) y Tiras (4 diseños) → InStock.
+  <!-- SKUs comprables: Individuales (5 diseños) y Tiras (6 diseños) → InStock.
        Sculpt Liner / Lip Eclipse / Power Matte → OutOfStock (conservan precio).
        Sets / Brochas / Paquete inicial (cat-item--soon) → sin schema. Front no toca este bloque. -->
   <script type="application/ld+json">
@@ -664,7 +677,7 @@
         "@type": "Product",
         "@id": "https://apbeauty-lima.com/catalogo.html#tiras",
         "name": "Línea de Tiras — Pestañas AP Beauty",
-        "description": "Pestañas postizas de tira de AP Beauty. Cinco diseños: Destellos, Hechizo, Velada, Vértigo e Hipnótica.",
+        "description": "Pestañas postizas de tira de AP Beauty. Seis diseños: Destellos, Hechizo, Velada, Vértigo, Hipnótica y Fascinación.",
         "category": "Pestañas postizas",
         "brand": { "@type": "Brand", "name": "AP Beauty" },
         "url": "https://apbeauty-lima.com/catalogo.html?cat=pestanas#tiras",
@@ -673,14 +686,15 @@
           "https://apbeauty-lima.com/pestanas-tiras-catalogo/hechizo.jpg",
           "https://apbeauty-lima.com/pestanas-tiras-catalogo/velada.jpg",
           "https://apbeauty-lima.com/pestanas-tiras-catalogo/vertigo.jpg",
-          "https://apbeauty-lima.com/pestanas-tiras-catalogo/hipnotica.jpg"
+          "https://apbeauty-lima.com/pestanas-tiras-catalogo/hipnotica.jpg",
+          "https://apbeauty-lima.com/pestanas-tiras-catalogo/fascinacion.jpg"
         ],
         "offers": {
           "@type": "AggregateOffer",
           "priceCurrency": "PEN",
           "lowPrice": "10.00",
           "highPrice": "10.00",
-          "offerCount": 5,
+          "offerCount": 6,
           "availability": "https://schema.org/InStock",
           "seller": { "@id": "https://apbeauty-lima.com/#organization" }
         }

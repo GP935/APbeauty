@@ -100,12 +100,13 @@ const CATALOGO = {
   'individuales-despierta': { title: 'Individuales · Despierta', price: 3000, priceId: 'TODO_STRIPE_PRICE_ID_DESPIERTA' },
   'individuales-suspiro':   { title: 'Individuales · Suspiro',   price: 2500, priceId: 'TODO_STRIPE_PRICE_ID_SUSPIRO' },
   'individuales-anhelada':  { title: 'Individuales · Anhelada',  price: 4000, priceId: 'TODO_STRIPE_PRICE_ID_ANHELADA' },
-  // Línea Tiras — 5 diseños, todas S/ 10, todas talla única
+  // Línea Tiras — 6 diseños, todas S/ 10, todas talla única
   'tiras-destellos': { title: 'Tiras · Destellos', price: 1000, priceId: 'TODO_STRIPE_PRICE_ID_DESTELLOS' },
   'tiras-hechizo':   { title: 'Tiras · Hechizo',   price: 1000, priceId: 'TODO_STRIPE_PRICE_ID_HECHIZO' },
   'tiras-velada':    { title: 'Tiras · Velada',    price: 1000, priceId: 'TODO_STRIPE_PRICE_ID_VELADA' },
   'tiras-vertigo':   { title: 'Tiras · Vértigo',   price: 1000, priceId: 'TODO_STRIPE_PRICE_ID_VERTIGO' },
   'tiras-hipnotica': { title: 'Tiras · Hipnótica', price: 1000, priceId: 'TODO_STRIPE_PRICE_ID_HIPNOTICA' },
+  'tiras-fascinacion': { title: 'Tiras · Fascinación', price: 1000, priceId: 'TODO_STRIPE_PRICE_ID_FASCINACION' },
 };
 
 const MONEDA = 'PEN';
