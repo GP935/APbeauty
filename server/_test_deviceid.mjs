@@ -35,7 +35,7 @@ await new Promise((r) => setTimeout(r, 400));
 const SHIPPING = {
   name: 'María Pérez López', phone: '987654321',
   address: {
-    street: 'Av. Pardo', number: '123', reference: 'Dpto 4', district: 'Miraflores',
+    line: 'Av. Pardo 123', reference: 'Dpto 4', district: 'Miraflores',
     province: 'Lima', department: 'Lima', zip: '', country: 'PE',
   },
 };

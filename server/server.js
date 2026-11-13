@@ -508,6 +508,105 @@ function shippingParaMetadata(envio) {
   };
 }
 
+// ─────────────────────────────────────────────────────────────
+// Datos para el antifraude de MP (cc_rejected_high_risk): MP puntúa el riesgo
+// con items, comprador y destino. Todo lo textual del cliente pasa por `cap` /
+// regex; items, precios y cantidades salen de `pedido` (CATALOGO), nunca del body.
+// ─────────────────────────────────────────────────────────────
+const CATEGORIA_MP = 'fashion'; // MP no tiene "beauty"; fashion es la más cercana (accesorios de moda/belleza)
+const EMAIL_RE = /^[^\s@<>"',;]{1,64}@[^\s@<>"',;]{1,255}\.[A-Za-z]{2,24}$/;
+
+function partirNombre(nombre) {
+  const p = cap(nombre, 120).split(/\s+/).filter(Boolean);
+  if (p.length <= 1) return { first_name: p[0] || '', last_name: '' };
+  if (p.length === 2 || p.length === 3) return { first_name: p[0], last_name: p.slice(1).join(' ') };
+  return { first_name: p.slice(0, 2).join(' '), last_name: p.slice(2).join(' ') }; // 4+: dos nombres + apellidos
+}
+
+// "Av. Pardo 123" → { street_name: "Av. Pardo", street_number: "123" }.
+// El número es el ÚLTIMO token numérico de la parte principal (antes de coma o
+// de Dpto/Int/Of/Piso), así "Calle 28 de Julio 150" → número 150 y no 28.
+// Mz./Lt., "s/n" o sin número → solo street_name con la línea completa:
+// nunca se inventa street_number.
+function partirCalle(line) {
+  const l = cap(line, 160);
+  const principal = l.split(/,|\s(?=(?:dpto|depto|int|interior|of|oficina|piso)\b)/i)[0].trim();
+  const m = principal.match(/^(.+?)\s+(?:N[°º.]{0,2}\s*)?(\d{1,6})[A-Za-z]?$/i);
+  if (!m || /\b(?:mz|mza|manzana|lt|lote)\.?$/i.test(m[1])) return { street_name: l };
+  return { street_name: m[1].trim(), street_number: m[2] };
+}
+
+function construirPayloadMP({ pedido, orderId, token, issuer_id, payment_method_id, payer, envio }) {
+  const email = EMAIL_RE.test(cap(payer?.email, 254)) ? cap(payer.email, 254) : undefined;
+  const nombre = envio ? partirNombre(envio.name) : { first_name: '', last_name: '' };
+  const telefono = envio?.phone ? envio.phone.replace(/[^\d+]/g, '') : '';
+  const ident = payer?.identification;
+  const identification = ident?.number && /^[\w-]{5,20}$/.test(String(ident.number))
+    ? {
+        type: ['DNI', 'CE', 'RUC', 'PAS'].includes(String(ident.type).toUpperCase()) ? String(ident.type).toUpperCase() : 'DNI',
+        number: String(ident.number),
+      }
+    : undefined;
+
+  const items = pedido.items.map((i) => {
+    const sku = skuBase(i.id);
+    const talla = String(i.id).match(/-(S|M|L|unica)$/i)?.[1];
+    return {
+      id: sku,
+      title: i.title,
+      description: talla && talla.toLowerCase() !== 'unica' ? `${i.title} — talla ${talla.toUpperCase()}` : i.title,
+      category_id: CATEGORIA_MP,
+      quantity: i.cantidad,
+      unit_price: i.price / 100,
+    };
+  });
+
+  const ap = { items };
+  if (nombre.first_name || telefono) {
+    ap.payer = {
+      ...(nombre.first_name ? { first_name: nombre.first_name } : {}),
+      ...(nombre.last_name ? { last_name: nombre.last_name } : {}),
+      ...(telefono ? { phone: { number: telefono } } : {}),
+    };
+  }
+  if (envio?.line) {
+    ap.shipments = {
+      receiver_address: {
+        ...partirCalle(envio.line),
+        ...(envio.zip ? { zip_code: envio.zip } : {}),
+        ...(envio.province ? { city_name: envio.province } : {}),
+        ...(envio.department ? { state_name: envio.department } : {}),
+      },
+    };
+  }
+
+  return {
+    token,
+    issuer_id,
+    payment_method_id,
+    installments: 1,
+    transaction_amount: pedido.amountExpected, // Invariante 1: del servidor
+    description: items.map((i) => `${i.id}x${i.quantity}`).join(', '),
+    external_reference: orderId,
+    ...(envio ? { metadata: shippingParaMetadata(envio) } : {}),
+    additional_info: ap,
+    payer: {
+      email,
+      ...(nombre.first_name ? { first_name: nombre.first_name } : {}),
+      ...(nombre.last_name ? { last_name: nombre.last_name } : {}),
+      ...(identification ? { identification } : {}),
+    },
+  };
+}
+
+// Payload anterior a la mejora antifraude: sin additional_info ni nombre en payer.
+// Conserva token, importe, email, documento, external_reference y metadata.
+function payloadMinimoMP(full) {
+  const { additional_info: _ai, ...resto } = full;
+  const { first_name: _f, last_name: _l, ...payer } = full.payer;
+  return { ...resto, payer };
+}
+
 // Tarea 1: leer la dirección desde la metadata del pago confirmado (fuente de
 // verdad tras la confirmación). Fallback al pedido en memoria si MP no la
 // devolviera (p. ej. reconciliación de un pago viejo).
@@ -884,39 +983,43 @@ app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
     if (deviceId) pedido.deviceId = deviceId;
     else console.warn(`process-payment ${orderId}: sin device_id — riesgo de rechazo antifraude de MP.`);
 
-    const response = await fetch('https://api.mercadopago.com/v1/payments', {
+    const payloadMP = construirPayloadMP({ pedido, orderId, token, issuer_id, payment_method_id, payer, envio });
+    console.info(`process-payment ${orderId}: payer.email=${payloadMP.payer.email ? 'ok' : (payer?.email ? 'inválido' : 'AUSENTE')} nombre=${payloadMP.payer.first_name ? 'ok' : 'ausente'} dirección=${payloadMP.additional_info.shipments ? 'ok' : 'ausente'} doc=${payloadMP.payer.identification ? 'ok' : 'ausente'}`);
+
+    const llamarMP = (body, idemKey) => fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
         // Idempotencia propia del orderId: si el cliente reintenta la misma
         // orden (doble click, retry de red), MP no duplica el cobro.
-        'X-Idempotency-Key': orderId,
+        'X-Idempotency-Key': idemKey,
         ...(deviceId ? { 'X-meli-session-id': deviceId } : {}),
       },
-      body: JSON.stringify({
-        token,
-        issuer_id,
-        payment_method_id,
-        installments: 1,
-        transaction_amount: pedido.amountExpected,
-        description: pedido.items.map((i) => `${i.id}x${i.cantidad}`).join(', '),
-        external_reference: orderId, // correlación con el webhook
-        ...(envio ? { metadata: shippingParaMetadata(envio) } : {}),
-        payer: {
-          email: payer?.email,
-          // Perú (MPE): MP suele exigir identificación (DNI) para aprobar.
-          // El Brick la recoge; se reenvía si el frontend la manda (no la fabricamos).
-          ...(payer?.identification?.number
-            ? { identification: { type: payer.identification.type || 'DNI', number: String(payer.identification.number) } }
-            : {}),
-        },
-      }),
+      body: JSON.stringify(body),
     });
 
-    const payment = await response.json();
+    let response = await llamarMP(payloadMP, orderId);
+    let payment = await response.json();
+
+    // Fallback: si MP rechaza con 400 los datos extra (additional_info / nombre),
+    // UN reintento con el payload mínimo anterior. Un 400 significa que no se
+    // creó ningún pago, así que no hay riesgo de doble cobro; clave de
+    // idempotencia distinta porque el cuerpo cambia.
+    if (response.status === 400) {
+      const causa = (Array.isArray(payment.cause) ? payment.cause : [])
+        .map((c) => `${c?.code}:${cap(c?.description, 120)}`).join(' | ');
+      console.warn(`process-payment ${orderId}: MP 400 con datos extra → reintento con payload mínimo. message=${cap(payment.message, 160)} cause=${causa}`);
+      response = await llamarMP(payloadMinimoMP(payloadMP), `${orderId}-min`);
+      payment = await response.json();
+    }
+
+    if (response.ok && !['approved', 'in_process', 'pending'].includes(payment.status)) {
+      // Solo ids/estados: nunca token ni datos de tarjeta.
+      console.warn(`pago rechazado ${orderId}: payment_id=${payment.id} status=${payment.status} status_detail=${payment.status_detail}`);
+    }
     if (!response.ok) {
-      console.error('Error de la API de Mercado Pago:', payment);
+      console.error(`Error de la API de Mercado Pago (${orderId}): http=${response.status} message=${cap(payment?.message, 200)} error=${cap(payment?.error, 80)}`);
       return res.status(502).json({ error: 'no se pudo procesar el pago' });
     }
 
