@@ -844,6 +844,51 @@ section { padding-block: var(--section-pad-y); }
 }
 .cat-item--soon .cat-item__media { opacity: .9; filter: grayscale(.25); }
 
+/* AB-C24 · "Agotado" ≠ "Próximamente": el producto existe pero no hay stock.
+   Media más apagada + precio tachado + badge sólido (en vez del contorno de --soon). */
+.cat-item--agotado .cat-item__media { opacity: .75; filter: grayscale(.85); }
+.cat-item--agotado .cat-item__price { text-decoration: line-through; opacity: .55; }
+.cat-item__agotado {
+  display: inline-block;
+  font: 600 .72rem/1 var(--font-body); letter-spacing: .18em; text-transform: uppercase;
+  color: #fff; background: var(--gris-texto); border-radius: var(--radius-pill);
+  padding: 9px 18px; margin: clamp(4px, 1vw, 8px) 0 0;
+}
+.cat-item__agotado[hidden] { display: none; }
+
+/* AB-C30 · Stock en vivo (js: AB-J19). `.stock-note` hereda el color del contexto
+   (claro u oscuro) con opacidad; `--low` (≤3 o agotado) sube peso y pasa a rojo
+   solo en fondos claros (rojo ≤10%, sin gritar). */
+.stock-note {
+  margin: 10px 0 0; font: 500 .8rem/1.4 var(--font-body); letter-spacing: .02em;
+  color: inherit; opacity: .72;
+}
+.stock-note[hidden] { display: none; }
+.stock-note--low { font-weight: 600; opacity: 1; color: var(--color-red-hover); }
+.cat-item:nth-child(even) .stock-note--low,
+.rail-card .stock-note--low { color: inherit; }   /* sobre fondo oscuro: sin rojo, solo más peso */
+.cart-line .stock-note { margin: 4px 0 0; font-size: .76rem; }
+.stock-msg {
+  margin: 0 0 16px; padding: 12px 14px;
+  border-left: 3px solid var(--color-red); border-radius: var(--radius-soft);
+  background: #FDE7EA; color: var(--color-red-hover);
+  font: 600 .82rem/1.5 var(--font-body);
+}
+.stock-msg[hidden] { display: none; }
+/* Swatch de diseño agotado: sigue clicable (se puede ver), pero apagado y con nombre tachado */
+.lash-swatch--agotado, .lash-swatch[data-agotado="true"] { opacity: .55; }
+.lash-swatch--agotado .lash-swatch__thumb,
+.lash-swatch[data-agotado="true"] .lash-swatch__thumb { filter: grayscale(1); }
+.lash-swatch--agotado .lash-swatch__name,
+.lash-swatch[data-agotado="true"] .lash-swatch__name { text-decoration: line-through; }
+.lash-swatch--agotado.is-active, .lash-swatch[data-agotado="true"].is-active { opacity: .8; }
+/* Botones sin stock / tope de cantidad */
+.add-to-cart:disabled, .add-to-cart[aria-disabled="true"] {
+  opacity: .45; cursor: not-allowed; pointer-events: none;
+}
+.qty-btn:disabled { opacity: .3; cursor: not-allowed; }
+.cart-line__qty .qty-btn:disabled:hover { color: var(--negro); }
+
 /* Items charcoal (pares) — inversión de texto a claro */
 .cat-item:nth-child(even) .cat-item__name,
 .cat-item:nth-child(even) .cat-item__price { color: #fff; }
@@ -1106,6 +1151,125 @@ section { padding-block: var(--section-pad-y); }
   background: #FDE7EA;
   color: var(--color-red-hover);
   font: 600 .82rem/1.5 var(--font-body);
+}
+
+/* AB-C31 · Checkout MP como UN panel: pasos → form de envío → Brick.
+   Todo dentro de `.cart-summary` (fondo --fondo-alt). El form y el contenedor
+   del Brick comparten ancho, radio (--radius-soft) y borde, para que no se lea
+   como dos cosas pegadas. Hooks de estado para js (AB-J20): `.mp-shipping.is-attempted`
+   (tras el primer intento de pago → muestra :invalid), `.mp-shipping__field.is-invalid`
+   / `input[aria-invalid="true"]` (errores por campo), `.mp-shipping__error` (texto
+   inline por campo), `.is-processing` en `.cart-summary` / `.mp-brick-container`
+   (pago en curso). */
+.checkout-steps {
+  list-style: none; margin: 0 0 20px; padding: 0;
+  display: flex; gap: 10px;
+}
+.checkout-steps__item {
+  flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 10px;
+  padding-top: 12px; border-top: 2px solid var(--borde);
+  font: 600 .78rem/1.2 var(--font-body); letter-spacing: .06em; text-transform: uppercase;
+  color: var(--gris-texto);
+}
+.checkout-steps__item:first-child { border-top-color: var(--negro); color: var(--negro); }
+.checkout-steps__num {
+  flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--negro); color: #fff; font: 700 .72rem/1 var(--font-body);
+}
+.checkout-steps__item:not(:first-child) .checkout-steps__num { background: var(--borde); color: var(--gris-texto); }
+
+.mp-shipping {
+  margin: 18px 0 0; padding: clamp(16px, 3vw, 20px);
+  background: #fff; border: 1px solid var(--borde); border-radius: var(--radius-soft);
+}
+.mp-shipping__title {
+  font: 700 1.05rem/1.2 var(--font-display); color: var(--negro); margin: 0 0 14px;
+}
+.mp-shipping__grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+.mp-shipping__field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.mp-shipping__field > span {
+  font: 600 .78rem/1.3 var(--font-body); letter-spacing: .02em; color: var(--negro);
+}
+.mp-shipping__field > span em { font-style: normal; font-weight: 400; color: var(--gris-texto); }
+.mp-shipping__field input {
+  width: 100%; min-height: 46px; padding: 11px 14px;
+  font: 400 16px/1.3 var(--font-body);   /* 16px: evita el zoom de iOS al enfocar */
+  color: var(--negro); background: #fff;
+  border: 1px solid var(--color-gray); border-radius: var(--radius-soft);
+  transition: border-color .2s, box-shadow .2s;
+}
+.mp-shipping__field input::placeholder { color: var(--gris-texto); opacity: .75; }
+.mp-shipping__field input:hover { border-color: var(--negro); }
+.mp-shipping__field input:focus-visible {
+  outline: 2px solid var(--negro); outline-offset: 1px; border-color: var(--negro);
+}
+/* Error: solo tras el primer intento de pago (o marcado por js), nunca al cargar */
+.mp-shipping.is-attempted .mp-shipping__field input:invalid,
+.mp-shipping__field.is-invalid input,
+.mp-shipping__field input[aria-invalid="true"] {
+  border-color: var(--color-red); background: #FFF7F8;
+}
+.mp-shipping.is-attempted .mp-shipping__field input:invalid:focus-visible,
+.mp-shipping__field.is-invalid input:focus-visible,
+.mp-shipping__field input[aria-invalid="true"]:focus-visible { outline-color: var(--color-red); }
+.mp-shipping__error { font: 600 .76rem/1.4 var(--font-body); color: var(--color-red-hover); margin: 0; }
+.mp-shipping__error[hidden] { display: none; }
+
+/* El Brick hereda el mismo marco que el form (ancho, radio, borde) */
+.mp-shipping + .mp-brick-container,
+.mp-brick-container {
+  padding: clamp(12px, 2.5vw, 16px); background: #fff;
+  border: 1px solid var(--borde); border-radius: var(--radius-soft);
+}
+.mp-shipping + .mp-brick-container { margin-top: 14px; }
+
+/* Pago en curso: Brick/form atenuados e inertes, botón con cursor de espera */
+.is-processing .mp-brick-container,
+.is-processing .mp-shipping,
+.mp-brick-container.is-processing { opacity: .6; pointer-events: none; }
+.is-processing, .is-processing * { cursor: progress; }
+.cart-summary__status {
+  display: flex; align-items: center; justify-content: center; gap: 10px; margin: 14px 0 0;
+  font: 600 .85rem/1.4 var(--font-body); color: var(--negro);
+}
+.cart-summary__status[hidden] { display: none; }
+
+/* Línea de confianza, política y ayuda (AB-F43) */
+.cart-summary__policy { margin: 12px 0 0; font: 400 .78rem/1.5 var(--font-body); color: var(--gris-texto); text-align: center; }
+.cart-summary__policy a { color: var(--negro); text-decoration: underline; text-underline-offset: 2px; }
+.cart-summary__policy a:hover { color: var(--color-red); }
+.cart-summary__help { margin: 12px 0 0; font: 400 .82rem/1.5 var(--font-body); color: var(--gris-texto); text-align: center; }
+.cart-summary__help[hidden] { display: none; }
+.cart-summary__help-link { color: var(--negro); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.cart-summary__help-link:hover { color: var(--color-red); }
+
+/* AB-C32 · Layout del form de envío por ANCHO DEL CONTENEDOR, no del viewport.
+   `.mp-shipping` vive en `.cart-summary` (~360px en desktop) y a ancho completo en
+   móvil/tablet; una media query de viewport daba 2 columnas de ~120px en el primero.
+   Base = 1 columna (cabe en 270–330px de contenido). Desde 440px de contenido se
+   pasa a rejilla de 6 y se emparejan campos con lógica (orden del DOM intacto):
+   1 nombre · 2 teléfono · 3 depto · 4 provincia · 5 distrito · 6 calle · 7 número
+   · 8 referencia · 9 código postal.  Sin soporte de @container → queda 1 columna. */
+.mp-shipping { container: mp-shipping / inline-size; }
+@container mp-shipping (min-width: 440px) {
+  .mp-shipping__grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .mp-shipping__field { grid-column: span 6; }
+  .mp-shipping__field:nth-child(3),
+  .mp-shipping__field:nth-child(4),
+  .mp-shipping__field:nth-child(6),
+  .mp-shipping__field:nth-child(7) { grid-column: span 3; }   /* depto|prov · calle|número */
+}
+@container mp-shipping (min-width: 560px) {
+  .mp-shipping__field:nth-child(3),
+  .mp-shipping__field:nth-child(4),
+  .mp-shipping__field:nth-child(5) { grid-column: span 2; }   /* depto|prov|distrito en una fila */
+}
+/* 360–420px: la caja del carrito pierde padding para dar ancho a form y Brick */
+@media (max-width: 420px) {
+  .cart-summary { padding: 18px 14px; }
+  .checkout-steps__item { font-size: .7rem; letter-spacing: .03em; gap: 8px; }
+  .mp-shipping { padding: 14px 12px; }
 }
 
 @media (min-width: 900px) {

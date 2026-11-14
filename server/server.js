@@ -472,13 +472,17 @@ const cap = (v, n) => String(v ?? '').trim().slice(0, n);
 // Valida/sanea la dirección que manda el frontend (readShippingForm de main.js):
 // { name, phone, address: { line, reference, district, province, department, zip, country } }
 // Devuelve la forma normalizada o `null` si no hay datos mínimos utilizables.
+// El formulario junta calle + número, pero muchos clientes ya escriben el número en
+// la calle: "Amazonas 836 836". Se colapsa el número final repetido.
+const dedupNumero = (l) => l.replace(/(^|\s)(N?[°º.]{0,2}\d{1,6}[A-Za-z]?)\s+\2$/i, '$1$2');
+
 function sanearShipping(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const a = raw.address && typeof raw.address === 'object' ? raw.address : {};
   const envio = {
     name: cap(raw.name, 120),
     phone: cap(raw.phone, 20),
-    line: cap(a.line, 160),
+    line: dedupNumero(cap(a.line, 160)),
     reference: cap(a.reference, 160),
     district: cap(a.district, 60),
     province: cap(a.province, 60),
@@ -973,6 +977,11 @@ app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
     // Se guarda en el pedido y viaja a MP como `metadata` para poder leerla
     // de vuelta desde el pago confirmado (webhook / reconciliación).
     const envio = sanearShipping(shipping);
+    // Nombre y apellido: MP puntúa más riesgo a un comprador con nombre incompleto
+    // (cc_rejected_high_risk). 400 SIN tocar el pedido → el cliente corrige y reintenta.
+    if (envio && envio.name.split(/\s+/).filter(Boolean).length < 2) {
+      return res.status(400).json({ error: 'Escribe tu nombre y apellido', field: 'shipping.name' });
+    }
     if (envio) pedido.shipping = envio;
 
     // Device ID (fingerprint antifraude de MP). Lo recolecta el SDK JS de MP en
@@ -1035,7 +1044,7 @@ app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
     }
     pedidosMP.set(orderId, pedido);
 
-    return res.json({ status: payment.status, id: payment.id });
+    return res.json({ status: payment.status, status_detail: payment.status_detail ?? null, id: payment.id });
   } catch (err) {
     console.error('Error procesando pago Mercado Pago:', err.message);
     return res.status(500).json({ error: 'no se pudo procesar el pago' });

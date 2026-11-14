@@ -65,7 +65,7 @@ async function pagar({ items, body = {} }) {
       shipping: SHIPPING, device_id: 'armor.abc', ...body,
     }),
   });
-  return { orderId, res: await r.json() };
+  return { orderId, res: await r.json(), http: r.status };
 }
 
 const hdr = (h, n) => Object.entries(h).find(([k]) => k.toLowerCase() === n.toLowerCase())?.[1];
@@ -104,7 +104,7 @@ const check = (c, m) => { assert.ok(c, m); console.log(`  ok  ${m}`); pass++; };
     items: [{ id: 'tiras-destellos', quantity: 1 }],
     body: {
       payer: { email: 'no-es-un-email', identification: { type: 'X', number: '<script>' } },
-      shipping: { ...SHIPPING, name: 'A'.repeat(500), address: { ...SHIPPING.address, line: 'Calle Sin Numero', zip: '1'.repeat(40) } },
+      shipping: { ...SHIPPING, name: 'A'.repeat(60) + ' ' + 'B'.repeat(400), address: { ...SHIPPING.address, line: 'Calle Sin Numero', zip: '1'.repeat(40) } },
     },
   });
   const b = lastMP.body;
@@ -119,6 +119,7 @@ const check = (c, m) => { assert.ok(c, m); console.log(`  ok  ${m}`); pass++; };
   const { res } = await pagar({ items: [{ id: 'tiras-destellos', quantity: 1 }] });
   const w = warns.find((x) => x.includes('pago rechazado'));
   check(res.status === 'rejected', 'respuesta al cliente = rejected');
+  check(res.status_detail === 'cc_rejected_high_risk', 'la respuesta incluye status_detail para el mensaje de rechazo');
   check(w && w.includes('status=rejected') && w.includes('status_detail=cc_rejected_high_risk'), 'log de rechazo con status y status_detail');
   check(!warns.concat().join('\n').includes('tok_secreto'), 'el log no contiene el token');
 }
@@ -156,6 +157,28 @@ const check = (c, m) => { assert.ok(c, m); console.log(`  ok  ${m}`); pass++; };
   check(w && w.includes('invalid additional_info') && w.includes('4012'), 'se loguea el motivo del 400');
   check(!warns.join('\n').includes('tok_secreto'), 'el log del 400 no contiene el token');
   mpRechazaExtra = false;
+}
+{ // 8 — dirección con número duplicado ("Amazonas 836 836")
+  mpStatus = 'approved';
+  await pagar({ items: [{ id: 'tiras-destellos', quantity: 1 }], body: { shipping: { ...SHIPPING, address: { ...SHIPPING.address, line: 'Amazonas 836 836' } } } });
+  const ra = lastMP.body.additional_info.shipments.receiver_address;
+  check(ra.street_name === 'Amazonas' && ra.street_number === '836', `"Amazonas 836 836" → ${ra.street_name} | ${ra.street_number}`);
+  check(lastMP.body.metadata.ship_line === 'Amazonas 836', 'metadata.ship_line sin número duplicado');
+}
+{ // 9 — nombre de una sola palabra → 400, MP no se llama, y el mismo pedido se puede reintentar
+  mpCalls.length = 0;
+  const r0 = await fetch(`${BASE}/api/mp/create-order`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ items: [{ id: 'tiras-destellos', quantity: 1 }] }) });
+  const { orderId } = await r0.json();
+  const enviar = (name) => fetch(`${BASE}/api/mp/process-payment`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ orderId, token: 'tok', issuer_id: '1', payment_method_id: 'visa', payer: { email: 'c@example.com' }, shipping: { ...SHIPPING, name }, device_id: 'armor.abc' }),
+  });
+  const r1 = await enviar('Andrea');
+  const j1 = await r1.json();
+  check(r1.status === 400 && j1.field === 'shipping.name' && /apellido/i.test(j1.error), 'nombre de una palabra → 400 con field shipping.name');
+  check(mpCalls.length === 0, 'con nombre incompleto no se llama a MP');
+  const r2 = await enviar('Andrea Torres');
+  check(r2.status === 200 && mpCalls.length === 1, 'el mismo pedido se paga tras corregir el nombre');
 }
 
 console.log(`\n${pass}/${pass} PASS`);

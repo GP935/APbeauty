@@ -646,11 +646,11 @@ function buildShippingForm() {
     '<div class="mp-shipping__grid">',
     '  <label class="mp-shipping__field mp-shipping__field--wide">',
     '    <span>Nombre y apellidos</span>',
-    '    <input name="nombre" type="text" autocomplete="name" required maxlength="120">',
+    '    <input name="nombre" type="text" autocomplete="name" required maxlength="120" placeholder="Nombre y apellido">',
     '  </label>',
     '  <label class="mp-shipping__field">',
     '    <span>Teléfono / celular</span>',
-    '    <input name="telefono" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20">',
+    '    <input name="telefono" type="tel" inputmode="tel" enterkeyhint="next" autocomplete="tel" required maxlength="20">',
     '  </label>',
     '  <label class="mp-shipping__field">',
     '    <span>Departamento</span>',
@@ -666,11 +666,11 @@ function buildShippingForm() {
     '  </label>',
     '  <label class="mp-shipping__field mp-shipping__field--wide">',
     '    <span>Calle, avenida o jirón</span>',
-    '    <input name="calle" type="text" autocomplete="address-line1" required maxlength="140">',
+    '    <input name="calle" type="text" autocomplete="address-line1" required maxlength="140" placeholder="Solo la calle (ej. Av. Pardo)">',
     '  </label>',
     '  <label class="mp-shipping__field">',
     '    <span>Número de casa / edificio</span>',
-    '    <input name="numero" type="text" autocomplete="address-line2" required maxlength="20">',
+    '    <input name="numero" type="text" inputmode="numeric" enterkeyhint="next" autocomplete="address-line2" required maxlength="20" placeholder="Ej. 123">',
     '  </label>',
     '  <label class="mp-shipping__field mp-shipping__field--wide">',
     '    <span>Referencia, dpto./interior <em>(opcional)</em></span>',
@@ -678,11 +678,127 @@ function buildShippingForm() {
     '  </label>',
     '  <label class="mp-shipping__field">',
     '    <span>Código postal <em>(opcional)</em></span>',
-    '    <input name="codigoPostal" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="12">',
+    '    <input name="codigoPostal" type="text" inputmode="numeric" enterkeyhint="done" autocomplete="postal-code" maxlength="12">',
     '  </label>',
     '</div>',
   ].join('\n');
+  // Nombre y apellido: MP puntúa más riesgo (cc_rejected_high_risk) a un comprador
+  // con nombre incompleto y el backend lo rechaza con 400 (AB-B12). Se valida aquí
+  // primero con el mensaje nativo de `reportValidity()` (ver onSubmit).
+  const nombre = form.elements.nombre;
+  const validarNombre = () => nombre.setCustomValidity(
+    nombre.value.trim().split(/\s+/).filter(Boolean).length >= 2 ? '' : 'Escribe tu nombre y apellido',
+  );
+  nombre.addEventListener('input', validarNombre);
+
+  // Borrador en sessionStorage (solo datos de envío, NUNCA tarjeta): un recargo o un
+  // rechazo no vacía el formulario.
+  try {
+    const draft = JSON.parse(sessionStorage.getItem(SHIPPING_DRAFT_KEY) || '{}');
+    Object.keys(draft).forEach((k) => {
+      if (form.elements[k] && typeof draft[k] === 'string') form.elements[k].value = draft[k];
+    });
+  } catch (_) { /* borrador corrupto: se ignora */ }
+  validarNombre();
+  const saveDraft = () => {
+    const draft = {};
+    Array.from(form.elements).forEach((el) => { if (el.name) draft[el.name] = el.value; });
+    try { sessionStorage.setItem(SHIPPING_DRAFT_KEY, JSON.stringify(draft)); } catch (_) { /* cuota/privado */ }
+  };
+  form.addEventListener('input', saveDraft);
+
+  // Error inline por campo: <p class="mp-shipping__error"> con aria-live; el input
+  // apunta a él con aria-describedby/aria-invalid.
+  Array.from(form.elements).forEach((el) => {
+    if (!el.name || el.tagName !== 'INPUT') return;
+    const err = document.createElement('p');
+    err.className = 'mp-shipping__error';
+    err.id = `mp-err-${el.name}`;
+    err.setAttribute('aria-live', 'polite');
+    err.hidden = true;
+    el.closest('label').appendChild(err);
+    el.addEventListener('input', () => { if (el.validity.valid) clearFieldError(el); });
+  });
   return form;
+}
+
+const SHIPPING_DRAFT_KEY = 'ap_shipping_draft';
+
+function clearFieldError(input) {
+  input.removeAttribute('aria-invalid');
+  input.removeAttribute('aria-describedby');
+  const err = document.getElementById(`mp-err-${input.name}`);
+  if (err) { err.textContent = ''; err.hidden = true; }
+}
+
+// Marca el formulario como "intentado" (css pinta :invalid solo desde entonces),
+// muestra el error de cada campo inválido y enfoca el primero. Devuelve true si es válido.
+function validateShippingInline(form) {
+  form.classList.add('is-attempted');
+  let first = null;
+  Array.from(form.elements).forEach((el) => {
+    if (!el.name || el.tagName !== 'INPUT') return;
+    if (el.validity.valid) { clearFieldError(el); return; }
+    const err = document.getElementById(`mp-err-${el.name}`);
+    el.setAttribute('aria-invalid', 'true');
+    if (err) {
+      err.textContent = el.validationMessage || 'Revisa este campo';
+      err.hidden = false;
+      el.setAttribute('aria-describedby', err.id);
+    }
+    if (!first) first = el;
+  });
+  if (first) {
+    first.focus();
+    first.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+  return !first;
+}
+
+// Mensajes de rechazo por status_detail (MP recomienda explicar motivo y qué hacer).
+function rejectionMessage(detail) {
+  const d = String(detail || '');
+  if (d === 'cc_rejected_high_risk') {
+    // El enlace de WhatsApp está oculto hasta tener el número: no mandar al cliente a un canal que no existe.
+    const hayWhatsApp = document.querySelector('.cart-summary__help')?.hidden === false;
+    return `No pudimos validar este pago. Prueba con otra tarjeta${hayWhatsApp ? ' o escríbenos por WhatsApp.' : '.'}`;
+  }
+  if (d.startsWith('cc_rejected_bad_filled')) return 'Revisa los datos de la tarjeta (número, vencimiento o código) e inténtalo de nuevo.';
+  if (d === 'cc_rejected_insufficient_amount') return 'Saldo insuficiente. Prueba con otra tarjeta u otro medio de pago.';
+  if (d === 'cc_rejected_call_for_authorize') return 'Tu banco necesita autorizar este pago. Llámalo para autorizarlo o prueba con otra tarjeta.';
+  if (d === 'cc_rejected_card_disabled') return 'Tu tarjeta está inactiva. Actívala con tu banco o prueba con otra.';
+  if (d === 'cc_rejected_max_attempts') return 'Superaste el máximo de intentos. Prueba con otra tarjeta o inténtalo más tarde.';
+  if (d === 'cc_rejected_duplicated_payment') return 'Ya hiciste un pago igual hace un momento. Revisa tu correo antes de reintentar.';
+  return 'El pago fue rechazado. Prueba con otra tarjeta.';
+}
+
+// Estado de carga: bloquea doble clic y atenúa el panel (css `.is-processing`).
+function setProcessing(on) {
+  const summary = document.querySelector('.cart-summary');
+  if (!summary) return;
+  summary.classList.toggle('is-processing', on);
+  summary.setAttribute('aria-busy', on ? 'true' : 'false');
+  let st = summary.querySelector('.cart-summary__status');
+  if (on) {
+    if (!st) {
+      st = document.createElement('p');
+      st.className = 'cart-summary__status';
+      st.setAttribute('role', 'status');
+      st.textContent = 'Procesando tu pago…';
+      summary.querySelector('.mp-brick-error')?.insertAdjacentElement('beforebegin', st);
+    }
+    st.hidden = false;
+  } else if (st) {
+    st.hidden = true;
+  }
+}
+
+// Pasos visuales del checkout: 1 = envío, 2 = pago.
+function setCheckoutStep(step) {
+  document.querySelectorAll('.checkout-steps__item').forEach((li, i) => {
+    li.classList.toggle('is-active', i + 1 === step);
+    li.classList.toggle('is-done', i + 1 < step);
+  });
 }
 
 // Lee el formulario a la forma que consume el backend (POST /api/mp/process-payment).
@@ -699,7 +815,11 @@ function readShippingForm(form) {
     name: val('nombre'),
     phone: val('telefono'),
     address: {
-      line: [street, number].filter(Boolean).join(' '),
+      // Si el cliente ya escribió el número al final de la calle no se repite
+      // ("Amazonas 836" + "836" → "Amazonas 836", no "Amazonas 836 836").
+      line: number && street.split(/\s+/).pop().toLowerCase() === number.toLowerCase()
+        ? street
+        : [street, number].filter(Boolean).join(' '),
       street,
       number,
       reference: val('referencia'),
@@ -719,6 +839,7 @@ async function mountMercadoPagoBrick(container, errorEl, orderId, amount, shippi
   await loadMercadoPagoSdk();
   const mp = new window.MercadoPago(MP_PUBLIC_KEY, { locale: 'es-PE' });
   const bricksBuilder = mp.bricks();
+  let inFlight = false;
 
   return bricksBuilder.create('cardPayment', container.id, {
     initialization: { amount },
@@ -732,8 +853,13 @@ async function mountMercadoPagoBrick(container, errorEl, orderId, amount, shippi
           // customVariables se acepta sin error de la SDK.
           customVariables: {
             textPrimaryColor: '#0A0A0A',
-            formBackgroundColor: '#F7F7F5',
+            formBackgroundColor: '#FFFFFF',
+            inputBackgroundColor: '#FFFFFF',
             baseColor: '#6B2737',
+            errorColor: '#C8102E',
+            outlinePrimaryColor: '#8A8A8A',
+            outlineSecondaryColor: '#8A8A8A',
+            borderRadiusMedium: '8px',
           },
         },
       },
@@ -750,11 +876,15 @@ async function mountMercadoPagoBrick(container, errorEl, orderId, amount, shippi
         // onSubmit; los de dirección los validamos aquí. `reportValidity()`
         // muestra los mensajes nativos y enfoca el primer campo inválido.
         // `reject()` mantiene el Brick activo para reintentar tras completar.
-        if (shippingForm && !shippingForm.reportValidity()) {
+        if (shippingForm && !validateShippingInline(shippingForm)) {
           reject();
           showMpError(errorEl, 'Completa los datos de envío antes de pagar.');
           return;
         }
+        if (inFlight) { reject(); return; }
+        inFlight = true;
+        setProcessing(true);
+        setCheckoutStep(2);
         if (errorEl) errorEl.hidden = true; // limpia el aviso del gate si venía de un intento anterior
         const shipping = shippingForm ? readShippingForm(shippingForm) : null;
 
@@ -790,24 +920,37 @@ async function mountMercadoPagoBrick(container, errorEl, orderId, amount, shippi
         })
           .then((res) => res.json().catch(() => ({})).then((data) => ({ ok: res.ok, status: res.status, data })))
           .then(({ ok, status, data }) => {
+            inFlight = false;
+            setProcessing(false);
             resolve(); // resuelve siempre: el Brick solo espera que la promesa termine
             // 409 sin_stock: el pedido viejo conserva las cantidades antiguas → NO reintentar
             // el mismo orderId; se avisa, se reajusta el carrito y se monta un pedido nuevo.
             if (status === 409 && onStockConflict) { onStockConflict(data); return; }
+            // 400 de validación de nombre (AB-B12): mensaje claro y foco en el campo; el
+            // MISMO pedido sigue pendiente, así que se puede reintentar.
+            if (status === 400 && data.field === 'shipping.name') {
+              showMpError(errorEl, data.error || 'Escribe tu nombre y apellido');
+              shippingForm?.elements.nombre?.focus();
+              return;
+            }
             if (!ok) { showMpError(errorEl, 'No se pudo procesar el pago. Inténtalo de nuevo.'); return; }
             if (data.status === 'approved') {
               clearCart();
+              try { sessionStorage.removeItem(SHIPPING_DRAFT_KEY); } catch (_) { /* noop */ }
               window.location.href = 'confirmacion.html';
             } else if (data.status === 'in_process' || data.status === 'pending') {
               // Común en bancos peruanos: el pago queda en revisión, el webhook
               // confirma después — no marcar "pagado" aquí (invariante 5).
               clearCart();
+              try { sessionStorage.removeItem(SHIPPING_DRAFT_KEY); } catch (_) { /* noop */ }
               window.location.href = 'confirmacion.html?estado=pendiente';
             } else {
-              showMpError(errorEl, 'El pago fue rechazado. Prueba con otra tarjeta.');
+              showMpError(errorEl, rejectionMessage(data.status_detail));
             }
           })
           .catch(() => {
+            inFlight = false;
+            setProcessing(false);
             reject();
             showMpError(errorEl, 'No se pudo procesar el pago. Inténtalo de nuevo.');
           });
@@ -876,6 +1019,8 @@ async function initPaymentGateway() {
   // Orden en `.cart-summary`: [dirección de envío] → [Brick] → [aviso de error].
   const shippingForm = buildShippingForm();
   btnCheckout.insertAdjacentElement('afterend', shippingForm);
+  setCheckoutStep(1);
+  shippingForm.addEventListener('focusin', () => setCheckoutStep(1));
 
   const container = document.createElement('div');
   container.id = 'cardPaymentBrick_container';
