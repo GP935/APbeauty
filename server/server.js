@@ -37,6 +37,7 @@ const {
   //   'mercadopago' → Card Payment Brick (requiere MP_ACCESS_TOKEN válido).
   // AP Beauty opera solo en Perú y en soles (PEN); no hay ruteo geográfico.
   CHECKOUT_GATEWAY = 'none',
+  THREEDS_ENABLED = '0', // '1' → 3DS 2.0 (three_d_secure_mode optional) en process-payment
   // Rutas alternativas de logs/stock (solo para tests de integración; en prod
   // se usan los defaults `server/logs/` y `server/data/stock.json`).
   LOGS_DIR,
@@ -110,6 +111,9 @@ const CATALOGO = {
 };
 
 const MONEDA = 'PEN';
+
+// Intentos de pago por pedido (un rechazo permite reintentar con otra tarjeta).
+const MAX_INTENTOS_PAGO = 3;
 
 // Un priceId sigue sin configurar (placeholder del HTML) mientras empiece así.
 const esPlaceholder = (priceId) => !priceId || String(priceId).startsWith('TODO_');
@@ -594,6 +598,7 @@ function construirPayloadMP({ pedido, orderId, token, issuer_id, payment_method_
     external_reference: orderId,
     ...(envio ? { metadata: shippingParaMetadata(envio) } : {}),
     additional_info: ap,
+    ...(THREEDS_ENABLED === '1' ? { three_d_secure_mode: 'optional' } : {}),
     payer: {
       email,
       ...(nombre.first_name ? { first_name: nombre.first_name } : {}),
@@ -606,7 +611,7 @@ function construirPayloadMP({ pedido, orderId, token, issuer_id, payment_method_
 // Payload anterior a la mejora antifraude: sin additional_info ni nombre en payer.
 // Conserva token, importe, email, documento, external_reference y metadata.
 function payloadMinimoMP(full) {
-  const { additional_info: _ai, ...resto } = full;
+  const { additional_info: _ai, three_d_secure_mode: _3ds, ...resto } = full;
   const { first_name: _f, last_name: _l, ...payer } = full.payer;
   return { ...resto, payer };
 }
@@ -962,6 +967,15 @@ app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
     if (!pedido) {
       return res.status(400).json({ error: 'pedido no encontrado o expirado' });
     }
+    // Un pago RECHAZADO no cobró nada: el cliente puede reintentar con otra tarjeta sobre el
+    // mismo pedido (máx. MAX_INTENTOS_PAGO). Antes devolvía 409 «pedido ya procesado» y
+    // el frontend lo tomaba por conflicto de stock. Cualquier otro estado no se reabre.
+    if (pedido.estado === 'rechazado' && (pedido.intentos || 0) < MAX_INTENTOS_PAGO) {
+      pedido.estado = 'pendiente';
+    }
+    if (pedido.estado === 'rechazado') {
+      return res.status(409).json({ error: 'Superaste los intentos de pago de este pedido. Preparamos un pago nuevo: vuelve a introducir los datos de tu tarjeta.' });
+    }
     if (pedido.estado !== 'pendiente') {
       return res.status(409).json({ error: 'pedido ya procesado' });
     }
@@ -1008,7 +1022,12 @@ app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
       body: JSON.stringify(body),
     });
 
-    let response = await llamarMP(payloadMP, orderId);
+    // Clave de idempotencia por INTENTO: con la misma clave MP devolvería el rechazo cacheado
+    // del primer intento aunque el cliente use otra tarjeta.
+    pedido.intentos = (pedido.intentos || 0) + 1;
+    const idemKey = pedido.intentos === 1 ? orderId : `${orderId}-a${pedido.intentos}`;
+
+    let response = await llamarMP(payloadMP, idemKey);
     let payment = await response.json();
 
     // Fallback: si MP rechaza con 400 los datos extra (additional_info / nombre),
@@ -1019,7 +1038,7 @@ app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
       const causa = (Array.isArray(payment.cause) ? payment.cause : [])
         .map((c) => `${c?.code}:${cap(c?.description, 120)}`).join(' | ');
       console.warn(`process-payment ${orderId}: MP 400 con datos extra → reintento con payload mínimo. message=${cap(payment.message, 160)} cause=${causa}`);
-      response = await llamarMP(payloadMinimoMP(payloadMP), `${orderId}-min`);
+      response = await llamarMP(payloadMinimoMP(payloadMP), `${idemKey}-min`);
       payment = await response.json();
     }
 
@@ -1044,11 +1063,34 @@ app.post('/api/mp/process-payment', mpLimiter, async (req, res) => {
     }
     pedidosMP.set(orderId, pedido);
 
-    return res.json({ status: payment.status, status_detail: payment.status_detail ?? null, id: payment.id });
+    const respuesta = { status: payment.status, status_detail: payment.status_detail ?? null, id: payment.id };
+    // 3DS 2.0: MP pide verificar con el banco. El frontend monta el Status Screen Brick con
+    // estos dos valores; el resultado final llega por webhook (→ /api/mp/order-status).
+    if (payment.status === 'pending' && payment.status_detail === 'pending_challenge' && payment.three_ds_info?.external_resource_url) {
+      respuesta.three_ds_info = {
+        external_resource_url: String(payment.three_ds_info.external_resource_url),
+        creq: String(payment.three_ds_info.creq || ''),
+      };
+    }
+    return res.json(respuesta);
   } catch (err) {
     console.error('Error procesando pago Mercado Pago:', err.message);
     return res.status(500).json({ error: 'no se pudo procesar el pago' });
   }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/mp/order-status/:orderId — el frontend lo consulta mientras el cliente completa el
+// desafío 3DS. Solo LEE el estado que fija el webhook (invariante 5: nunca se confirma desde
+// el navegador). orderId = UUID aleatorio; no expone datos personales.
+// ─────────────────────────────────────────────────────────────
+const orderStatusLimiter = rateLimit({ windowMs: 60_000, max: 60 });
+app.get('/api/mp/order-status/:orderId', orderStatusLimiter, (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const pedido = pedidosMP.get(req.params.orderId);
+  if (!pedido) return res.status(404).json({ error: 'pedido no encontrado o expirado' });
+  const estado = pedido.estado === 'pagado' ? 'approved' : pedido.estado === 'rechazado' ? 'rejected' : 'pending';
+  return res.json({ estado });
 });
 
 // ─────────────────────────────────────────────────────────────

@@ -1235,6 +1235,17 @@ section { padding-block: var(--section-pad-y); }
 }
 .cart-summary__status[hidden] { display: none; }
 
+/* 3DS 2.0: desafío del banco (Status Screen Brick) en lugar del Brick de tarjeta */
+.mp-3ds-note {
+  margin: 14px 0 0; padding: 12px 14px; border-left: 3px solid var(--color-ink);
+  border-radius: var(--radius-soft); background: var(--color-bg-alt);
+  font: 600 .82rem/1.5 var(--font-body); color: var(--color-ink);
+}
+.mp-3ds-container {
+  margin-top: 14px; padding: clamp(12px, 2.5vw, 16px); background: #fff;
+  border: 1px solid var(--borde); border-radius: var(--radius-soft); min-height: 220px;
+}
+
 /* Línea de confianza, política y ayuda (AB-F43) */
 .cart-summary__policy { margin: 12px 0 0; font: 400 .78rem/1.5 var(--font-body); color: var(--gris-texto); text-align: center; }
 .cart-summary__policy a { color: var(--negro); text-decoration: underline; text-underline-offset: 2px; }

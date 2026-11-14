@@ -938,6 +938,10 @@ async function mountMercadoPagoBrick(container, errorEl, orderId, amount, shippi
               clearCart();
               try { sessionStorage.removeItem(SHIPPING_DRAFT_KEY); } catch (_) { /* noop */ }
               window.location.href = 'confirmacion.html';
+            } else if (data.status === 'pending' && data.status_detail === 'pending_challenge' && data.three_ds_info?.external_resource_url) {
+              // 3DS 2.0: el banco pide verificar al cliente (Status Screen Brick). El resultado
+              // final lo fija el webhook; aquí solo se consulta /api/mp/order-status.
+              start3dsChallenge({ bricksBuilder, data, orderId, brickContainer: container, errorEl });
             } else if (data.status === 'in_process' || data.status === 'pending') {
               // Común en bancos peruanos: el pago queda en revisión, el webhook
               // confirma después — no marcar "pagado" aquí (invariante 5).
@@ -961,6 +965,79 @@ async function mountMercadoPagoBrick(container, errorEl, orderId, amount, shippi
       },
     },
   });
+}
+
+// 3DS 2.0 (Checkout Bricks): `process-payment` devolvió `pending_challenge` + `three_ds_info`.
+// Se oculta el Brick de tarjeta, se monta el Status Screen Brick (muestra el desafío del banco;
+// debe empezar en <30 s o MP rechaza) y se consulta `order-status` hasta que el webhook fije
+// `approved`/`rejected`. Si pasa el tiempo máximo sin resultado → «pago en revisión» (el correo
+// de confirmación llega por webhook). Invariante 5: nada se confirma desde el navegador.
+const THREEDS_POLL_MS = 4000;
+const THREEDS_MAX_MS = 180000;
+
+async function start3dsChallenge({ bricksBuilder, data, orderId, brickContainer, errorEl }) {
+  if (errorEl) errorEl.hidden = true;
+  brickContainer.hidden = true;
+  const host = document.createElement('div');
+  host.id = 'statusScreenBrick_container';
+  host.className = 'mp-3ds-container';
+  const note = document.createElement('p');
+  note.className = 'mp-3ds-note';
+  note.setAttribute('role', 'status');
+  note.textContent = 'Tu banco te pedirá verificar este pago. No cierres ni recargues la página.';
+  brickContainer.insertAdjacentElement('afterend', host);
+  host.insertAdjacentElement('beforebegin', note);
+
+  const volverAlBrick = () => {
+    host.remove();
+    note.remove();
+    brickContainer.hidden = false;
+  };
+
+  try {
+    await bricksBuilder.create('statusScreen', host.id, {
+      initialization: {
+        paymentId: String(data.id),
+        additionalInfo: {
+          externalResourceURL: data.three_ds_info.external_resource_url,
+          creq: data.three_ds_info.creq,
+        },
+      },
+      callbacks: {
+        onReady: () => {},
+        onError: (error) => console.error('Mercado Pago — error del Status Screen (3DS):', error),
+      },
+    });
+  } catch (err) {
+    console.error('Mercado Pago — no se pudo mostrar el desafío 3DS:', err);
+  }
+
+  const inicio = Date.now();
+  const timer = setInterval(async () => {
+    try {
+      const res = await fetch(`/api/mp/order-status/${encodeURIComponent(orderId)}`, { cache: 'no-store' });
+      const { estado } = await res.json();
+      if (estado === 'approved') {
+        clearInterval(timer);
+        clearCart();
+        try { sessionStorage.removeItem(SHIPPING_DRAFT_KEY); } catch (_) { /* noop */ }
+        window.location.href = 'confirmacion.html';
+        return;
+      }
+      if (estado === 'rejected') {
+        clearInterval(timer);
+        volverAlBrick();
+        showMpError(errorEl, 'Tu banco no pudo verificar el pago. Prueba con otra tarjeta.');
+        return;
+      }
+    } catch (_) { /* red intermitente: se reintenta en el siguiente ciclo */ }
+    if (Date.now() - inicio > THREEDS_MAX_MS) {
+      clearInterval(timer);
+      clearCart();
+      try { sessionStorage.removeItem(SHIPPING_DRAFT_KEY); } catch (_) { /* noop */ }
+      window.location.href = 'confirmacion.html?estado=pendiente';
+    }
+  }, THREEDS_POLL_MS);
 }
 
 // Confirma que el Brick llegó a pintar su iframe. En producción se ha visto que
