@@ -521,6 +521,7 @@ function shippingParaMetadata(envio) {
 // con items, comprador y destino. Todo lo textual del cliente pasa por `cap` /
 // regex; items, precios y cantidades salen de `pedido` (CATALOGO), nunca del body.
 // ─────────────────────────────────────────────────────────────
+const DESCRIPTOR_TARJETA = 'APBEAUTY'; // statement_descriptor: aparece en el resumen de la tarjeta (máx. 22 car.)
 const CATEGORIA_MP = 'fashion'; // MP no tiene "beauty"; fashion es la más cercana (accesorios de moda/belleza)
 const EMAIL_RE = /^[^\s@<>"',;]{1,64}@[^\s@<>"',;]{1,255}\.[A-Za-z]{2,24}$/;
 
@@ -596,6 +597,7 @@ function construirPayloadMP({ pedido, orderId, token, issuer_id, payment_method_
     transaction_amount: pedido.amountExpected, // Invariante 1: del servidor
     description: items.map((i) => `${i.id}x${i.quantity}`).join(', '),
     external_reference: orderId,
+    statement_descriptor: DESCRIPTOR_TARJETA,
     ...(envio ? { metadata: shippingParaMetadata(envio) } : {}),
     additional_info: ap,
     ...(THREEDS_ENABLED === '1' ? { three_d_secure_mode: 'optional' } : {}),
